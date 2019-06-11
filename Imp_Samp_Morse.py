@@ -17,13 +17,13 @@ m_H = 1.007825 / (Avo_num*me*1000)
 m_red = (m_O*m_H)/(m_O+m_H)
 har2wave = 219474.6
 
-
+# parameters for the potential and for the analytic wavefuntion
 De = 0.02
 sigmaOH = np.sqrt(dtau/m_red)
 omega = 3600./har2wave
 A = np.sqrt(omega**2 * m_red/(2*De))
 
-
+# Loads the wavefunction from the DVR for interpolation
 Psi_t = np.load('Ground_state_wavefunction_HO.npy')
 
 
@@ -39,6 +39,7 @@ class Walkers(object):
         self.weights_i = np.zeros(walkers) + 1.
 
 
+# function that plugs in the coordinates of the walkers and gets back the values of the trial wavefunction
 def psi_t(coords):
     # wvfn = Psi_t
     # x = wvfn[0, :]
@@ -49,6 +50,7 @@ def psi_t(coords):
     return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))
 
 
+# Calculation of the drift term
 def drift(coords):
     psi = psi_t(coords)
     # wvfn = Psi_t
@@ -60,6 +62,7 @@ def drift(coords):
     return ((mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))*-mw*coords)/psi
 
 
+# Calculates the second derivative of the trial wavefunction for the kinetic energy of the local energy
 def sec_dir(coords):
     # wvfn = Psi_t
     # x = wvfn[0, :]
@@ -70,6 +73,7 @@ def sec_dir(coords):
     return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))*(mw**2*coords**2-mw)
 
 
+# Metropolis step to determine the ratio of Green's functions
 def metropolis(x, y, Fqx, Fqy):
     psi_x = psi_t(x)
     psi_y = psi_t(y)
@@ -95,6 +99,7 @@ def potential(Psi):
     # return De*(1. - np.exp(-A*Psi.coords))**2
 
 
+# Calculates the local energy of the trial wavefunction
 def E_loc(V, Psi):
     psi = psi_t(Psi.coords)
     kin = -1./(2*m_red)*sec_dir(Psi.coords)
@@ -114,7 +119,7 @@ def E_loc(V, Psi):
 # # plt.ylim(1799, 1801)
 # plt.savefig('testing_the_local_energy.png')
 
-
+# Calculate Eref from the local energy and the weights of the walkers
 def E_ref_calc(V, Psi):
     El = E_loc(V, Psi)
     P0 = sum(Psi.weights_i)
@@ -130,8 +135,8 @@ def Weighting(Vi, Vref, Psi):
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)
-    for i in death:
-        ind = np.argmax(Psi.weights)
+    for i in death:  # iterate over the list of dead walkers
+        ind = np.argmax(Psi.weights)  # find the walker with with most weight
         Biggo_weight = float(Psi.weights[ind])
         Biggo_pos = np.array(Psi.coords[ind])
         Psi.weights[i[0]] = Biggo_weight / 2.
@@ -151,7 +156,7 @@ def desWeight(Vi, Vref, Psi):
         ind = np.argmax(Psi.weights)
         Biggo_weight = float(Psi.weights[ind])
         Biggo_pos = np.array(Psi.coords[ind])
-        Biggo_num = float(Psi.walkers[ind])
+        Biggo_num = float(Psi.walkers[ind])  # make sure to keep track of the walker that is donating its weight
         Psi.weights[i[0]] = Biggo_weight/2.
         Psi.weights[ind] = Biggo_weight/2.
         Psi.walkers[i[0]] = Biggo_num
