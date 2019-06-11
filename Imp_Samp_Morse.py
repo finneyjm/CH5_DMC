@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # DMC parameters
 dtau = 1.
-N_0 = 500
+N_0 = 10
 time_total = 1000.
 alpha = 1./(2.*dtau)
 
@@ -95,8 +95,8 @@ def Kinetic(Psi, Fqx):
 
 
 def potential(Psi):
-    return 1./2.*m_red*omega**2*Psi.coords**2
-    # return De*(1. - np.exp(-A*Psi.coords))**2
+    return 1./2.*m_red*omega**2*Psi.coords**2  # Harmonic potential
+    # return De*(1. - np.exp(-A*Psi.coords))**2  # Morse potential
 
 
 # Calculates the local energy of the trial wavefunction
@@ -106,8 +106,8 @@ def E_loc(V, Psi):
     pot = V*psi
     return (kin + pot)/psi
 
-# number = 1000000
-# points = np.linspace(-2, 2, num=number)
+# number = 100000
+# points = np.random.uniform(-2, 2, number)
 # wvfn = Walkers(number)
 # wvfn.coords += points
 # V = potential(wvfn)
@@ -116,15 +116,16 @@ def E_loc(V, Psi):
 # m = np.mean(E)
 # plt.figure()
 # plt.plot(wvfn.coords, E)
-# # plt.ylim(1799, 1801)
-# plt.savefig('testing_the_local_energy.png')
+# plt.ylim(1799, 1801)
+# plt.savefig('testing_the_local_energy_random_dist.png')
+
 
 # Calculate Eref from the local energy and the weights of the walkers
 def E_ref_calc(V, Psi):
     El = E_loc(V, Psi)
     P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    E_ref = sum(Psi.weights*El)/P - alpha*(np.log(P/P0))
+    E_ref = sum(Psi.weights*El)/P - alpha*np.log(P/P0)
     return E_ref
 
 
@@ -192,8 +193,8 @@ def run(propagation):
             prop = float(propagation)
 
         Psi, Fqx = Kinetic(new_psi, Fqx)
-        Eref = E_ref_calc(Vi, Psi)
         Vi = potential(Psi)
+        Eref = E_ref_calc(Vi, Psi)
 
         Eref_array = np.append(Eref_array, Eref)
 
