@@ -124,10 +124,7 @@ def run(propagation):
             prop = float(propagation)
 
         Psi = Kinetic(new_psi)
-        Vref = V_ref_calc(Vi, Psi)
         Vi = Potential(Psi)
-
-        Eref = np.append(Eref, Vref)
 
         if DW is False:
             new_psi = Weighting(Vi, Vref, Psi)
@@ -139,6 +136,11 @@ def run(propagation):
             else:
                 new_psi = desWeight(Vi, Vref, Psi)
             prop -= 1.
+
+        Vi = Potential(new_psi)
+
+        Vref = V_ref_calc(Vi, new_psi)
+        Eref = np.append(Eref, Vref)
 
         if i >= (time_total - 1. - float(propagation)) and prop > 0:  # start of descendant weighting
             DW = True
