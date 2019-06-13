@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 # DMC parameters
 dtau = 1.
 N_0 = 500
-time_total = 20000.
+time_total = 10000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -18,14 +18,11 @@ m_red = (m_O*m_H)/(m_O+m_H)
 har2wave = 219474.6
 
 # parameters for the potential and for the analytic wavefuntion
-De = 0.1896
+De = 0.02
 sigmaOH = np.sqrt(dtau/m_red)
 omega = 3600./har2wave
 mw = m_red * omega
 A = np.sqrt(omega**2 * m_red/(2*De))
-
-# Loads the wavefunction from the DVR for interpolation
-Psi_t = np.load('Ground_state_wavefunction_HO.npy')
 
 
 # Creates the walkers with all of their attributes
@@ -40,57 +37,10 @@ class Walkers(object):
         self.weights_i = np.zeros(walkers) + 1.
 
 
-# function that plugs in the coordinates of the walkers and gets back the values of the trial wavefunction
-def psi_t(coords):
-    # wvfn = Psi_t
-    # x = wvfn[0, :]
-    # y = wvfn[1, :]
-    # int = interpolate.splrep(x, y, s=0)
-    # return interpolate.splev(coords, int, der=0)
-    return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))
-
-
-# Calculation of the drift term
-def drift(coords):
-    # psi = psi_t(coords)
-    # wvfn = Psi_t
-    # x = wvfn[0, :]
-    # y = wvfn[1, :]
-    # int = interpolate.splrep(x, y, s=0)
-    # return interpolate.splev(coords, int, der=1)/psi
-    # return ((mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))*-mw*coords)/psi
-    return -2.*mw*coords
-
-
-# Calculates the second derivative of the trial wavefunction for the kinetic energy of the local energy
-def sec_dir(coords):
-    # wvfn = Psi_t
-    # x = wvfn[0, :]
-    # y = wvfn[1, :]
-    # int = interpolate.splrep(x, y, s=0)
-    # return interpolate.splev(coords, int, der=2)
-    return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))*(mw**2*coords**2-mw)
-
-
-# Metropolis step to determine the ratio of Green's functions
-def metropolis(x, y, Fqx, Fqy):
-    psi_x = psi_t(x)
-    psi_y = psi_t(y)
-    pre_factor = (psi_y/psi_x)**2
-    M = pre_factor*np.exp(1./2.*(Fqx + Fqy)*(sigmaOH**2/4.*(Fqx-Fqy) - (y-x)))
-    return M
-
-
-def Kinetic(Psi, Fqx):
-    randomwalk = np.random.normal(0.0, sigmaOH, N_0)
-    Drift = sigmaOH**2/2.*Fqx
-    y = Psi.coords + randomwalk + Drift
-    Fqy = drift(y)
-    a = metropolis(Psi.coords, y, Fqx, Fqy)
-    check = np.random.random(size=N_0)
-    accept = np.argwhere(a > check)
-    Psi.coords[accept] = y[accept]
-    return Psi, Fqy
+def Kinetic(psi):
+    randomwalk = np.random.normal(0.0, sigmaOH, size=N_0)
+    psi.coords += randomwalk
+    return psi
 
 
 def potential(Psi):
@@ -98,25 +48,16 @@ def potential(Psi):
     return De*(1. - np.exp(-A*Psi.coords))**2  # Morse potential
 
 
-# Calculates the local energy of the trial wavefunction
-def E_loc(V, Psi):
-    psi = psi_t(Psi.coords)
-    kin = -1./(2*m_red)*sec_dir(Psi.coords)/psi
-    pot = V
-    return kin + pot
-
-
-# Calculate Eref from the local energy and the weights of the walkers
-def E_ref_calc(El, Psi):
+def E_ref_calc(V, Psi):
     P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    E_ref = sum(Psi.weights*El)/P - alpha*np.log(P/P0)
+    E_ref = sum(Psi.weights*V)/P - alpha*(sum((Psi.weights-Psi.weights_i))/P0)
     return E_ref
 
 
 # The weighting calculation that gets the weights of each walker in the simulation
-def Weighting(El, Vref, Psi):
-    Psi.weights = Psi.weights * np.exp(-(El - Vref) * dtau)
+def Weighting(V, Vref, Psi):
+    Psi.weights = Psi.weights * np.exp(-(V - Vref) * dtau)
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)
@@ -131,8 +72,8 @@ def Weighting(El, Vref, Psi):
 
 
 # Descendant weighting where the descendants of the walkers that replace those that die are kept track of
-def desWeight(El, Vref, Psi):
-    Psi.weights = Psi.weights*np.exp(-(El-Vref)*dtau)
+def desWeight(V, Vref, Psi):
+    Psi.weights = Psi.weights * np.exp(-(V-Vref)*dtau)
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)
@@ -157,61 +98,51 @@ def descendants(Psi):
 
 def run(propagation):
     psi = Walkers(N_0)
-    # Vstart = potential(psi)
-    # El_start = E_loc(Vstart, psi)
-    # print(El_start*har2wave)
-    Fqx = drift(psi.coords)
-    Psi, Fqx = Kinetic(psi, Fqx)
+    Psi = Kinetic(psi)
     Vi = potential(Psi)
-    El = E_loc(Vi, Psi)
-    Eref_array = np.array([])
-    Eref = E_ref_calc(El, Psi)
-    Eref_array = np.append(Eref_array, Eref)
-    new_psi = Weighting(El, Eref, Psi)
+    Eref = np.array([])
+    Vref = E_ref_calc(Vi, Psi)
+    Eref = np.append(Eref, Vref)
+    new_psi = Weighting(Vi, Vref, Psi)
 
     # initial parameters before running the calculation
     DW = False  # a parameter that will implement descendant weighting when True
-    Psi_dtau = 0
+    Psi_dtau = 0  #
     for i in range(int(time_total)):
         if DW is False:
             prop = float(propagation)
 
-        Psi, Fqx = Kinetic(new_psi, Fqx)
+        Psi = Kinetic(new_psi)
         Vi = potential(Psi)
-        El = E_loc(Vi, Psi)
 
         if DW is False:
-            new_psi = Weighting(El, Eref, Psi)
+            new_psi = Weighting(Vi, Vref, Psi)
         elif DW is True:
             if Psi_dtau == 0:
                 Psi_tau = copy.deepcopy(Psi)
                 Psi_dtau = copy.deepcopy(Psi_tau)
-                new_psi = desWeight(El, Eref, Psi_dtau)
+                new_psi = desWeight(Vi, Vref, Psi_dtau)
             else:
-                new_psi = desWeight(El, Eref, Psi)
+                new_psi = desWeight(Vi, Vref, Psi)
             prop -= 1.
 
         Vi = potential(new_psi)
-        El = E_loc(Vi, new_psi)
 
-        Eref = E_ref_calc(El, new_psi)
+        Vref = E_ref_calc(Vi, new_psi)
 
-        Eref_array = np.append(Eref_array, Eref)
+        Eref = np.append(Eref, Vref)
 
         if i >= (time_total - 1. - float(propagation)) and prop > 0:  # start of descendant weighting
             DW = True
-        elif i >= (time_total - 1. - float(propagation)) and prop == 0.:  # end of descendant weighting
+        elif i >= (time_total - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
             d_values = descendants(new_psi)
             Psi_tau.d += d_values
-
-    wvfn = np.zeros((3, N_0))
-    wvfn[0, :] += Psi_tau.coords
-    wvfn[1, :] += Psi_tau.weights
-    wvfn[2, :] += Psi_tau.d
-    np.save('Imp_samp_morse_energy', Eref_array)
-    np.save('Imp_samp_morse_Psi', wvfn)
-    return
+    return Eref
 
 
-run(100)
+Eref = run(100)
+print(np.mean(Eref[400:])*har2wave)
+plt.figure()
+plt.plot(Eref[400:]*har2wave)
+plt.savefig('Non_imp_samp_morse.png')
 
