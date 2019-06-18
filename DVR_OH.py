@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-ang2bohr = (1.e-10)/(5.291772106712e-11)
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
 m_O = 15.994915 / (Avo_num*me*1000)

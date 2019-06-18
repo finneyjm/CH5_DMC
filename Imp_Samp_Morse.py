@@ -38,6 +38,8 @@ class Walkers(object):
         self.weights = np.zeros(walkers) + 1.
         self.d = np.zeros(walkers)
         self.weights_i = np.zeros(walkers) + 1.
+        self.V = np.zeros(walkers)
+        self.El = np.zeros(walkers)
 
 
 # function that plugs in the coordinates of the walkers and gets back the values of the trial wavefunction
@@ -94,29 +96,31 @@ def Kinetic(Psi, Fqx):
 
 
 def potential(Psi):
+    Psi.V = De*(1. - np.exp(-A*Psi.coords))**2  # Morse potential
     # return 1./2.*m_red*omega**2*Psi.coords**2  # Harmonic potential
-    return De*(1. - np.exp(-A*Psi.coords))**2  # Morse potential
+    return Psi
 
 
 # Calculates the local energy of the trial wavefunction
-def E_loc(V, Psi):
+def E_loc(Psi):
     psi = psi_t(Psi.coords)
     kin = -1./(2*m_red)*sec_dir(Psi.coords)/psi
-    pot = V
-    return kin + pot
+    pot = Psi.V
+    Psi.El = kin + pot
+    return Psi
 
 
 # Calculate Eref from the local energy and the weights of the walkers
-def E_ref_calc(El, Psi):
+def E_ref_calc(Psi):
     P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    E_ref = sum(Psi.weights*El)/P - alpha*np.log(P/P0)
+    E_ref = sum(Psi.weights*Psi.El)/P - alpha*np.log(P/P0)
     return E_ref
 
 
 # The weighting calculation that gets the weights of each walker in the simulation
-def Weighting(El, Vref, Psi):
-    Psi.weights = Psi.weights * np.exp(-(El - Vref) * dtau)
+def Weighting(Vref, Psi):
+    Psi.weights = Psi.weights * np.exp(-(Psi.El - Vref) * dtau)
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)
@@ -124,9 +128,13 @@ def Weighting(El, Vref, Psi):
         ind = np.argmax(Psi.weights)  # find the walker with with most weight
         Biggo_weight = float(Psi.weights[ind])
         Biggo_pos = np.array(Psi.coords[ind])
+        Biggo_pot = float(Psi.V[ind])
+        Biggo_El = float(Psi.El[ind])
         Psi.weights[i[0]] = Biggo_weight / 2.
         Psi.weights[ind] = Biggo_weight / 2.
         Psi.coords[i[0]] = Biggo_pos
+        Psi.pot[i[0]] = Biggo_pot
+        Psi.El[i[0]] = Biggo_El
     return Psi
 
 
@@ -141,10 +149,14 @@ def desWeight(El, Vref, Psi):
         Biggo_weight = float(Psi.weights[ind])
         Biggo_pos = np.array(Psi.coords[ind])
         Biggo_num = float(Psi.walkers[ind])  # make sure to keep track of the walker that is donating its weight
+        Biggo_pot = float(Psi.V[ind])
+        Biggo_El = float(Psi.El[ind])
         Psi.weights[i[0]] = Biggo_weight/2.
         Psi.weights[ind] = Biggo_weight/2.
         Psi.walkers[i[0]] = Biggo_num
         Psi.coords[i[0]] = Biggo_pos
+        Psi.pot[i[0]] = Biggo_pot
+        Psi.El[i[0]] = Biggo_El
     return Psi
 
 
@@ -157,17 +169,14 @@ def descendants(Psi):
 
 def run(propagation):
     psi = Walkers(N_0)
-    # Vstart = potential(psi)
-    # El_start = E_loc(Vstart, psi)
-    # print(El_start*har2wave)
     Fqx = drift(psi.coords)
     Psi, Fqx = Kinetic(psi, Fqx)
-    Vi = potential(Psi)
-    El = E_loc(Vi, Psi)
+    Psi = potential(Psi)
+    Psi = E_loc(Psi)
     Eref_array = np.array([])
-    Eref = E_ref_calc(El, Psi)
+    Eref = E_ref_calc(Psi)
     Eref_array = np.append(Eref_array, Eref)
-    new_psi = Weighting(El, Eref, Psi)
+    new_psi = Weighting(Eref, Psi)
 
     # initial parameters before running the calculation
     DW = False  # a parameter that will implement descendant weighting when True
@@ -177,24 +186,21 @@ def run(propagation):
             prop = float(propagation)
 
         Psi, Fqx = Kinetic(new_psi, Fqx)
-        Vi = potential(Psi)
-        El = E_loc(Vi, Psi)
+        Psi = potential(Psi)
+        Psi = E_loc(Psi)
 
         if DW is False:
-            new_psi = Weighting(El, Eref, Psi)
+            new_psi = Weighting(Eref, Psi)
         elif DW is True:
             if Psi_dtau == 0:
                 Psi_tau = copy.deepcopy(Psi)
                 Psi_dtau = copy.deepcopy(Psi_tau)
-                new_psi = desWeight(El, Eref, Psi_dtau)
+                new_psi = desWeight(Eref, Psi_dtau)
             else:
-                new_psi = desWeight(El, Eref, Psi)
+                new_psi = desWeight(Eref, Psi)
             prop -= 1.
 
-        Vi = potential(new_psi)
-        El = E_loc(Vi, new_psi)
-
-        Eref = E_ref_calc(El, new_psi)
+        Eref = E_ref_calc(new_psi)
 
         Eref_array = np.append(Eref_array, Eref)
 
