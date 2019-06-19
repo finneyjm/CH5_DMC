@@ -1,12 +1,10 @@
 import numpy as np
 import copy
-from scipy import interpolate
-import matplotlib.pyplot as plt
 
 # DMC parameters
 dtau = 1.
 N_0 = 500
-time_total = 20000.
+time_total = 1000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -44,33 +42,16 @@ class Walkers(object):
 
 # function that plugs in the coordinates of the walkers and gets back the values of the trial wavefunction
 def psi_t(coords):
-    # wvfn = Psi_t
-    # x = wvfn[0, :]
-    # y = wvfn[1, :]
-    # int = interpolate.splrep(x, y, s=0)
-    # return interpolate.splev(coords, int, der=0)
     return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))
 
 
 # Calculation of the drift term
 def drift(coords):
-    # psi = psi_t(coords)
-    # wvfn = Psi_t
-    # x = wvfn[0, :]
-    # y = wvfn[1, :]
-    # int = interpolate.splrep(x, y, s=0)
-    # return interpolate.splev(coords, int, der=1)/psi
-    # return ((mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))*-mw*coords)/psi
     return -2.*mw*coords
 
 
 # Calculates the second derivative of the trial wavefunction for the kinetic energy of the local energy
 def sec_dir(coords):
-    # wvfn = Psi_t
-    # x = wvfn[0, :]
-    # y = wvfn[1, :]
-    # int = interpolate.splrep(x, y, s=0)
-    # return interpolate.splev(coords, int, der=2)
     return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))*(mw**2*coords**2-mw)
 
 
@@ -97,7 +78,6 @@ def Kinetic(Psi, Fqx):
 
 def potential(Psi):
     Psi.V = De*(1. - np.exp(-A*Psi.coords))**2  # Morse potential
-    # return 1./2.*m_red*omega**2*Psi.coords**2  # Harmonic potential
     return Psi
 
 
@@ -139,8 +119,8 @@ def Weighting(Vref, Psi):
 
 
 # Descendant weighting where the descendants of the walkers that replace those that die are kept track of
-def desWeight(El, Vref, Psi):
-    Psi.weights = Psi.weights*np.exp(-(El-Vref)*dtau)
+def desWeight(Vref, Psi):
+    Psi.weights = Psi.weights*np.exp(-(Psi.El-Vref)*dtau)
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)

@@ -38,8 +38,10 @@ def grid(a, b, N, CH):
 def Potential(grid, CH):
     V = CH5pot.mycalcpot(grid, len(grid[:, 0, 0]))
     V_final = np.diag(np.array(V))
-    plt.plot(grid[:, 1, 0], np.diag(V_final)*har2wave, label='CH_stretch%s' %CH)
+    plt.plot(grid[:, 1, 0], np.diag(V_final)*har2wave, label='CH stretch %s' %CH)
     plt.legend()
+    plt.xlabel('Bond Distance (Bohr)')
+    plt.ylabel(r'Energy (cm${-1}$)')
     plt.savefig('Potential_CH_stretch%s.png' %CH)
     return V_final
 
@@ -75,7 +77,14 @@ def run(CH):
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
+    print(En[0]*har2wave)
     np.save('CH_stretch_wavefunction%s' %CH, Eig[:, 0])
+    # plt.plot(g[:, 1, 0], -Eig[:, 0]*har2wave + En[0]*har2wave, label='Ground State Wavefunction CH stretch %s' %CH)
+    # plt.xlabel('Bond Distance (Bohr)')
+    # plt.ylabel('Energy (Hartree)')
+    # plt.legend()
+    # plt.savefig('GSW%s.png' %CH)
+
 
 
 for i in np.arange(1, 6):
