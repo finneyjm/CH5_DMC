@@ -3,12 +3,24 @@ import matplotlib.pyplot as plt
 from Coordinerds.CoordinateSystems import *
 import CH5pot
 
-coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
-                  [0.1318851447521099, 2.088940054609643, 0.000000000000000],
-                  [1.786540362044548, -1.386051328559878, 0.000000000000000],
-                  [2.233806981137821, 0.3567096955165336, 0.000000000000000],
-                  [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
-                  [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
+# coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+#                   [0.1318851447521099, 2.088940054609643, 0.000000000000000],
+#                   [1.786540362044548, -1.386051328559878, 0.000000000000000],
+#                   [2.233806981137821, 0.3567096955165336, 0.000000000000000],
+#                   [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
+#                   [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
+# coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+#                        [1.931652478009080, -4.5126502395556294E-008, -0.6830921182334913],
+#                        [5.4640011799588715E-017, 0.8923685824271653, 2.083855680290835],
+#                        [-5.4640011799588715E-017, -0.8923685824271653, 2.083855680290835],
+#                        [-1.145620108130841, -1.659539840225091, -0.4971351597887673],
+#                        [-1.145620108130841, 1.659539840225091, -0.4971351597887673]])
+coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.386992362158741],
+                       [0.000000000000000, 0.000000000000000, -1.810066283748844],
+                       [1.797239666982623, 0.000000000000000, 1.381637275550612],
+                       [-1.797239666982623, 0.000000000000000, 1.381637275550612],
+                       [0.000000000000000, -1.895858229423645, -0.6415748897955779],
+                       [0.000000000000000, 1.895858229423645, -0.6415748897955779]])
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
 m_C = 12.0106 / (Avo_num*me*1000)
@@ -39,13 +51,13 @@ def grid(a, b, N, CH):
 def Potential(grid, CH):
     V = CH5pot.mycalcpot(grid, len(grid[:, 0, 0]))
     V_final = np.diag(np.array(V))
-    plt.plot(grid[:, 1, 0]/ang2bohr, np.diag(V_final)*har2wave, label='CH stretch %s' %CH, color='C%s' %(CH+1))
-    plt.legend(loc=2)
-    plt.xlabel('Bond Distance (Angstrom)')
-    plt.ylabel(r'Energy (cm${-1}$)')
-    plt.ylim(0, 5000)
-    plt.xlim(0.75, 1.5)
-
+    # plt.plot(grid[:, 1, 0]/ang2bohr, np.diag(V_final)*har2wave, label='CH stretch %s' %CH, color='C%s' %(CH+1))
+    # plt.legend(loc=2)
+    # plt.xlabel('Bond Distance (Angstrom)')
+    # plt.ylabel(r'Energy (cm${-1}$)')
+    # plt.ylim(0, 5000)
+    # plt.xlim(0.75, 1.5)
+    np.save('Potential_CH_stretch_c2v_saddle%s' %CH, np.diag(V_final))
     return V_final
 
 
@@ -80,8 +92,8 @@ def run(CH):
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
-    plt.plot(g[:, 1, 0]/ang2bohr, np.array([En[0]]*50)*har2wave, color='C%s' %(CH+1))
-    plt.savefig('Potential_CH_stretch%s.png' % CH)
+    # plt.plot(g[:, 1, 0]/ang2bohr, np.array([En[0]]*50)*har2wave, color='C%s' %(CH+1))
+    # plt.savefig('Potential_CH_stretch_c2v_saddle%s.png' % CH)
     # print(En[0]*har2wave)
     # np.save('CH_stretch_wavefunction%s' %CH, Eig[:, 0])
     # plt.plot(g[:, 1, 0]/ang2bohr, -Eig[:, 0], label='Ground State Wavefunction CH stretch %s' %CH)
@@ -96,9 +108,9 @@ wvfn = np.zeros((5, 50))
 for i in np.arange(1, 6):
     g, wvfn[i-1, :] = run(i)
 
-av_wvfn = np.mean(wvfn, axis=0)
-avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
-np.save('Average_GSW_CH_stretch', avg_wvfn)
+# av_wvfn = np.mean(wvfn, axis=0)
+# avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
+# np.save('Average_GSW_CH_stretch', avg_wvfn)
 
 # plt.plot(g[:, 1, 0]/ang2bohr, -av_wvfn, label='Average Ground State Wavefunction')
 # plt.legend(loc=3)

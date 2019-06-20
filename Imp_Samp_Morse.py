@@ -86,7 +86,7 @@ def potential(Psi):
 # Calculates the local energy of the trial wavefunction
 def E_loc(Psi):
     psi = psi_t(Psi.coords)
-    kin = -1./(2*m_red)*sec_dir(Psi.coords)/psi
+    kin = -1./(2.*m_red)*sec_dir(Psi.coords)/psi
     pot = Psi.V
     Psi.El = kin + pot
     return Psi
