@@ -15,6 +15,7 @@ m_C = 12.0106 / (Avo_num*me*1000)
 m_H = 1.00782503223 / (Avo_num*me*1000)
 m_red = (m_C*m_H)/(m_C+m_H)
 har2wave = 219474.6
+ang2bohr = (1.e-10)/(5.291772106712e-11)
 
 
 def grid(a, b, N, CH):
@@ -38,11 +39,13 @@ def grid(a, b, N, CH):
 def Potential(grid, CH):
     V = CH5pot.mycalcpot(grid, len(grid[:, 0, 0]))
     V_final = np.diag(np.array(V))
-    plt.plot(grid[:, 1, 0], np.diag(V_final)*har2wave, label='CH stretch %s' %CH)
-    plt.legend()
-    plt.xlabel('Bond Distance (Bohr)')
+    plt.plot(grid[:, 1, 0]/ang2bohr, np.diag(V_final)*har2wave, label='CH stretch %s' %CH, color='C%s' %(CH+1))
+    plt.legend(loc=2)
+    plt.xlabel('Bond Distance (Angstrom)')
     plt.ylabel(r'Energy (cm${-1}$)')
-    plt.savefig('Potential_CH_stretch%s.png' %CH)
+    plt.ylim(0, 5000)
+    plt.xlim(0.75, 1.5)
+
     return V_final
 
 
@@ -77,15 +80,26 @@ def run(CH):
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
-    print(En[0]*har2wave)
-    np.save('CH_stretch_wavefunction%s' %CH, Eig[:, 0])
-    # plt.plot(g[:, 1, 0], -Eig[:, 0]*har2wave + En[0]*har2wave, label='Ground State Wavefunction CH stretch %s' %CH)
-    # plt.xlabel('Bond Distance (Bohr)')
-    # plt.ylabel('Energy (Hartree)')
+    plt.plot(g[:, 1, 0]/ang2bohr, np.array([En[0]]*50)*har2wave, color='C%s' %(CH+1))
+    plt.savefig('Potential_CH_stretch%s.png' % CH)
+    # print(En[0]*har2wave)
+    # np.save('CH_stretch_wavefunction%s' %CH, Eig[:, 0])
+    # plt.plot(g[:, 1, 0]/ang2bohr, -Eig[:, 0], label='Ground State Wavefunction CH stretch %s' %CH)
+    # plt.xlabel('Bond Distance (Angstrom)')
+    # plt.ylabel('Probability Density')
     # plt.legend()
     # plt.savefig('GSW%s.png' %CH)
+    return g, Eig[:, 0]
 
 
-
+wvfn = np.zeros((5, 50))
 for i in np.arange(1, 6):
-    run(i)
+    g, wvfn[i-1, :] = run(i)
+
+av_wvfn = np.mean(wvfn, axis=0)
+avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
+np.save('Average_GSW_CH_stretch', avg_wvfn)
+
+# plt.plot(g[:, 1, 0]/ang2bohr, -av_wvfn, label='Average Ground State Wavefunction')
+# plt.legend(loc=3)
+# plt.savefig('Avg_GSW.png')

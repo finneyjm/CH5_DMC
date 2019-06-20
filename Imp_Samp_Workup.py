@@ -24,10 +24,9 @@ def do_the_things(pot):
     plt.plot(Energy*har2wave)
     # plt.ylim(1799.99, 1800.01)
     print(np.mean(Energy[400:])*har2wave)
-    print(Energy[0]*har2wave)
     plt.savefig('Imp_samp_%s_energy.png' %pot)
 
-    amp, xx = np.histogram(psi.coords, weights=psi.weights, bins=100, range=(-0.8, 0.8), density=True)
+    amp, xx = np.histogram(psi.coords, weights=psi.weights, bins=25, range=(-0.8, 0.8), density=True)
     bins = (xx[1:] + xx[:-1])/2.
     # amp_2, xx_2 = np.histogram(psi.coords, weights=psi.d, bins=50, range=(-0.8, 0.8), density=True)
     # bins_2 = (xx_2[1:] + xx_2[:-1])/2.

@@ -149,7 +149,6 @@ def run(propagation):
             Psi_tau.d += d_values
     E0 = np.mean(Eref[50:])
     np.save("DMC_CH5_Energy", Eref)
-    print(d_values)
     return E0
 
 

@@ -3,8 +3,8 @@ import copy
 
 # DMC parameters
 dtau = 1.
-N_0 = 500
-time_total = 1000.
+N_0 = 5000
+time_total = 10000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -72,7 +72,9 @@ def Kinetic(Psi, Fqx):
     a = metropolis(Psi.coords, y, Fqx, Fqy)
     check = np.random.random(size=N_0)
     accept = np.argwhere(a > check)
+    nah = np.argwhere(a <= check)
     Psi.coords[accept] = y[accept]
+    Fqy[nah] = Fqx[nah]
     return Psi, Fqy
 
 
@@ -113,7 +115,7 @@ def Weighting(Vref, Psi):
         Psi.weights[i[0]] = Biggo_weight / 2.
         Psi.weights[ind] = Biggo_weight / 2.
         Psi.coords[i[0]] = Biggo_pos
-        Psi.pot[i[0]] = Biggo_pot
+        Psi.V[i[0]] = Biggo_pot
         Psi.El[i[0]] = Biggo_El
     return Psi
 
@@ -135,7 +137,7 @@ def desWeight(Vref, Psi):
         Psi.weights[ind] = Biggo_weight/2.
         Psi.walkers[i[0]] = Biggo_num
         Psi.coords[i[0]] = Biggo_pos
-        Psi.pot[i[0]] = Biggo_pot
+        Psi.V[i[0]] = Biggo_pot
         Psi.El[i[0]] = Biggo_El
     return Psi
 
