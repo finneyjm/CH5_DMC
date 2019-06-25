@@ -31,7 +31,7 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
                   [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
 
 Psi_t = np.load('Average_GSW_CH_stretch.npy')
-int = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 
 
 # Creates the walkers with all of their attributes
@@ -49,16 +49,16 @@ class Walkers(object):
 
 
 def psi_t(coords):
-    return interpolate.splev(coords, int, der=0)
+    return interpolate.splev(coords, interp, der=0)
 
 
 def drift(coords):
     psi = psi_t(coords)
-    return interpolate.splev(coords, int, der=1)/psi
+    return interpolate.splev(coords, interp, der=1)/psi
 
 
 def sec_dir(coords):
-    return interpolate.splev(coords, int, der=2)
+    return interpolate.splev(coords, interp, der=2)
 
 
 def metropolis(x, y, Fqx, Fqy):

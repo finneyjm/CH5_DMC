@@ -57,7 +57,7 @@ def Potential(grid, CH):
     # plt.ylabel(r'Energy (cm${-1}$)')
     # plt.ylim(0, 5000)
     # plt.xlim(0.75, 1.5)
-    np.save('Potential_CH_stretch_c2v_saddle%s' %CH, np.diag(V_final))
+
     return V_final
 
 
@@ -88,13 +88,13 @@ def Energy(T, V):
 
 
 def run(CH):
-    g = grid(1., 4., 50, CH)
+    g = grid(1., 4., 500, CH)
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
     # plt.plot(g[:, 1, 0]/ang2bohr, np.array([En[0]]*50)*har2wave, color='C%s' %(CH+1))
     # plt.savefig('Potential_CH_stretch_c2v_saddle%s.png' % CH)
-    # print(En[0]*har2wave)
+    print(En[0]*har2wave)
     # np.save('CH_stretch_wavefunction%s' %CH, Eig[:, 0])
     # plt.plot(g[:, 1, 0]/ang2bohr, -Eig[:, 0], label='Ground State Wavefunction CH stretch %s' %CH)
     # plt.xlabel('Bond Distance (Angstrom)')
@@ -104,7 +104,7 @@ def run(CH):
     return g, Eig[:, 0]
 
 
-wvfn = np.zeros((5, 50))
+wvfn = np.zeros((5, 500))
 for i in np.arange(1, 6):
     g, wvfn[i-1, :] = run(i)
 

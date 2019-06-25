@@ -7,19 +7,18 @@ har2wave = 219474.6
 
 
 def do_the_things(pot):
-    Wvfn = np.load('Imp_samp_%s_Psi.npy' %pot)
+    wvfn = np.load('Imp_samp_%s_Psi.npy' %pot)
     Energy = np.load('Imp_samp_%s_energy.npy' %pot)
     # HOwvfn = np.load('Ground_state_wavefunction_%s.npy' %pot)
 
-    class wvfn(object):
+    class Wvfn(object):
 
         def __init__(self, Psi):
             self.coords = Psi[0, :]
             self.weights = Psi[1, :]
             self.d = Psi[2, :]
 
-
-    psi = wvfn(Wvfn)
+    psi = Wvfn(wvfn)
     plt.figure()
     plt.plot(Energy*har2wave)
     # plt.ylim(1799.99, 1800.01)
