@@ -29,6 +29,7 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
                   [2.233806981137821, 0.3567096955165336, 0.000000000000000],
                   [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
                   [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
+order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
 
 Psi_t = np.load('Average_GSW_CH_stretch.npy')
 interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
@@ -48,8 +49,12 @@ class Walkers(object):
         self.El = np.zeros(walkers)
 
 
-def psi_t(coords):
-    return interpolate.splev(coords, interp, der=0)
+def psi_t(coord):
+    zmatrix = CoordinateSet(coord, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
+    CHbonds = np.zeros((len(zmatrix[:, 1]), N_0))
+    for i in range(len(zmatrix[:, 1])):
+        CHbonds[i, :] = interpolate.splev(zmatrix[i, 1], interp, der=0)
+    return interpolate.splev(coord, interp, der=0)
 
 
 def drift(coords):
@@ -146,7 +151,7 @@ def run(propagation):
     Eref_array = np.append(Eref_array, Eref)
     new_psi = Weighting(Eref, Psi, DW)
 
-    Psi_dtau = 0
+    Psi_tau = 0
     for i in range(int(time_steps)):
         Psi, Fqx = Kinetic(new_psi, Fqx)
         Psi = Potential(Psi)
@@ -156,7 +161,7 @@ def run(propagation):
             prop = float(propagation)
         elif DW is True:
             prop -= 1.
-            if Psi_dtau == 0:
+            if Psi_tau == 0:
                 Psi_tau = copy.deepcopy(Psi)
         new_psi = Weighting(Eref, Psi, DW)
         Eref = E_ref_calc(new_psi)

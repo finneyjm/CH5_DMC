@@ -38,9 +38,7 @@ class Walkers(object):
         self.weights = np.zeros(walkers) + 1.
         self.d = np.zeros(walkers)
         self.weights_i = np.zeros(walkers) + 1.
-
-
-psi = Walkers(N_0)
+        self.V = np.zeros(walkers)
 
 
 # Random walk of all the walkers
@@ -55,48 +53,33 @@ def Kinetic(Psi):
 # Using the potential call to calculate the potential of all the walkers
 def Potential(Psi):
     V = CH5pot.mycalcpot(Psi.coords, N_0)
-    Vi = np.array(V)
-    return Vi
+    Psi.V = np.array(V)
+    return Psi
 
 
 # Calculate V_ref for the weighting calculation and to determine the ground state energy
-def V_ref_calc(Vi,Psi):
+def V_ref_calc(Psi):
     P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    V_ref = sum(Psi.weights*Vi)/P - alpha*(sum((Psi.weights-Psi.weights_i))/P0)
+    V_ref = sum(Psi.weights*Psi.V)/P - alpha*(sum((Psi.weights-Psi.weights_i))/P0)
     return V_ref
 
 
 # The weighting calculation that gets the weights of each walker in the simulation
-def Weighting(Vi, Vref, Psi):
-    Psi.weights = Psi.weights * np.exp(-(Vi - Vref) * dtau)
+def Weighting(Vref, Psi, DW):
+    Psi.weights = Psi.weights * np.exp(-(Psi.V - Vref) * dtau)
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)
     for i in death:
         ind = np.argmax(Psi.weights)
+        if DW is True:
+            Biggo_num = float(Psi.walkers[ind])
+            Psi.walkers[i[0]] = Biggo_num
         Biggo_weight = float(Psi.weights[ind])
         Biggo_pos = np.array(Psi.coords[ind])
         Psi.weights[i[0]] = Biggo_weight / 2.
         Psi.weights[ind] = Biggo_weight / 2.
-        Psi.coords[i[0]] = Biggo_pos
-    return Psi
-
-
-# Descendant weighting where the descendants of the walkers that replace those that die are kept track of
-def desWeight(Vi, Vref, Psi):
-    Psi.weights = Psi.weights*np.exp(-(Vi-Vref)*dtau)
-    # Conditions to prevent one walker from obtaining all the weight
-    threshold = 1. / float(N_0)
-    death = np.argwhere(Psi.weights < threshold)
-    for i in death:
-        ind = np.argmax(Psi.weights)
-        Biggo_weight = float(Psi.weights[ind])
-        Biggo_pos = np.array(Psi.coords[ind])
-        Biggo_num = float(Psi.walkers[ind])
-        Psi.weights[i[0]] = Biggo_weight/2.
-        Psi.weights[ind] = Biggo_weight/2.
-        Psi.walkers[i] = Biggo_num
         Psi.coords[i[0]] = Biggo_pos
     return Psi
 
@@ -109,37 +92,32 @@ def descendants(Psi):
 
 
 def run(propagation):
+    DW = False  # a parameter that will implement descendant weighting when True
+    psi = Walkers(N_0)
     Psi = Kinetic(psi)
-    Vi = Potential(Psi)
+    Psi = Potential(Psi)
     Eref = np.array([])
-    Vref = V_ref_calc(Vi, Psi)
+    Vref = V_ref_calc(Psi)
     Eref = np.append(Eref, Vref)
-    new_psi = Weighting(Vi, Vref, Psi)
+    new_psi = Weighting(Vref, Psi)
 
     # initial parameters before running the calculation
-    DW = False  # a parameter that will implement descendant weighting when True
-    Psi_dtau = 0  #
+
+    Psi_tau = 0  #
     for i in range(int(time_total)):
+        Psi = Kinetic(new_psi)
+        Psi = Potential(Psi)
+
         if DW is False:
             prop = float(propagation)
 
-        Psi = Kinetic(new_psi)
-        Vi = Potential(Psi)
-
-        if DW is False:
-            new_psi = Weighting(Vi, Vref, Psi)
         elif DW is True:
-            if Psi_dtau == 0:
-                Psi_tau = copy.deepcopy(Psi)
-                Psi_dtau = copy.deepcopy(Psi_tau)
-                new_psi = desWeight(Vi, Vref, Psi_dtau)
-            else:
-                new_psi = desWeight(Vi, Vref, Psi)
             prop -= 1.
+            if Psi_tau == 0:
+                Psi_tau = copy.deepcopy(Psi)
+        new_psi = Weighting(Vref, Psi, DW)
 
-        Vi = Potential(new_psi)
-
-        Vref = V_ref_calc(Vi, new_psi)
+        Vref = V_ref_calc(new_psi)
         Eref = np.append(Eref, Vref)
 
         if i >= (time_total - 1. - float(propagation)) and prop > 0:  # start of descendant weighting

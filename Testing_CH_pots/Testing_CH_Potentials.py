@@ -24,7 +24,6 @@ sigmaC = np.sqrt(dtau/m_C)
 sigmaCH = np.sqrt(dtau/m_CH)
 
 
-
 # Creates the walkers with all of their attributes
 class Walkers(object):
     walkers = 0
@@ -160,35 +159,45 @@ def run(propagation, CH, type):
     wvfn[0, :] += Psi_tau.coords
     wvfn[1, :] += Psi_tau.weights
     wvfn[2, :] += Psi_tau.d
-    np.save('Imp_samp_CH_pots_Psi_%s' %CH, wvfn)
-    np.save('Imp_samp_CH_pots_Energy_%s' %CH, Eref_array)
+    np.save('Imp_samp_CH_pots_Psi_c2v%s' %CH, wvfn)
+    np.save('Imp_samp_CH_pots_Energy_c2v%s' %CH, Eref_array)
 
 
 # for i in range(5):
 #     run(50., (i+1), '')
-#     run(50., '_cs_saddle' + str(i+1), '_cs_saddle')
+#
+# for i in range(5):
+#     run(50., (i+1), '')
+#     run(50., '_cs_saddle' + str(i+1), '')
+#     run(50., '_c2v_saddle' + str(i+1), '')
+# for i in range(5):
+#     run(50., (i+1), '_cs_saddle')
+#     run(50., '_cs_saddle' + str(i + 1), '_cs_saddle')
+#     run(50., '_c2v_saddle' + str(i+1), '_cs_saddle')
+# for i in range(5):
+#     run(50., (i+1), '_c2v_saddle')
+#     run(50., '_cs_saddle' + str(i + 1), '_c2v_saddle')
 #     run(50., '_c2v_saddle' + str(i+1), '_c2v_saddle')
 
-
 for i in range(5):
-    Energy1 = np.load('Imp_samp_CH_pots_Energy_%s.npy' %(i+1))
-    Energy2 = np.load('Imp_samp_CH_pots_Energy_%s.npy' %('_cs_saddle' + str(i+1)))
-    Energy3 = np.load('Imp_samp_CH_pots_Energy_%s.npy' %('_c2v_saddle' + str(i+1)))
+    Energy1 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' %(i+1))
+    Energy2 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' %('_cs_saddle' + str(i+1)))
+    Energy3 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' %('_c2v_saddle' + str(i+1)))
 
     plt.figure()
     plt.plot(Energy1[:1000]*har2wave)
     print(str(np.mean(Energy1[400:]*har2wave)) + '+/-' + str(np.std(Energy1[400:]*har2wave)))
-    plt.savefig('Imp_samp_CH_energy%s.png' %(i+1))
+    plt.savefig('Imp_samp_CH_energy_c2v%s.png' %(i+1))
 
     plt.figure()
     plt.plot(Energy2[:1000]*har2wave)
     print(str(np.mean(Energy2[400:]*har2wave)) + '+/-' + str(np.std(Energy2[400:]*har2wave)))
-    plt.savefig('Imp_samp_CH_energy%s.png' %('_cs_saddle' + str(i+1)))
+    plt.savefig('Imp_samp_CH_energy_c2v%s.png' %('_cs_saddle' + str(i+1)))
 
     plt.figure()
     plt.plot(Energy3[:1000]*har2wave)
     print(str(np.mean(Energy3[400:]*har2wave)) + '+/-' + str(np.std(Energy3[400:]*har2wave)))
-    plt.savefig('Imp_samp_CH_energy%s.png' %('_c2v_saddle' + str(i+1)))
+    plt.savefig('Imp_samp_CH_energy_c2v%s.png' %('_c2v_saddle' + str(i+1)))
 
 
 
