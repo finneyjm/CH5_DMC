@@ -68,17 +68,17 @@ def lets_get_these_graphs(name):
     plt.savefig('Energy_after_flattening_multi_simple.png')
 
 
-def Psi_sqrd(how_many, what_factor):
-    for i in range(how_many):
-        coords, d, weights = load_psi(what_factor*(i+1))
-        Psi = Walkers(coords, d, weights)
-        amp, xx = np.histogram(Psi.coords[0, :], weights=Psi.d[0, 0, :], bins=10, range=(-1.75, 1.75), density=True)
-        bins = (xx[1:]+xx[:-1])/2.
-        plt.plot(bins, amp, label='Des. weight = %s' %(what_factor*(i+1)))
-    plt.xlabel('x')
-    plt.legend()
-    plt.show()
-    plt.close()
+# def Psi_sqrd(how_many, what_factor):
+#     for i in range(how_many):
+#         coords, d, weights = load_psi(what_factor*(i+1))
+#         Psi = Walkers(coords, d, weights)
+#         amp, xx = np.histogram(Psi.coords[0, :], weights=Psi.d[0, 0, :], bins=10, range=(-1.75, 1.75), density=True)
+#         bins = (xx[1:]+xx[:-1])/2.
+#         plt.plot(bins, amp, label='Des. weight = %s' %(what_factor*(i+1)))
+#     plt.xlabel('x')
+#     plt.legend()
+#     plt.show()
+#     plt.close()
 
 
 # Psi_sqrd(7, 25)

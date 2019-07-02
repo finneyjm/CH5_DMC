@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+import CH5pot
 
 # DMC parameters
 dtau = 1.
@@ -10,43 +11,55 @@ alpha = 1./(2.*dtau)
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_O = 15.994915 / (Avo_num*me*1000)
+m_C = 12.0107 / (Avo_num*me*1000)
 m_H = 1.007825 / (Avo_num*me*1000)
-m_red = (m_O*m_H)/(m_O+m_H)
 har2wave = 219474.6
 
-sigma = np.sqrt(dtau/m_red)
+# Values for Simulation
+sigmaH = np.sqrt(dtau/m_H)
+sigmaC = np.sqrt(dtau/m_C)
+# Starting orientation of walkers
+coords_inital = ([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+                  [-0.8247121421923925, -0.6295306113384560, 1.775332267901544],
+                  [0.1318851447521099, 2.088940054609643, 0.000000000000000],
+                  [1.786540362044548, -1.386051328559878, 0.000000000000000],
+                  [2.233806981137821, 0.3567096955165336, 0.000000000000000],
+                  [-0.8247121421923925, -0.6295306113384560, -1.775332267901544]])
 
 
+# Creates the walkers with all of their attributes
 class Walkers(object):
+    walkers = 0
 
     def __init__(self, walkers, cuts):
         self.walkers = np.linspace(0, walkers-1, num=walkers)
-        self.coords = np.zeros(walkers)
+        self.coords = np.array([coords_inital]*walkers)
         self.weights = np.zeros((cuts, walkers)) + 1.
         self.weights_i = np.zeros(walkers) + 1.
         self.V = np.zeros((cuts, walkers))
         self.Diff = np.zeros((cuts, walkers))
 
 
+# Random walk of all the walkers
 def Kinetic(Psi):
-    randomwalk = np.random.normal(0.0, sigma, N_0)
-    Psi.coords += randomwalk
+    randomwalkC = np.random.normal(0.0, sigmaC, size=(N_0, 3))
+    randomwalkH = np.random.normal(0.0, sigmaH, size=(N_0, 5, 3))
+    Psi.coords[:, 0, :] += randomwalkC
+    Psi.coords[:, 1:6, :] += randomwalkH
     return Psi
 
 
-def Potential(Psi, bh, spacing, Ecut):
-    bh = bh/har2wave
+# Using the potential call to calculate the potential of all the walkers
+def Potential(Psi, Ecut):
     Ecut = Ecut/har2wave
-    A = bh * 8. / spacing ** 2
-    B = bh * (4. / spacing ** 2) ** 2
-    Vi = bh - A * Psi.coords ** 2 + B * (Psi.coords ** 4)
+    V = CH5pot.mycalcpot(Psi.coords, N_0)
+    V_orig = np.array(V)
     cuts = len(Ecut)
     for i in range(cuts):
-        ind = np.argwhere(Vi < Ecut[i])
-        Psi.V[i, :] = np.array(Vi)
+        ind = np.argwhere(V_orig < Ecut[i])
+        Psi.V[i, :] = np.array(V)
         Psi.V[i, ind] = Ecut[i]
-        Psi.Diff[i, :] = Vi - Psi.V[i, :]
+        Psi.Diff[i, :] = V_orig - Psi.V[i, :]
     return Psi
 
 
@@ -71,7 +84,7 @@ def Weighting(Vref, Psi, DW):
                 Biggo_num = float(Psi.walkers[ind[1]])
                 Psi.walkers[i] = Biggo_num
             Biggo_weight = np.array(Psi.weights[:, ind[1]])
-            Biggo_pos = float(Psi.coords[ind[1]])
+            Biggo_pos = np.array(Psi.coords[ind[1]])
             Biggo_pot = np.array(Psi.V[:, ind[1]])
             Biggo_diff = np.array(Psi.Diff[:, ind[1]])
             Psi.coords[i[0]] = Biggo_pos
@@ -90,31 +103,27 @@ def descendants(Psi):
 
 
 def run(equilibration, wait_time, propagation, Ecut, naming):
-    barrier = 100.
-    spacing = 2.
     cuts = len(Ecut)
     DW = False
-    psi = Walkers(N_0, cuts)
-    Psi = Kinetic(psi)
-    Psi = Potential(Psi, barrier, spacing, Ecut)
+    new_psi = Walkers(N_0, cuts)
     Eref = np.zeros((cuts, int(time_steps) + 1))
-    Vref = V_ref_calc(Psi)
-    Eref[:, 0] += Vref
-    new_psi = Weighting(Vref, Psi, DW)
-
     Psi_tau = 0.
     wait = float(wait_time)
     j = 0
     num_of_dw = int(round((time_steps - equilibration) / (wait_time + propagation)))
     des_weights = np.zeros((num_of_dw, cuts, N_0))
     differences = np.zeros((num_of_dw, cuts, N_0))
-    positions = np.zeros((num_of_dw, N_0))
+    positions = np.zeros((num_of_dw, N_0, 6, 3))
     weights = np.zeros((num_of_dw, cuts, N_0))
     for i in range(int(time_steps)):
         if i % 1000 == 0:
             print(i)
         Psi = Kinetic(new_psi)
-        Psi = Potential(Psi, barrier, spacing, Ecut)
+        Psi = Potential(Psi, Ecut)
+
+        if i == 0:
+            Vref = V_ref_calc(Psi)
+            Eref[:, 0] += Vref
 
         if DW is False:
             prop = float(propagation)
@@ -148,24 +157,33 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
             wait = float(wait_time)
             DW = False
 
-    np.save("DMC_HO_descendants_concrete_multiweight%s" %naming, des_weights)
-    np.save("DMC_HO_Diffs_concrete_multiweight%s" %naming, differences)
-    np.save("DMC_HO_Energy_concrete_multiweight%s" %naming, Eref)
-    np.save("DMC_HO_Psi_pos_concrete_multiweight%s" %naming, positions)
-    np.save("DMC_HO_Psi_weights_concrete_multiweight%s" %naming, weights)
+    np.save("DMC_CH5_descendants_concrete_multiweight%s" %naming, des_weights)
+    np.save("DMC_CH5_Diffs_concrete_multiweight%s" %naming, differences)
+    np.save("DMC_CH5_Energy_concrete_multiweight%s" %naming, Eref)
+    np.save("DMC_CH5_Psi_pos_concrete_multiweight%s" %naming, positions)
+    np.save("DMC_CH5_Psi_weights_concrete_multiweight%s" %naming, weights)
     return
 
 
 def acquire_dis_data():
-    Ecut_array = np.linspace(0, 100, num=11)
-    run(4000, 500, 50, Ecut_array, '_all_cuts')
-    print("All the cuts are done")
-    for i in range(len(Ecut_array)):
-        run(4000, 500, 50, np.array([Ecut_array[i]]), '_Ecut%s' %Ecut_array[i])
-        print("Cut %s is done" %(i+1))
+    Ecut_array = np.linspace(0, 10000, num=11)
+    run(4000, 500, 50, Ecut_array, '_to_10000')
+    print('Done with big cuts')
+    Ecut_array = np.linspace(0, 8000, num=11)
+    run(4000, 500, 50, Ecut_array, '_to_8000')
+    print('Done with middle cuts')
+    Ecut_array = np.linspace(0, 6000, num=11)
+    run(4000, 500, 50, Ecut_array, '_to_6000')
+    print('Done with small cuts')
 
 
 acquire_dis_data()
+
+
+
+
+
+
 
 
 
