@@ -52,6 +52,25 @@ def lets_get_these_graphs(name, Ecut_array):
     plt.savefig('Energy_after_flattening_multi_CH5.png')
 
 
+def new_graphs(name, Ecut_array):
+    for i in range(len(Ecut_array)):
+        diffs, energy = load_observables(name[i])
+        plt.figure()
+        Ecut = np.linspace(0, Ecut_array[i], num=len(energy[:, 0]))
+        for j in range(len(energy[:, 0])):
+            plt.plot(energy[j, :] * har2wave, label='Cut at %s' %Ecut[j])
+        plt.xlabel('Time')
+        plt.ylabel('Ground State Energy(cm^-1)')
+        plt.title('Eref Fluctuations')
+        plt.legend(loc=4)
+        plt.savefig('Eref_fluctuations_for_Ecut_%s' %Ecut_array[i])
+
+
+
 names = ['_to_10000', '_to_8000', '_to_6000', '_to_4000', '_to_2000']
 Ecuts = [10000, 8000, 6000, 4000, 2000]
-lets_get_these_graphs(names, Ecuts)
+# lets_get_these_graphs(names, Ecuts)
+new_graphs(names, Ecuts)
+
+
+

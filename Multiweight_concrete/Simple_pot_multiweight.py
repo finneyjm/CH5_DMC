@@ -3,7 +3,7 @@ import copy
 
 # DMC parameters
 dtau = 1.
-N_0 = 2000
+N_0 = 10000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
 
@@ -90,7 +90,7 @@ def descendants(Psi):
 
 
 def run(equilibration, wait_time, propagation, Ecut, naming):
-    barrier = 100.
+    barrier = 1000.
     spacing = 2.
     cuts = len(Ecut)
     DW = False
@@ -157,12 +157,11 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
 
 
 def acquire_dis_data():
-    Ecut_array = np.linspace(0, 100, num=11)
-    run(4000, 500, 50, Ecut_array, '_all_cuts')
-    print("All the cuts are done")
-    for i in range(len(Ecut_array)):
-        run(4000, 500, 50, np.array([Ecut_array[i]]), '_Ecut%s' %Ecut_array[i])
-        print("Cut %s is done" %(i+1))
+    for i in range(5):
+        for j in range(5):
+            Ecut_array = np.linspace(0, 100*(i+1), num=(j+2))
+            run(4000, 500, 50, Ecut_array, '_to_%s_job' %Ecut_array[-1] + '_%s' %(j+1))
+            print('Done with Ecut to %s' %Ecut_array[-1] + ' job %s' %(j+1))
 
 
 acquire_dis_data()

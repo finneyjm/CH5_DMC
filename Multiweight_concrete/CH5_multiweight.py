@@ -3,8 +3,8 @@ import copy
 import CH5pot
 
 # DMC parameters
-dtau = 1.
-N_0 = 2000
+dtau = 5.
+N_0 = 20000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
 
@@ -166,15 +166,10 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
 
 
 def acquire_dis_data():
-    Ecut_array = np.linspace(0, 10000, num=11)
-    run(4000, 500, 50, Ecut_array, '_to_10000')
-    print('Done with big cuts')
-    Ecut_array = np.linspace(0, 8000, num=11)
-    run(4000, 500, 50, Ecut_array, '_to_8000')
-    print('Done with middle cuts')
-    Ecut_array = np.linspace(0, 6000, num=11)
-    run(4000, 500, 50, Ecut_array, '_to_6000')
-    print('Done with small cuts')
+    for i in range(5):
+        Ecut_array = np.linspace(0, 2000*(i+1), num=11)
+        run(4000, 500, 50, Ecut_array, '_to_%s' %Ecut_array[-1])
+        print('Done with Ecut to %s' %Ecut_array[-1])
 
 
 acquire_dis_data()
