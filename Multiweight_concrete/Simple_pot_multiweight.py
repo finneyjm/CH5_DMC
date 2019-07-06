@@ -61,11 +61,12 @@ def V_ref_calc(Psi):
 def Weighting(Vref, Psi, DW):
     cuts = len(Vref)
     for i in range(cuts):
-        Psi.weights[i, :] *= np.nan_to_num(np.exp(-(Psi.V[i, :] - Vref[i]) * dtau))
+        Psi.weights[i, :] *= np.exp(-(Psi.V[i, :] - Vref[i]) * dtau)
     threshold = 1./float(N_0)
-    for j in range(cuts):
-        death = np.argwhere(Psi.weights[j, :] < threshold)
-        for i in death:
+    # for j in range(cuts):
+    death = np.argwhere(Psi.weights < threshold)
+    for i in death:
+        if Psi.weights[i[0], i[1]] == np.max(Psi.weights[:, i[1]]):
             ind = np.unravel_index(Psi.weights.argmax(), Psi.weights.shape)
             if DW is True:
                 Biggo_num = float(Psi.walkers[ind[1]])

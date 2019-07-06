@@ -36,7 +36,6 @@ class Walkers(object):
         self.walkers = np.linspace(0, walkers-1, num=walkers)
         self.coords = np.array([coords_inital]*walkers)
         self.weights = np.zeros(walkers) + 1.
-        self.d = np.zeros(walkers)
         self.weights_i = np.zeros(walkers) + 1.
         self.V = np.zeros(walkers)
 
@@ -86,9 +85,10 @@ def Weighting(Vref, Psi, DW):
 
 # Calculates the descendant weight for the walkers before descendant weighting
 def descendants(Psi):
+    d = np.zeros(N_0)
     for i in range(N_0):
-        Psi.d[i] = np.sum(Psi.weights[Psi.walkers == i])
-    return Psi.d
+        d[i] = np.sum(Psi.weights[Psi.walkers == i])
+    return d
 
 
 def run(propagation):

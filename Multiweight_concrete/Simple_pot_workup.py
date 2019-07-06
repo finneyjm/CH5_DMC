@@ -84,7 +84,7 @@ def lets_get_these_graphs(name, Ecut_array):
         axes.set_xlabel('Ecut (cm^-1)')
         axes.set_ylabel('Ground State Energy (cm^-1)')
         axes.set_title('Ground State Energy with Different Flattening')
-        fig.legend(loc=4)
+        fig.legend()
         fig.savefig('Energy_after_flattening_multi_simple_more_walkers%s.png' %Ecut_array[i, 0])
 
 
