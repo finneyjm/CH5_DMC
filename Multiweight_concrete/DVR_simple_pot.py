@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 # constants and conversion factors
 me = 9.10938356e-31
@@ -13,12 +14,18 @@ def grid(a, b, N):
     return np.linspace(a, b, num=N)
 
 
-
 def Potential(g, bh, spacing):
     bh = bh/har2wave
     A = bh * 8. / spacing ** 2
     B = bh * (4. / spacing ** 2) ** 2
     V = bh - A * g ** 2 + B * (g ** 4)
+    plt.figure()
+    plt.plot(g, V*har2wave)
+    plt.xlabel('Arbitrary Grid')
+    plt.ylabel('Energy (cm^-1)')
+    plt.title('Double Well Potential')
+    plt.ylim(0, 5000)
+    plt.savefig('Double_well_pot_%s.png' %g[-1])
     return np.diag(V)
 
 
@@ -49,11 +56,15 @@ def Energy(T, V):
 
 
 def run():
-    g = grid(-5, 5, 1000)
+    g = grid(-2.5, 2.5, 1000)
     V = Potential(g, 1000., 2.)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
     print(En[0]*har2wave)
+    plt.figure()
+    plt.plot(g, -Eig[:, 0])
+    plt.ylabel('Probability Amplitude')
+    plt.savefig('Double_well_pot_wavefn_%s.png' %g[-1])
 
 
 run()

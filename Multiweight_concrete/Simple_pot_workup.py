@@ -86,6 +86,7 @@ def lets_get_these_graphs(name, Ecut_array):
         axes.set_title('Ground State Energy with Different Flattening')
         fig.legend()
         fig.savefig('Energy_after_flattening_multi_simple_more_walkers%s.png' %Ecut_array[i, 0])
+        plt.close(fig)
 
 
 # def Psi_sqrd(how_many, what_factor):

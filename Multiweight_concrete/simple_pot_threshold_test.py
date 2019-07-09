@@ -2,7 +2,7 @@ import numpy as np
 import copy
 
 # DMC parameters
-dtau = 1.
+dtau = 5.
 N_0 = 10000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
@@ -17,6 +17,8 @@ m_red = (m_O*m_H)/(m_O+m_H)
 har2wave = 219474.6
 
 sigma = np.sqrt(dtau/m_red)
+
+walker_reaper = np.array([])
 
 
 class Walkers(object):
@@ -52,10 +54,16 @@ def V_ref_calc(Psi):
 
 # The weighting calculation that gets the weights of each walker in the simulation
 def Weighting(Vref, Psi, DW, threshold):
+    global walker_reaper
     Psi.weights = Psi.weights * np.exp(-(Psi.V - Vref) * dtau)
     # Conditions to prevent one walker from obtaining all the weight
     death = np.argwhere(Psi.weights < threshold)
+    if len(death) >= 1:
+        walker_reaper = np.append(walker_reaper, len(death))
+    else:
+        walker_reaper = np.append(walker_reaper, 0)
     for i in death:
+
         ind = np.argmax(Psi.weights)
         if DW is True:
             Biggo_num = float(Psi.walkers[ind])
@@ -77,6 +85,7 @@ def descendants(Psi):
 
 
 def run(equilibration, wait_time, propagation, threshold, naming):
+    global walker_reaper
     barrier = 1000.
     spacing = 2.
     DW = False
@@ -98,6 +107,7 @@ def run(equilibration, wait_time, propagation, threshold, naming):
     for i in range(int(time_steps)):
         if i % 1000 == 0:
             print(i)
+            print(np.mean(walker_reaper))
         Psi = Kinetic(new_psi)
         Psi = Potential(Psi, barrier, spacing)
 
@@ -138,13 +148,17 @@ def run(equilibration, wait_time, propagation, threshold, naming):
     return
 
 
-def let_get_this_bread():
-    for i in range(5):
-        run(4000, 500, 50, 0.1**(i+1), '%s' % (0.1**(i+1)))
-        print('Threshold %s' % (i+1) + ' is calculated!')
-    # run(4000, 500, 50, 1./float(N_0), '%s' % (1./float(N_0)))
-    # print('Threshold %s is calculated!' % 6)
+# def let_get_this_bread():
+#     for j in range(6):
+#         print('Starting job %s' % (j+1))
+#         for i in range(5):
+#             run(4000, 500, 50, 0.1**(i+1), '%s' % (0.1**(i+1)) + '_job_%s' % (j+1))
+#             print('Threshold %s' % (i+1) + ' is calculated!')
+#     # run(4000, 500, 50, 1./float(N_0), '%s' % (1./float(N_0)))
+#     # print('Threshold %s is calculated!' % 6)
+#
+#
+# let_get_this_bread()
 
-
-let_get_this_bread()
-
+run(4000, 500, 50, 0.001, 'test_death')
+print(np.mean(walker_reaper))

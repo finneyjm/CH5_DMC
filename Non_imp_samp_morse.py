@@ -4,8 +4,8 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 # DMC parameters
-dtau = 1.
-N_0 = 500
+dtau = 5.
+N_0 = 10000
 time_total = 10000.
 alpha = 1./(2.*dtau)
 
@@ -61,6 +61,8 @@ def Weighting(V, Vref, Psi):
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)
+    if len(death) >= 1:
+            print('%s walkers dead' %len(death))
     for i in death:  # iterate over the list of dead walkers
         ind = np.argmax(Psi.weights)  # find the walker with with most weight
         Biggo_weight = float(Psi.weights[ind])
@@ -109,6 +111,7 @@ def run(propagation):
     DW = False  # a parameter that will implement descendant weighting when True
     Psi_dtau = 0  #
     for i in range(int(time_total)):
+        print(i)
         if DW is False:
             prop = float(propagation)
 

@@ -27,6 +27,8 @@ coords_inital = ([[0.000000000000000, 0.000000000000000, 0.000000000000000],
                   [2.233806981137821, 0.3567096955165336, 0.000000000000000],
                   [-0.8247121421923925, -0.6295306113384560, -1.775332267901544]])
 
+walker_reaper = np.array([])
+
 
 # Creates the walkers with all of their attributes
 class Walkers(object):
@@ -66,10 +68,15 @@ def V_ref_calc(Psi):
 
 # The weighting calculation that gets the weights of each walker in the simulation
 def Weighting(Vref, Psi, DW):
+    global walker_reaper
     Psi.weights = Psi.weights * np.exp(-(Psi.V - Vref) * dtau)
     # Conditions to prevent one walker from obtaining all the weight
-    threshold = 1. / float(N_0)
+    threshold = 0.001
     death = np.argwhere(Psi.weights < threshold)
+    if len(death) >= 1:
+        walker_reaper = np.append(walker_reaper, len(death))
+    else:
+        walker_reaper = np.append(walker_reaper, 0)
     for i in death:
         ind = np.argmax(Psi.weights)
         if DW is True:
@@ -99,7 +106,7 @@ def run(propagation):
     Eref = np.array([])
     Vref = V_ref_calc(Psi)
     Eref = np.append(Eref, Vref)
-    new_psi = Weighting(Vref, Psi)
+    new_psi = Weighting(Vref, Psi, DW)
 
     # initial parameters before running the calculation
 
@@ -124,11 +131,12 @@ def run(propagation):
             DW = True
         elif i >= (time_total - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
             d_values = descendants(new_psi)
-            Psi_tau.d += d_values
     E0 = np.mean(Eref[50:])
     np.save("DMC_CH5_Energy", Eref)
     return E0
 
 
-E0, E0_time = tm.time_me(run, 50)
-tm.print_time_list(run, E0_time)
+# E0, E0_time = tm.time_me(run, 50)
+# tm.print_time_list(run, E0_time)
+run(50)
+print(np.mean(walker_reaper))

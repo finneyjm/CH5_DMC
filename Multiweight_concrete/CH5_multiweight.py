@@ -87,11 +87,11 @@ def Weighting(Vref, Psi, DW):
             Biggo_pos = np.array(Psi.coords[ind[1]])
             Biggo_pot = np.array(Psi.V[:, ind[1]])
             Biggo_diff = np.array(Psi.Diff[:, ind[1]])
-            Psi.coords[i[0]] = Biggo_pos
-            Psi.weights[:, i[0]] = Biggo_weight/2.
+            Psi.coords[i[1]] = Biggo_pos
+            Psi.weights[:, i[1]] = Biggo_weight/2.
             Psi.weights[:, ind[1]] = Biggo_weight/2.
-            Psi.V[:, i[0]] = Biggo_pot
-            Psi.Diff[:, i[0]] = Biggo_diff
+            Psi.V[:, i[1]] = Biggo_pot
+            Psi.Diff[:, i[1]] = Biggo_diff
     return Psi
 
 

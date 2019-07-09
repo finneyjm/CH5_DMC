@@ -2,7 +2,7 @@ import numpy as np
 import copy
 
 # DMC parameters
-dtau = 1.
+dtau = 5.
 N_0 = 10000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
@@ -16,6 +16,8 @@ m_red = (m_O*m_H)/(m_O+m_H)
 har2wave = 219474.6
 
 sigma = np.sqrt(dtau/m_red)
+
+walker_reaper = np.array([])
 
 
 class Walkers(object):
@@ -38,9 +40,9 @@ def Kinetic(Psi):
 def Potential(Psi, bh, spacing, Ecut):
     bh = bh/har2wave
     Ecut = Ecut/har2wave
-    A = bh * 8. / spacing ** 2
-    B = bh * (4. / spacing ** 2) ** 2
-    Vi = bh - A * Psi.coords ** 2 + B * (Psi.coords ** 4)
+    A = bh * 8. / (spacing * spacing)
+    B = bh * (4. / (spacing * spacing)) * (4. / (spacing * spacing))
+    Vi = bh - A * Psi.coords * Psi.coords + B * (Psi.coords * Psi.coords * Psi.coords * Psi.coords)
     cuts = len(Ecut)
     for i in range(cuts):
         ind = np.argwhere(Vi < Ecut[i])
@@ -59,14 +61,17 @@ def V_ref_calc(Psi):
 
 
 def Weighting(Vref, Psi, DW):
+    global walker_reaper
     cuts = len(Vref)
     for i in range(cuts):
         Psi.weights[i, :] *= np.exp(-(Psi.V[i, :] - Vref[i]) * dtau)
     threshold = 1./float(N_0)
     # for j in range(cuts):
     death = np.argwhere(Psi.weights < threshold)
+    j = 0
     for i in death:
         if Psi.weights[i[0], i[1]] == np.max(Psi.weights[:, i[1]]):
+            j += 1
             ind = np.unravel_index(Psi.weights.argmax(), Psi.weights.shape)
             if DW is True:
                 Biggo_num = float(Psi.walkers[ind[1]])
@@ -75,11 +80,12 @@ def Weighting(Vref, Psi, DW):
             Biggo_pos = float(Psi.coords[ind[1]])
             Biggo_pot = np.array(Psi.V[:, ind[1]])
             Biggo_diff = np.array(Psi.Diff[:, ind[1]])
-            Psi.coords[i[0]] = Biggo_pos
-            Psi.weights[:, i[0]] = Biggo_weight/2.
+            Psi.coords[i[1]] = Biggo_pos
+            Psi.weights[:, i[1]] = Biggo_weight/2.
             Psi.weights[:, ind[1]] = Biggo_weight/2.
-            Psi.V[:, i[0]] = Biggo_pot
-            Psi.Diff[:, i[0]] = Biggo_diff
+            Psi.V[:, i[1]] = Biggo_pot
+            Psi.Diff[:, i[1]] = Biggo_diff
+    walker_reaper = np.append(walker_reaper, j)
     return Psi
 
 
@@ -91,6 +97,7 @@ def descendants(Psi):
 
 
 def run(equilibration, wait_time, propagation, Ecut, naming):
+    global walker_reaper
     barrier = 1000.
     spacing = 2.
     cuts = len(Ecut)
@@ -166,7 +173,6 @@ def acquire_dis_data():
 
 
 acquire_dis_data()
-
 
 
 
