@@ -14,19 +14,16 @@ def grid(a, b, N):
     return np.linspace(a, b, num=N)
 
 
-def Potential(g, bh, spacing):
+def Potential(g, bh, spacing, Ecut):
     bh = bh/har2wave
+    Ecut = Ecut/har2wave
     A = bh * 8. / spacing ** 2
     B = bh * (4. / spacing ** 2) ** 2
-    V = bh - A * g ** 2 + B * (g ** 4)
-    plt.figure()
-    plt.plot(g, V*har2wave)
-    plt.xlabel('Arbitrary Grid')
-    plt.ylabel('Energy (cm^-1)')
-    plt.title('Double Well Potential')
-    plt.ylim(0, 5000)
-    plt.savefig('Double_well_pot_%s.png' %g[-1])
-    return np.diag(V)
+    V0 = bh - A * g ** 2 + B * (g ** 4)
+    ind = np.argwhere(V0 < Ecut)
+    V = np.array(V0)
+    V[ind] = Ecut
+    return np.diag(V), np.diag(V0)
 
 
 def Kinetic_Calc(grid):
@@ -55,20 +52,29 @@ def Energy(T, V):
     return En, Eigv
 
 
-def run():
+def run(Ecut):
     g = grid(-2.5, 2.5, 1000)
-    V = Potential(g, 1000., 2.)
+    V, V0 = Potential(g, 1000., 2., Ecut)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
-    print(En[0]*har2wave)
-    plt.figure()
-    plt.plot(g, -Eig[:, 0])
-    plt.ylabel('Probability Amplitude')
-    plt.savefig('Double_well_pot_wavefn_%s.png' %g[-1])
+    E_correction = np.dot((Eig[:, 0]*Eig[:, 0]), np.diag(V0-V))
+    print(En[0]*har2wave + E_correction * har2wave)
+    return En, Eig, g
 
 
-run()
-
+cut = 10
+En0, Eig0, g = run(0)
+En10, Eig10, g10 = run(cut)
+overlap = np.linalg.norm(Eig0[:, 0]*Eig10[:, 0], ord=1)
+print(overlap)
+plt.figure()
+plt.plot(g, -Eig0[:, 0], label='No cut')
+plt.plot(g, -Eig10[:, 0], label='Ecut=%s cm^-1' %cut)
+plt.xlabel('x')
+plt.ylabel('Probability Density')
+plt.title('Overlap of Wavefunctions %s' % overlap)
+plt.legend()
+plt.savefig('GSW_test_small_cut_overlap%s.png' %cut)
 
 
 

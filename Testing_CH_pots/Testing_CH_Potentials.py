@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from Coordinerds.CoordinateSystems import *
 import copy
 from scipy import interpolate
+# import Timing_p3 as tm
 
 # DMC parameters
 dtau = 1.
@@ -117,7 +118,7 @@ def descendants(Psi):
     return Psi.d
 
 
-def run(propagation, CH, type):
+def run(propagation, CH, type, name):
     Psi_t = np.load('Average_GSW_CH_stretch%s.npy' %type)
     interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
     DW = False
@@ -135,6 +136,8 @@ def run(propagation, CH, type):
 
     Psi_tau = 0
     for i in range(int(time_steps)):
+        if i % 1000 == 0:
+            print(i)
         Psi, Fqx = Kinetic(new_psi, Fqx, interp)
         Psi.V = Potential(Psi, pot)
         Psi.El = E_loc(Psi, interp)
@@ -159,53 +162,80 @@ def run(propagation, CH, type):
     wvfn[0, :] += Psi_tau.coords
     wvfn[1, :] += Psi_tau.weights
     wvfn[2, :] += Psi_tau.d
-    np.save('Imp_samp_CH_pots_Psi_c2v%s' %CH, wvfn)
-    np.save('Imp_samp_CH_pots_Energy_c2v%s' %CH, Eref_array)
+    np.save('Imp_samp_CH_pots_Psi_%s' %(type + CH + name), wvfn)
+    np.save('Imp_samp_CH_pots_Energy_%s' %(type + CH + name), Eref_array)
+    return DW
 
 
-# for i in range(5):
-#     run(50., (i+1), '')
+# Energy1 = np.zeros((6, 5, 3))
+# Energy2 = np.zeros((6, 5, 3))
+# Energy3 = np.zeros((6, 5, 3))
+# for j in range(6):
+#     for i in range(5):
+# #         run(50., str(i + 1), '', '_job' + str(j + 1))
+# #         print('min CH stretch ' + str(i + 1) + ' job ' + str(j+1) + ' with min GSW is done!')
+#         run(50., '_cs_saddle' + str(i + 1), '', '_job' + str(j + 1))
+#         print('cs CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with min GSW is done!')
+#         run(50., '_c2v_saddle' + str(i + 1), '', '_job' + str(j + 1))
+#         print('c2v CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with min GSW is done!')
+#     for i in range(5):
+#         run(50., str(i + 1), '_cs_saddle', '_job' + str(j + 1))
+#         print('min CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with cs GSW is done!')
+#         run(50., '_cs_saddle' + str(i + 1), '_cs_saddle', '_job' + str(j + 1))
+#         print('cs CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with cs GSW is done!')
+#         run(50., '_c2v_saddle' + str(i + 1), '_cs_saddle', '_job' + str(j + 1))
+#         print('c2v CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with cs GSW is done!')
+# # #     for i in range(5):
+# # #         run(50., str(i + 1), '_c2v_saddle', '_job' + str(j + 1))
+# # #         print('min CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with c2v GSW is done!')
+# # #         run(50., '_cs_saddle' + str(i + 1), '_c2v_saddle','_job' + str(j + 1))
+# # #         print('cs CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with c2v GSW is done!')
+# # #         run(50., '_c2v_saddle' + str(i + 1), '_c2v_saddle', '_job' + str(j + 1))
+# # #         print('c2v CH stretch ' + str(i + 1) + ' job ' + str(j + 1) + ' with c2v GSW is done!')
+# # #
+#     for i in range(5):
+#         energy1 = np.load('Imp_samp_CH_pots_Energy_' + str(i + 1) + '_job' + str(j + 1) + '.npy')
+#         Energy1[j, i, 0] = np.mean(energy1[500:])
+#         energy2 = np.load('Imp_samp_CH_pots_Energy_%s.npy' % ('_cs_saddle' + str(i + 1) + '_job' + str(j + 1)))
+#         Energy2[j, i, 0] = np.mean(energy2[500:])
+#         energy3 = np.load('Imp_samp_CH_pots_Energy_%s.npy' % ('_c2v_saddle' + str(i + 1) + '_job' + str(j + 1)))
+#         Energy3[j, i, 0] = np.mean(energy3[500:])
 #
-# for i in range(5):
-#     run(50., (i+1), '')
-#     run(50., '_cs_saddle' + str(i+1), '')
-#     run(50., '_c2v_saddle' + str(i+1), '')
-# for i in range(5):
-#     run(50., (i+1), '_cs_saddle')
-#     run(50., '_cs_saddle' + str(i + 1), '_cs_saddle')
-#     run(50., '_c2v_saddle' + str(i+1), '_cs_saddle')
-# for i in range(5):
-#     run(50., (i+1), '_c2v_saddle')
-#     run(50., '_cs_saddle' + str(i + 1), '_c2v_saddle')
-#     run(50., '_c2v_saddle' + str(i+1), '_c2v_saddle')
+#     for i in range(5):
+#         energy1 = np.load('Imp_samp_CH_pots_Energy__cs_saddle' + str(i + 1) + '_job' + str(j + 1) + '.npy')
+#         Energy1[j, i, 1] = np.mean(energy1[500:])
+#         energy2 = np.load('Imp_samp_CH_pots_Energy__cs_saddle%s.npy' % ('_cs_saddle' + str(i + 1) + '_job' + str(j + 1)))
+#         Energy2[j, i, 1] = np.mean(energy2[500:])
+#         energy3 = np.load('Imp_samp_CH_pots_Energy__cs_saddle%s.npy' % ('_c2v_saddle' + str(i + 1) + '_job' + str(j + 1)))
+#         Energy3[j, i, 1] = np.mean(energy3[500:])
+#
+#     for i in range(5):
+#         energy1 = np.load('Imp_samp_CH_pots_Energy_c2v' + str(i + 1) + '_job' + str(j + 1) + '.npy')
+#         Energy1[j, i, 2] = np.mean(energy1[500:])
+#         energy2 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' % ('_cs_saddle' + str(i + 1) + '_job' + str(j + 1)))
+#         Energy2[j, i, 2] = np.mean(energy2[500:])
+#         energy3 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' % ('_c2v_saddle' + str(i + 1) + '_job' + str(j + 1)))
+#         Energy3[j, i, 2] = np.mean(energy3[500:])
+#
+# np.save('Imp_min_energies', Energy1)
+# np.save('Imp_cs_energies', Energy2)
+# np.save('Imp_c2v_energies', Energy3)
+
+
+
+# DW, time_list = tm.time_me(run, 50., str(1), '', 'test')
+# tm.print_time_list(run, time_list)
+#
+energy1 = np.load('Imp_min_energies.npy')*har2wave
+energy2 = np.load('Imp_cs_energies.npy')*har2wave
+energy3 = np.load('Imp_c2v_energies.npy')*har2wave
+#
+# print(energy1[:, :, 0])
+# print(energy2[:, :, 0])
+# print(energy3[:, :, 0])
 
 for i in range(5):
-    Energy1 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' %(i+1))
-    Energy2 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' %('_cs_saddle' + str(i+1)))
-    Energy3 = np.load('Imp_samp_CH_pots_Energy_c2v%s.npy' %('_c2v_saddle' + str(i+1)))
-
-    plt.figure()
-    plt.plot(Energy1[:1000]*har2wave)
-    print(str(np.mean(Energy1[400:]*har2wave)) + '+/-' + str(np.std(Energy1[400:]*har2wave)))
-    plt.savefig('Imp_samp_CH_energy_c2v%s.png' %(i+1))
-
-    plt.figure()
-    plt.plot(Energy2[:1000]*har2wave)
-    print(str(np.mean(Energy2[400:]*har2wave)) + '+/-' + str(np.std(Energy2[400:]*har2wave)))
-    plt.savefig('Imp_samp_CH_energy_c2v%s.png' %('_cs_saddle' + str(i+1)))
-
-    plt.figure()
-    plt.plot(Energy3[:1000]*har2wave)
-    print(str(np.mean(Energy3[400:]*har2wave)) + '+/-' + str(np.std(Energy3[400:]*har2wave)))
-    plt.savefig('Imp_samp_CH_energy_c2v%s.png' %('_c2v_saddle' + str(i+1)))
-
-
-
-
-
-
-
-
+    print(energy2[5, i, 0])
 
 
 

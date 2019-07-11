@@ -65,8 +65,26 @@ def Weighting(Vref, Psi, DW):
     cuts = len(Vref)
     for i in range(cuts):
         Psi.weights[i, :] *= np.exp(-(Psi.V[i, :] - Vref[i]) * dtau)
-    threshold = 1./float(N_0)
+    threshold = 0.01
+    # method 1
     # for j in range(cuts):
+    #     death = np.argwhere(Psi.weights[j, :] < threshold)
+    #     for i in death:
+    #         ind = np.unravel_index(Psi.weights.argmax(), Psi.weights.shape)
+    #         if DW is True:
+    #             Biggo_num = float(Psi.walkers[ind[1]])
+    #             Psi.walkers[i] = Biggo_num
+    #         Biggo_weight = np.array(Psi.weights[:, ind[1]])
+    #         Biggo_pos = float(Psi.coords[ind[1]])
+    #         Biggo_pot = np.array(Psi.V[:, ind[1]])
+    #         Biggo_diff = np.array(Psi.Diff[:, ind[1]])
+    #         Psi.coords[i[0]] = Biggo_pos
+    #         Psi.weights[:, i[0]] = Biggo_weight/2.
+    #         Psi.weights[:, ind[1]] = Biggo_weight/2.
+    #         Psi.V[:, i[0]] = Biggo_pot
+    #         Psi.Diff[:, i[0]] = Biggo_diff
+
+    # method 2
     death = np.argwhere(Psi.weights < threshold)
     j = 0
     for i in death:
@@ -81,8 +99,8 @@ def Weighting(Vref, Psi, DW):
             Biggo_pot = np.array(Psi.V[:, ind[1]])
             Biggo_diff = np.array(Psi.Diff[:, ind[1]])
             Psi.coords[i[1]] = Biggo_pos
-            Psi.weights[:, i[1]] = Biggo_weight/2.
-            Psi.weights[:, ind[1]] = Biggo_weight/2.
+            Psi.weights[:, i[1]] = Biggo_weight / 2.
+            Psi.weights[:, ind[1]] = Biggo_weight / 2.
             Psi.V[:, i[1]] = Biggo_pot
             Psi.Diff[:, i[1]] = Biggo_diff
     walker_reaper = np.append(walker_reaper, j)
@@ -161,19 +179,22 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
     np.save("DMC_HO_Energy_concrete_multiweight%s" %naming, Eref)
     np.save("DMC_HO_Psi_pos_concrete_multiweight%s" %naming, positions)
     np.save("DMC_HO_Psi_weights_concrete_multiweight%s" %naming, weights)
+
     return
 
 
 def acquire_dis_data():
-    for i in range(5):
-        for j in range(5):
-            Ecut_array = np.linspace(0, 100*(i+1), num=(j+2))
-            run(4000, 500, 50, Ecut_array, '_to_%s_job' %Ecut_array[-1] + '_%s' %(j+1))
+    for i in range(1):
+        for j in range(1):
+            Ecut_array = np.linspace(0, 10*(i+1), num=(j+2))
+            run(4000, 500, 100, Ecut_array, '_to_%s_job' %Ecut_array[-1] + '_%s' %(j+1))
             print('Done with Ecut to %s' %Ecut_array[-1] + ' job %s' %(j+1))
 
 
 acquire_dis_data()
 
+# Ecut_array = np.zeros(2)
+# run(4000, 500, 50, Ecut_array, '_test_with_no_cut')
 
 
 
