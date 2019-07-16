@@ -35,6 +35,7 @@ def Kinetic(Psi):
     Psi.coords += randomwalk
     return Psi
 
+
 def Potential(Psi, bh, spacing):
     bh = bh/har2wave
     A = bh * 8. / spacing ** 2

@@ -1,5 +1,7 @@
 import numpy as np
 import copy
+#import Timing_p3 as tm
+import matplotlib.pyplot as plt
 
 # DMC parameters
 dtau = 5.
@@ -61,61 +63,37 @@ def V_ref_calc(Psi):
 
 
 def Weighting(Vref, Psi, DW):
-    global walker_reaper
     cuts = len(Vref)
     for i in range(cuts):
         Psi.weights[i, :] *= np.exp(-(Psi.V[i, :] - Vref[i]) * dtau)
     threshold = 0.01
-    # method 1
-    # for j in range(cuts):
-    #     death = np.argwhere(Psi.weights[j, :] < threshold)
-    #     for i in death:
-    #         ind = np.unravel_index(Psi.weights.argmax(), Psi.weights.shape)
-    #         if DW is True:
-    #             Biggo_num = float(Psi.walkers[ind[1]])
-    #             Psi.walkers[i] = Biggo_num
-    #         Biggo_weight = np.array(Psi.weights[:, ind[1]])
-    #         Biggo_pos = float(Psi.coords[ind[1]])
-    #         Biggo_pot = np.array(Psi.V[:, ind[1]])
-    #         Biggo_diff = np.array(Psi.Diff[:, ind[1]])
-    #         Psi.coords[i[0]] = Biggo_pos
-    #         Psi.weights[:, i[0]] = Biggo_weight/2.
-    #         Psi.weights[:, ind[1]] = Biggo_weight/2.
-    #         Psi.V[:, i[0]] = Biggo_pot
-    #         Psi.Diff[:, i[0]] = Biggo_diff
-
-    # method 2
-    death = np.argwhere(Psi.weights < threshold)
-    j = 0
+    death = np.argwhere(np.all(Psi.weights < threshold, axis=0))
     for i in death:
-        if Psi.weights[i[0], i[1]] == np.max(Psi.weights[:, i[1]]):
-            j += 1
-            ind = np.unravel_index(Psi.weights.argmax(), Psi.weights.shape)
-            if DW is True:
-                Biggo_num = float(Psi.walkers[ind[1]])
-                Psi.walkers[i] = Biggo_num
-            Biggo_weight = np.array(Psi.weights[:, ind[1]])
-            Biggo_pos = float(Psi.coords[ind[1]])
-            Biggo_pot = np.array(Psi.V[:, ind[1]])
-            Biggo_diff = np.array(Psi.Diff[:, ind[1]])
-            Psi.coords[i[1]] = Biggo_pos
-            Psi.weights[:, i[1]] = Biggo_weight / 2.
-            Psi.weights[:, ind[1]] = Biggo_weight / 2.
-            Psi.V[:, i[1]] = Biggo_pot
-            Psi.Diff[:, i[1]] = Biggo_diff
-    walker_reaper = np.append(walker_reaper, j)
+        ind = np.unravel_index(Psi.weights.argmax(), Psi.weights.shape)
+        if DW is True:
+            Biggo_num = float(Psi.walkers[ind[1]])
+            Psi.walkers[i[0]] = Biggo_num
+        Biggo_weight = np.array(Psi.weights[:, ind[1]])
+        Biggo_pos = float(Psi.coords[ind[1]])
+        Biggo_pot = np.array(Psi.V[:, ind[1]])
+        Biggo_diff = np.array(Psi.Diff[:, ind[1]])
+        Psi.coords[i[0]] = Biggo_pos
+        Psi.weights[:, i[0]] = Biggo_weight / 2.
+        Psi.weights[:, ind[1]] = Biggo_weight / 2.
+        Psi.V[:, i[0]] = Biggo_pot
+        Psi.Diff[:, i[0]] = Biggo_diff
+
     return Psi
 
 
 def descendants(Psi):
     d = np.zeros((len(Psi.weights[:, 0]), N_0))
     for i in range(N_0):
-        d[:, i] = np.sum(Psi.weights[:, Psi.walkers == i])
+        d[:, i] = np.sum(Psi.weights[:, Psi.walkers == i], axis=1)
     return d
 
 
 def run(equilibration, wait_time, propagation, Ecut, naming):
-    global walker_reaper
     barrier = 1000.
     spacing = 2.
     cuts = len(Ecut)
@@ -180,21 +158,41 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
     np.save("DMC_HO_Psi_pos_concrete_multiweight%s" %naming, positions)
     np.save("DMC_HO_Psi_weights_concrete_multiweight%s" %naming, weights)
 
-    return
+    return des_weights, differences, Eref, positions, weights
 
 
-def acquire_dis_data():
-    for i in range(1):
-        for j in range(1):
-            Ecut_array = np.linspace(0, 10*(i+1), num=(j+2))
-            run(4000, 500, 100, Ecut_array, '_to_%s_job' %Ecut_array[-1] + '_%s' %(j+1))
-            print('Done with Ecut to %s' %Ecut_array[-1] + ' job %s' %(j+1))
-
-
-acquire_dis_data()
+# def acquire_dis_data():
+#     for i in range(5):
+#         for j in range(5):
+#             Ecut_array = np.linspace(0, 100*(i+1), num=(5))
+#             run(4000, 500, 10*(j+1), Ecut_array, '_to_%s_des' %Ecut_array[-1] + '_%s' %(10 * (j+1)))
+#             print('Done with Ecut to %s' %Ecut_array[-1] + ' des %s!' %(10*(j+1)))
+#
+#
+# acquire_dis_data()
 
 # Ecut_array = np.zeros(2)
-# run(4000, 500, 50, Ecut_array, '_test_with_no_cut')
+# DW, time_list = tm.time_me(run, 4000, 500, 50, Ecut_array, '_test_with_no_cut')
+# tm.print_time_list(run, time_list)
+Ecut_array = np.linspace(0, 100, num=5)
+d, diff, erf, pos, weights = run(4000, 500, 50, Ecut_array, 'testing_death')
+
+dw = len(d[:, 0, 0])
+cuts = len(d[0, :, 0])
+
+for i in range(dw):
+    for j in range(cuts):
+        amp, xx = np.histogram(pos[i, :], weights=d[i, j, :], bins=25, range=(-1.75, 1.75), density=True)
+        bins = (xx[1:] + xx[:-1])/2.
+        plt.plot(bins, amp, label='Des weight {0} Ecut {1}'.format((i+1), Ecut_array[j]))
+        plt.ylabel('Probability Amplitude')
+        plt.legend()
+        plt.ylim(0, 0.7)
+        plt.savefig('Psisqrd_des_weight_{0}_Ecut_{1}.png'.format((i+1), Ecut_array[j]))
+        plt.close()
+
+
+
 
 
 

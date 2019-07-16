@@ -68,7 +68,7 @@ def run(file_name, num, mass):
 mass1 = (m_O*m_H)/(m_O+m_H)
 mass2 = ((m_O+m_H)*m_O)/(2.*m_O+m_H)
 x = run('mono-roh-pot.dat', 'monomer', mass1)
-run('trimer-rohb-pot.dat', 'trimer', mass1)
+run('trimer-rohb-pot.dat', 'trimer', mass2)
 
 mono_gsw = np.load('monomer_GSW.npy')
 tri_gsw = np.load('trimer_GSW.npy')

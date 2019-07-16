@@ -62,7 +62,7 @@ def run(Ecut):
     return En, Eig, g
 
 
-cut = 10
+cut = 100
 En0, Eig0, g = run(0)
 En10, Eig10, g10 = run(cut)
 overlap = np.linalg.norm(Eig0[:, 0]*Eig10[:, 0], ord=1)
