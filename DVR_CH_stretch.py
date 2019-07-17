@@ -108,10 +108,26 @@ wvfn = np.zeros((5, 500))
 for i in np.arange(1, 6):
     g, wvfn[i-1, :] = run(i)
 
-# av_wvfn = np.mean(wvfn, axis=0)
-# avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
+av_wvfn = np.mean(wvfn, axis=0)
+avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
 # np.save('Average_GSW_CH_stretch', avg_wvfn)
 
-# plt.plot(g[:, 1, 0]/ang2bohr, -av_wvfn, label='Average Ground State Wavefunction')
+
 # plt.legend(loc=3)
 # plt.savefig('Avg_GSW.png')
+for i in range(7):
+    s_point = 1.0 + 0.05*float(i)
+    switch = (np.tanh((g[:, 1, 0]-s_point*ang2bohr)) + 1.)*0.5
+    new_wvfn = wvfn[0, :]*switch + wvfn[1, :]*(1.-switch)
+    new_wvfn = new_wvfn/np.linalg.norm(new_wvfn)
+
+    plt.plot(g[:, 1, 0] / ang2bohr, av_wvfn, label='Average Ground State Wavefunction')
+    plt.plot(g[:, 1, 0]/ang2bohr, new_wvfn, label='Switch wvfn')
+    plt.plot(g[:, 1, 0]/ang2bohr, wvfn[0, :], label='CH 1')
+    plt.plot(g[:, 1, 0]/ang2bohr, wvfn[1, :], label='CH 2')
+    plt.legend()
+    plt.savefig('Switch_c2v_wvfn_%s.png' %s_point)
+    plt.close()
+
+    new_wvfn = np.vstack((g[:, 1, 0], new_wvfn))
+    np.save('Switch_c2v_wvfn_%s' %s_point, new_wvfn)
