@@ -55,7 +55,6 @@ def Potential(Psi, bh, spacing, Ecut):
 
 
 def V_ref_calc(Psi):
-    cuts = len(Psi.weights[:, 0])
     V_ref = np.zeros(cuts)
     for i in range(cuts):
         V_ref[i] += np.average(Psi.V[i, :], weights=Psi.weights[i, :]) - alpha * (sum(Psi.weights[i, :] - Psi.weights_i)/N_0)
