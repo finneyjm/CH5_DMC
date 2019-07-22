@@ -141,11 +141,11 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
             wait = float(wait_time)
             DW = False
 
-    np.save("DMC_HO_descendants_concrete_%s" % naming, des_weights)
-    np.save("DMC_HO_Diffs_concrete_%s" % naming, differences)
-    np.save("DMC_HO_Energy_concrete_%s" % naming, Eref)
-    np.save("DMC_HO_Psi_pos_concrete_%s" % naming, positions)
-    np.save("DMC_HO_Psi_weights_concrete_%s" % naming, weights)
+    np.save("DMC_HO_descendants_concrete_%s_desweight20" % naming, des_weights)
+    np.save("DMC_HO_Diffs_concrete_%s_desweight20" % naming, differences)
+    np.save("DMC_HO_Energy_concrete_%s_desweight20" % naming, Eref)
+    np.save("DMC_HO_Psi_pos_concrete_%s_desweight20" % naming, positions)
+    np.save("DMC_HO_Psi_weights_concrete_%s_desweight20" % naming, weights)
 
     return des_weights, differences, Eref, positions, weights
 
@@ -154,7 +154,7 @@ def acquire_dis_data():
     for j in range(5):
         Ecut_array = np.array([0., 25., 50., 75., 100., 125., 150., 200., 225., 250., 300., 375., 400., 500.])
         for l in range(len(Ecut_array)):
-            run(4000, 500, 50, Ecut_array[l], '_Ecut_%s_job' %Ecut_array[l] + '_%s' %(j+1))
+            run(4000, 500, 20, Ecut_array[l], '_Ecut_%s_job' %Ecut_array[l] + '_%s' %(j+1))
             print('Done with Ecut to %s' %Ecut_array[l] + ' job %s!' %(j+1))
 
 
