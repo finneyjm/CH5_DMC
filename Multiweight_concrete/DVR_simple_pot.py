@@ -58,24 +58,26 @@ def run(Ecut):
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
     E_correction = np.dot((Eig[:, 0]*Eig[:, 0]), np.diag(V0-V))
-    print(En[0]*har2wave + E_correction * har2wave)
+    print(E_correction*har2wave)
+    print(En[0]*har2wave)# + E_correction * har2wave)
     return En, Eig, g
 
 
-cut = 100
-En0, Eig0, g = run(0)
-En10, Eig10, g10 = run(cut)
-overlap = np.linalg.norm(Eig0[:, 0]*Eig10[:, 0], ord=1)
-print(overlap)
-plt.figure()
-plt.plot(g, -Eig0[:, 0], label='No cut')
-plt.plot(g, -Eig10[:, 0], label='Ecut=%s cm^-1' %cut)
-plt.xlabel('x')
-plt.ylabel('Probability Density')
-plt.title('Overlap of Wavefunctions %s' % overlap)
-plt.legend()
-plt.savefig('GSW_test_small_cut_overlap%s.png' %cut)
-
+# cut = 100
+# En0, Eig0, g = run(0)
+# En10, Eig10, g10 = run(cut)
+# overlap = np.linalg.norm(Eig0[:, 0]*Eig10[:, 0], ord=1)
+# print(overlap)
+# plt.figure()
+# plt.plot(g, -Eig0[:, 0], label='No cut')
+# plt.plot(g, -Eig10[:, 0], label='Ecut=%s cm^-1' %cut)
+# plt.xlabel('x')
+# plt.ylabel('Probability Density')
+# plt.title('Overlap of Wavefunctions %s' % overlap)
+# plt.legend()
+# plt.savefig('GSW_test_small_cut_overlap%s.png' %cut)
+en, eig, g = run(500)
+print(np.dot((eig[:, 0]*eig[:, 0]), g))
 
 
 

@@ -3,7 +3,7 @@ import copy
 
 # DMC parameters
 dtau = 5.
-N_0 = 10000
+N_0 = 1000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
 
@@ -150,14 +150,34 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
     return des_weights, differences, Eref, positions, weights
 
 
-def acquire_dis_data():
-    for j in range(5):
-        Ecut_array = np.array([0., 25., 50., 75., 100., 125., 150., 200., 225., 250., 300., 375., 400., 500.])
-        for l in range(len(Ecut_array)):
-            run(4000, 500, 20, Ecut_array[l], '_Ecut_%s_job' %Ecut_array[l] + '_%s' %(j+1))
-            print('Done with Ecut to %s' %Ecut_array[l] + ' job %s!' %(j+1))
+# def acquire_dis_data():
+#     for j in range(5):
+#         Ecut_array = np.array([0., 25., 50., 75., 100., 125., 150., 200., 225., 250., 300., 375., 400., 500.])
+#         for l in range(len(Ecut_array)):
+#             run(4000, 500, 20, Ecut_array[l], '_Ecut_%s_job' %Ecut_array[l] + '_%s' %(j+1))
+#             print('Done with Ecut to %s' %Ecut_array[l] + ' job %s!' %(j+1))
+#
+#
+# acquire_dis_data()
+d, diff, eref, pos, wei = run(4000, 500, 50, 500, 'testing_for_des')
+dw = len(d[:, 0])
+collect = np.zeros((11, dw))
+diffs = np.zeros((11, dw))
+energies = np.zeros(11)
+energies[0] += np.mean(eref[500:])
+for j in range(dw):
+    collect[0, j] += sum(d[j, :]*pos[j, :])/sum(d[j, :])
+    diffs[0, j] += sum(d[j, :] * diff[j, :]) / sum(d[j, :])
+for i in range(10):
+    d, diff, eref, pos, wei = run(4000, 500, 50, 500, 'testing_for_des')
+    energies[i+1] += np.mean(eref[500:])
+    for l in range(len(d[:, 0])):
+        collect[i+1, l] += sum(d[l, :]*pos[l, :])/sum(d[l, :])
+        diffs[i + 1, l] += sum(d[l, :] * diff[l, :]) / sum(d[l, :])
 
-
-acquire_dis_data()
-
-
+print(np.mean(collect))
+print(np.std(collect))
+print(np.mean(diffs)*har2wave)
+print(np.std(diffs)*har2wave)
+print(np.mean(energies*har2wave))
+print(np.std(energies*har2wave))
