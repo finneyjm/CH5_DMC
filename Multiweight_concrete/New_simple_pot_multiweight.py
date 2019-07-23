@@ -3,7 +3,7 @@ import copy
 
 # DMC parameters
 dtau = 5.
-N_0 = 1000
+N_0 = 10000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
 
@@ -138,46 +138,47 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
                 positions = np.vstack((positions, Psi_tau.coords[None, ...]))
                 weights = np.vstack((weights, Psi_tau.weights[None, ...]))
             Psi_tau = 0.
+            new_psi.walkers = np.linspace(0, N_0-1, num=N_0)
             wait = float(wait_time)
             DW = False
 
-    np.save("DMC_HO_descendants_concrete_%s_desweight20" % naming, des_weights)
-    np.save("DMC_HO_Diffs_concrete_%s_desweight20" % naming, differences)
-    np.save("DMC_HO_Energy_concrete_%s_desweight20" % naming, Eref)
-    np.save("DMC_HO_Psi_pos_concrete_%s_desweight20" % naming, positions)
-    np.save("DMC_HO_Psi_weights_concrete_%s_desweight20" % naming, weights)
+    np.save("DMC_HO_descendants_concrete_%s_desweight50" % naming, des_weights)
+    np.save("DMC_HO_Diffs_concrete_%s_desweight50" % naming, differences)
+    np.save("DMC_HO_Energy_concrete_%s_desweight50" % naming, Eref)
+    np.save("DMC_HO_Psi_pos_concrete_%s_desweight50" % naming, positions)
+    np.save("DMC_HO_Psi_weights_concrete_%s_desweight50" % naming, weights)
 
     return des_weights, differences, Eref, positions, weights
 
 
-# def acquire_dis_data():
-#     for j in range(5):
-#         Ecut_array = np.array([0., 25., 50., 75., 100., 125., 150., 200., 225., 250., 300., 375., 400., 500.])
-#         for l in range(len(Ecut_array)):
-#             run(4000, 500, 20, Ecut_array[l], '_Ecut_%s_job' %Ecut_array[l] + '_%s' %(j+1))
-#             print('Done with Ecut to %s' %Ecut_array[l] + ' job %s!' %(j+1))
-#
-#
-# acquire_dis_data()
-d, diff, eref, pos, wei = run(4000, 500, 50, 500, 'testing_for_des')
-dw = len(d[:, 0])
-collect = np.zeros((11, dw))
-diffs = np.zeros((11, dw))
-energies = np.zeros(11)
-energies[0] += np.mean(eref[500:])
-for j in range(dw):
-    collect[0, j] += sum(d[j, :]*pos[j, :])/sum(d[j, :])
-    diffs[0, j] += sum(d[j, :] * diff[j, :]) / sum(d[j, :])
-for i in range(10):
-    d, diff, eref, pos, wei = run(4000, 500, 50, 500, 'testing_for_des')
-    energies[i+1] += np.mean(eref[500:])
-    for l in range(len(d[:, 0])):
-        collect[i+1, l] += sum(d[l, :]*pos[l, :])/sum(d[l, :])
-        diffs[i + 1, l] += sum(d[l, :] * diff[l, :]) / sum(d[l, :])
+def acquire_dis_data():
+    for j in range(5):
+        Ecut_array = np.array([0., 25., 50., 75., 100., 125., 150., 200., 225., 250., 300., 375., 400., 500.])
+        for l in range(len(Ecut_array)):
+            run(4000, 500, 50, Ecut_array[l], '_Ecut_%s_job' %Ecut_array[l] + '_%s' %(j+1))
+            print('Done with Ecut to %s' %Ecut_array[l] + ' job %s!' %(j+1))
 
-print(np.mean(collect))
-print(np.std(collect))
-print(np.mean(diffs)*har2wave)
-print(np.std(diffs)*har2wave)
-print(np.mean(energies*har2wave))
-print(np.std(energies*har2wave))
+
+acquire_dis_data()
+# d, diff, eref, pos, wei = run(4000, 500, 50, 500, 'testing_for_des')
+# dw = len(d[:, 0])
+# collect = np.zeros((11, dw))
+# diffs = np.zeros((11, dw))
+# energies = np.zeros(11)
+# energies[0] += np.mean(eref[500:])
+# for j in range(dw):
+#     collect[0, j] += sum(d[j, :]*pos[j, :])/sum(d[j, :])
+#     diffs[0, j] += sum(d[j, :] * diff[j, :]) / sum(d[j, :])
+# for i in range(10):
+#     d, diff, eref, pos, wei = run(4000, 500, 50, 500, 'testing_for_des')
+#     energies[i+1] += np.mean(eref[500:])
+#     for l in range(len(d[:, 0])):
+#         collect[i+1, l] += sum(d[l, :]*pos[l, :])/sum(d[l, :])
+#         diffs[i + 1, l] += sum(d[l, :] * diff[l, :]) / sum(d[l, :])
+#
+# print(np.mean(collect))
+# print(np.std(collect))
+# print(np.mean(diffs)*har2wave)
+# print(np.std(diffs)*har2wave)
+# print(np.mean(energies*har2wave))
+# print(np.std(energies*har2wave))

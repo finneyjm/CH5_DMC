@@ -54,7 +54,7 @@ def Potential(Psi, bh, spacing, Ecut):
     return Psi
 
 
-def V_ref_calc(Psi):
+def V_ref_calc(Psi, cuts):
     V_ref = np.zeros(cuts)
     for i in range(cuts):
         V_ref[i] += np.average(Psi.V[i, :], weights=Psi.weights[i, :]) - alpha * (sum(Psi.weights[i, :] - Psi.weights_i)/N_0)
@@ -101,7 +101,7 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
     Psi = Kinetic(psi)
     Psi = Potential(Psi, barrier, spacing, Ecut)
     Eref = np.zeros((cuts, int(time_steps) + 1))
-    Vref = V_ref_calc(Psi)
+    Vref = V_ref_calc(Psi, cuts)
     Eref[:, 0] += Vref
     new_psi = Weighting(Vref, Psi, DW)
 
@@ -129,7 +129,7 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
 
         new_psi = Weighting(Vref, Psi, DW)
 
-        Vref = V_ref_calc(new_psi)
+        Vref = V_ref_calc(new_psi, cuts)
         Eref[:, i+1] += Vref
 
         if i >= int(equilibration) and wait <= 0. < prop:  # start of descendant weighting
@@ -148,6 +148,7 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
                 positions = np.vstack((positions, Psi_tau.coords[None, ...]))
                 weights = np.vstack((weights, Psi_tau.weights[None, ...]))
             Psi_tau = 0.
+            new_psi.walkers = np.linspace(0, N_0 - 1, num=N_0)
             wait = float(wait_time)
             DW = False
 
@@ -160,38 +161,38 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
     return des_weights, differences, Eref, positions, weights
 
 
-# def acquire_dis_data():
-#     for i in range(5):
-#         for j in range(5):
-#             Ecut_array = np.linspace(0, 100*(i+1), num=(5))
-#             run(4000, 500, 10*(j+1), Ecut_array, '_to_%s_des' %Ecut_array[-1] + '_%s' %(10 * (j+1)))
-#             print('Done with Ecut to %s' %Ecut_array[-1] + ' des %s!' %(10*(j+1)))
-#
-#
-# acquire_dis_data()
+def acquire_dis_data():
+    for i in range(5):
+        for j in range(5):
+            Ecut_array = np.linspace(0, 100*(i+1), num=(5))
+            run(4000, 500, 50, Ecut_array, '_to_%s_job' %Ecut_array[-1] + '_%s' %(j+1))
+            print('Done with Ecut to %s' %Ecut_array[-1] + ' job %s!' %(j+1))
+
+
+acquire_dis_data()
 
 # Ecut_array = np.zeros(2)
 # DW, time_list = tm.time_me(run, 4000, 500, 50, Ecut_array, '_test_with_no_cut')
 # tm.print_time_list(run, time_list)
-Ecut_array = np.linspace(0, 100, num=5)
-d, diff, erf, pos, weights = run(4000, 500, 50, Ecut_array, 'testing_death')
-
-dw = len(d[:, 0, 0])
-cuts = len(d[0, :, 0])
-
-for i in range(dw):
-    for j in range(cuts):
-        amp, xx = np.histogram(pos[i, :], weights=d[i, j, :], bins=25, range=(-1.75, 1.75), density=True)
-        bins = (xx[1:] + xx[:-1])/2.
-        plt.plot(bins, amp, label='Des weight {0} Ecut {1}'.format((i+1), Ecut_array[j]))
-        plt.ylabel('Probability Amplitude')
-        plt.legend()
-        plt.ylim(0, 0.7)
-        plt.savefig('Psisqrd_des_weight_{0}_Ecut_{1}.png'.format((i+1), Ecut_array[j]))
-        plt.close()
-
-
-
+# Ecut_array = np.linspace(0, 100, num=5)
+# d, diff, erf, pos, weights = run(4000, 500, 50, Ecut_array, 'testing_death')
+#
+# dw = len(d[:, 0, 0])
+# cuts = len(d[0, :, 0])
+#
+# for i in range(dw):
+#     for j in range(cuts):
+#         amp, xx = np.histogram(pos[i, :], weights=d[i, j, :], bins=25, range=(-1.75, 1.75), density=True)
+#         bins = (xx[1:] + xx[:-1])/2.
+#         plt.plot(bins, amp, label='Des weight {0} Ecut {1}'.format((i+1), Ecut_array[j]))
+#         plt.ylabel('Probability Amplitude')
+#         plt.legend()
+#         plt.ylim(0, 0.7)
+#         plt.savefig('Psisqrd_des_weight_{0}_Ecut_{1}.png'.format((i+1), Ecut_array[j]))
+#         plt.close()
+#
+#
+#
 
 
 

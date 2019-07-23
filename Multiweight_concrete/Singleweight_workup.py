@@ -38,9 +38,9 @@ def lets_get_these_graphs(Ecut_array):
         en_std = np.zeros(5)
         for l in range(5):
             for job in range(5):
-                coords, d, weights = load_psi('_Ecut_%s_job' % Ecut_array[i, l] + '_{0}_desweight500'.format(job+1))
+                coords, d, weights = load_psi('_Ecut_%s_job' % Ecut_array[i, l] + '_{0}_desweight50'.format(job+1))
                 Psi = Walkers(coords, d, weights)
-                diffs, energy = load_observables('_Ecut_%s_job' % Ecut_array[i, l] + '_{0}_desweight500'.format(job+1))
+                diffs, energy = load_observables('_Ecut_%s_job' % Ecut_array[i, l] + '_{0}_desweight50'.format(job+1))
                 num_dw = len(Psi.d[:, 0])
                 E_corrections = np.zeros(num_dw)
                 for j in range(num_dw):
@@ -61,7 +61,7 @@ def lets_get_these_graphs(Ecut_array):
         axes.set_title('Ground State Energy with Different Flattening')
         lgd = axes.legend(loc='center right', bbox_to_anchor=(1.5, 0.5))
         axes.set_ylim(450, 520)
-        fig.savefig('Energy_after_flattening_single_DMC_desweight500%s.png' % (str(Ecut_array[i, -1])), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        fig.savefig('Energy_after_flattening_single_DMC_desweight50%s.png' % (str(Ecut_array[i, -1])), bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.close(fig)
 
 
