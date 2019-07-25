@@ -119,7 +119,7 @@ def descendants(Psi):
 
 
 def run(propagation, CH, type, name, wvfn):
-    Psi_t = np.load('Switch{0}_wvfn_new_{1}.npy'.format(wvfn, type))
+    Psi_t = np.load(f'Switch{wvfn}_wvfn_speed_{type}.npy')
     interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
     DW = False
     pot = interpolate.splrep(Psi_t[0, :], np.load('Potential_CH_stretch%s.npy' %CH), s=0)
@@ -162,8 +162,8 @@ def run(propagation, CH, type, name, wvfn):
     wvfn[0, :] += Psi_tau.coords
     wvfn[1, :] += Psi_tau.weights
     wvfn[2, :] += Psi_tau.d
-    np.save('Imp_samp_CH_pots_Psi{0}'.format(type + CH + name), wvfn)
-    np.save('Imp_samp_CH_pots_Energy{0}'.format(type + CH + name), Eref_array)
+    np.save('Imp_samp_CH_pots_Psi_switch{0}'.format(type + CH + name), wvfn)
+    np.save('Imp_samp_CH_pots_Energy_switch{0}'.format(type + CH + name), Eref_array)
     return Eref_array
 
 num_pts = 11
@@ -173,23 +173,23 @@ num_pts = 11
 # for j in range(6):
 #     for i in range(5):
 #         for l in range(num_pts):
-#             energy1 = run(50., str(i+1), str(1.2 + 0.01*float(l)), str('_c2v_job' + str(j+1)), str('_c2v'))
-#             print('min CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+#             energy1 = run(50., str(i+1), str(0.5*float(l+1)), str('_c2v_job' + str(j+1)), str('_c2v'))
+#             print('min CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 #
-#             energy2 = run(50., '_cs_saddle' + str(i+1), str(1.2 + 0.01*float(l)), str('_c2v_job' + str(j+1)), str('_c2v'))
-#             print('cs CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+#             energy2 = run(50., '_cs_saddle' + str(i+1), str(0.5*float(l+1)), str('_c2v_job' + str(j+1)), str('_c2v'))
+#             print('cs CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 #
-#             energy3 = run(50., '_c2v_saddle' + str(i+1), str(1.2 + 0.01*float(l)), str('_c2v_job' + str(j+1)), str('_c2v'))
-#             print('c2v CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+#             energy3 = run(50., '_c2v_saddle' + str(i+1), str(0.5*float(l+1)), str('_c2v_job' + str(j+1)), str('_c2v'))
+#             print('c2v CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 #
 #             # save the mean energies to be entered into the table later
 #             Energy1[j, i, l] += np.mean(energy1[500:])
 #             Energy2[j, i, l] += np.mean(energy2[500:])
 #             Energy3[j, i, l] += np.mean(energy3[500:])
 #
-# np.save('Imp_min_energies_c2v_new', Energy1)
-# np.save('Imp_cs_energies_c2v_new', Energy2)
-# np.save('Imp_c2v_energies_c2v_new', Energy3)
+# np.save('Imp_min_energies_c2v_switch', Energy1)
+# np.save('Imp_cs_energies_c2v_switch', Energy2)
+# np.save('Imp_c2v_energies_c2v_switch', Energy3)
 
 # Energy1 = np.zeros((6, 5, num_pts))
 # Energy2 = np.zeros((6, 5, num_pts))
@@ -197,47 +197,47 @@ num_pts = 11
 # for j in range(6):
 #     for i in range(5):
 #         for l in range(num_pts):
-#             energy1 = run(50., str(i+1), str(1.2 + 0.01*float(l)), '_cs_job' + str(j+1), '_cs')
-#             print('min CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+#             energy1 = run(50., str(i+1), str(0.5*float(l+1)), '_cs_job' + str(j+1), '_cs')
+#             print('min CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 #
-#             energy2 = run(50., '_cs_saddle' + str(i+1), str(1.2 + 0.01*float(l)), '_cs_job' + str(j+1), '_cs')
-#             print('cs CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+#             energy2 = run(50., '_cs_saddle' + str(i+1), str(0.5*float(l+1)), '_cs_job' + str(j+1), '_cs')
+#             print('cs CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 #
-#             energy3 = run(50., '_c2v_saddle' + str(i+1), str(1.2 + 0.01*float(l)), '_cs_job' + str(j+1), '_cs')
-#             print('c2v CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+#             energy3 = run(50., '_c2v_saddle' + str(i+1), str(0.5*float(l+1)), '_cs_job' + str(j+1), '_cs')
+#             print('c2v CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 #
 #             # save the mean energies to be entered into the table later
 #             Energy1[j, i, l] += np.mean(energy1[500:])
 #             Energy2[j, i, l] += np.mean(energy2[500:])
 #             Energy3[j, i, l] += np.mean(energy3[500:])
 #
-# np.save('Imp_min_energies_cs_new', Energy1)
-# np.save('Imp_cs_energies_cs_new', Energy2)
-# np.save('Imp_c2v_energies_cs_new', Energy3)
-#
+# np.save('Imp_min_energies_cs_switch', Energy1)
+# np.save('Imp_cs_energies_cs_switch', Energy2)
+# np.save('Imp_c2v_energies_cs_switch', Energy3)
+
 Energy1 = np.zeros((6, 5, num_pts))
 Energy2 = np.zeros((6, 5, num_pts))
 Energy3 = np.zeros((6, 5, num_pts))
 for j in range(6):
     for i in range(5):
         for l in range(num_pts):
-            energy1 = run(50., str(i+1), str(1.2 + 0.01*float(l)), '_min_job' + str(j+1), '_min')
-            print('min CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+            energy1 = run(50., str(i+1), str(0.5*float(l+1)), '_min_job' + str(j+1), '_min')
+            print('min CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 
-            energy2 = run(50., '_cs_saddle' + str(i+1), str(1.2 + 0.01*float(l)), '_min_job' + str(j+1), '_min')
-            print('cs CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+            energy2 = run(50., '_cs_saddle' + str(i+1), str(0.5*float(l+1)), '_min_job' + str(j+1), '_min')
+            print('cs CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 
-            energy3 = run(50., '_c2v_saddle' + str(i+1), str(1.2 + 0.01*float(l)), '_min_job' + str(j+1), '_min')
-            print('c2v CH stretch ' + str(i+1) + ' with ' + str(1.2 + 0.01*float(l)) + ' switch point job ' + str(j+1) + ' is done!')
+            energy3 = run(50., '_c2v_saddle' + str(i+1), str(0.5*float(l+1)), '_min_job' + str(j+1), '_min')
+            print('c2v CH stretch ' + str(i+1) + ' with ' + str(0.5*float(l+1)) + ' switch point job ' + str(j+1) + ' is done!')
 
             # save the mean energies to be entered into the table later
             Energy1[j, i, l] += np.mean(energy1[500:])
             Energy2[j, i, l] += np.mean(energy2[500:])
             Energy3[j, i, l] += np.mean(energy3[500:])
 
-np.save('Imp_min_energies_min_new', Energy1)
-np.save('Imp_cs_energies_min_new', Energy2)
-np.save('Imp_c2v_energies_min_new', Energy3)
+np.save('Imp_min_energies_min_switch', Energy1)
+np.save('Imp_cs_energies_min_switch', Energy2)
+np.save('Imp_c2v_energies_min_switch', Energy3)
 
 
 # num_pts = 8
