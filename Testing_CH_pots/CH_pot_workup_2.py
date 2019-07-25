@@ -14,6 +14,8 @@ DVR_correct = np.array([[1488.113887, 1218.705882, 1224.753528, 1577.102303, 157
                         [1626.480859, 1242.570938, 1242.570937, 1554.300194, 1554.300197],
                         [1670.720578, 1919.949044, 1919.949044, 1713.462511, 1713.462511]])
 
+np.save('DVR_energies_each_CH_stretch', DVR_correct)
+
 DMC_NIS_mean = np.array([[1487.808809, 1219.11116, 1224.977963, 1576.08457, 1578.273878],
                          [1626.902877, 1241.245382, 1241.122367, 1555.912652, 1555.832413],
                          [1671.779012, 1919.835793, 1919.602008, 1713.789883, 1714.563884]])
@@ -21,6 +23,9 @@ DMC_NIS_mean = np.array([[1487.808809, 1219.11116, 1224.977963, 1576.08457, 1578
 DMC_NIS_std = np.array([[3.384906654, 2.891356861, 2.486500513, 3.630803896, 2.97606898],
                         [2.432287891, 3.080632152, 2.728463369, 2.715065554, 4.11127682],
                         [2.517015584, 3.587758239, 3.258845895, 3.151204422, 2.211255841]])
+
+DMC = np.array((DMC_NIS_mean, DMC_NIS_std))
+np.save('Non_imp_samp_DMC_energies', DMC)
 
 min_avg_mean = np.array([[1488.841196, 1218.870477, 1226.80496, 1578.53795, 1579.23167],
                          [1629.004676, 1246.545113, 1245.6346, 1554.464394, 1557.041201],
@@ -46,128 +51,134 @@ c2v_avg_std = np.array([[0.9149840664, 5.105362483, 2.237728779, 2.637779663, 2.
                         [3.746882225, 8.33968364, 7.836876918, 0.5170682703, 8.707869296],
                         [3.678271741, 2.277934333, 3.062818096, 1.485448541, 1.253955976]])
 
-energy1 = np.load('Imp_min_energies_min_low.npy')*har2wave
-energy2 = np.load('Imp_cs_energies_min_low.npy')*har2wave
-energy3 = np.load('Imp_c2v_energies_min_low.npy')*har2wave
+Avg_energies = np.zeros((3, 2, 3, 5))
+Avg_energies[0, :, :, :] += np.array((min_avg_mean, min_avg_std))
+Avg_energies[1, :, :, :] += np.array((cs_avg_mean, cs_avg_std))
+Avg_energies[2, :, :, :] += np.array((c2v_avg_mean, c2v_avg_std))
+np.save('Average_GSW_DMC_energies', Avg_energies)
 
-energy1cs = np.load('Imp_min_energies_cs_low.npy')*har2wave
-energy2cs = np.load('Imp_cs_energies_cs_low.npy')*har2wave
-energy3cs = np.load('Imp_c2v_energies_cs_low.npy')*har2wave
-
-energy1c2v = np.load('Imp_min_energies_c2v_low.npy')*har2wave
-energy2c2v = np.load('Imp_cs_energies_c2v_low.npy')*har2wave
-energy3c2v = np.load('Imp_c2v_energies_c2v_low.npy')*har2wave
-
-for j in range(5):
-    for l in range(8):
-        min_mean[0, j, l] += np.mean(energy1[:, j, l])
-        min_std[0, j, l] += np.std(energy1[:, j, l])
-
-        min_mean[1, j, l] += np.mean(energy2[:, j, l])
-        min_std[1, j, l] += np.std(energy2[:, j, l])
-
-        min_mean[2, j, l] += np.mean(energy3[:, j, l])
-        min_std[2, j, l] += np.std(energy3[:, j, l])
-
-        cs_mean[0, j, l] += np.mean(energy1cs[:, j, l])
-        cs_std[0, j, l] += np.std(energy1cs[:, j, l])
-
-        cs_mean[1, j, l] += np.mean(energy2cs[:, j, l])
-        cs_std[1, j, l] += np.std(energy2cs[:, j, l])
-
-        cs_mean[2, j, l] += np.mean(energy3cs[:, j, l])
-        cs_std[2, j, l] += np.std(energy3cs[:, j, l])
-
-        c2v_mean[0, j, l] += np.mean(energy1c2v[:, j, l])
-        c2v_std[0, j, l] += np.std(energy1c2v[:, j, l])
-
-        c2v_mean[1, j, l] += np.mean(energy2c2v[:, j, l])
-        c2v_std[1, j, l] += np.std(energy2c2v[:, j, l])
-
-        c2v_mean[2, j, l] += np.mean(energy3c2v[:, j, l])
-        c2v_std[2, j, l] += np.std(energy3c2v[:, j, l])
-
-energy1 = np.load('Imp_min_energies.npy')*har2wave
-energy2 = np.load('Imp_cs_energies_min_low.npy')*har2wave
-energy3 = np.load('Imp_c2v_energies_min_low.npy')*har2wave
-
-energy1cs = np.load('Imp_min_energies_cs.npy')*har2wave
-energy2cs = np.load('Imp_cs_energies_cs.npy')*har2wave
-energy3cs = np.load('Imp_c2v_energies_cs.npy')*har2wave
-
-energy1c2v = np.load('Imp_min_energies_c2v.npy')*har2wave
-energy2c2v = np.load('Imp_cs_energies_c2v.npy')*har2wave
-energy3c2v = np.load('Imp_c2v_energies_c2v.npy')*har2wave
-
-for j in range(5):
-    for l in range(7):
-        min_mean[0, j, l+8] += np.mean(energy1[:, j, l])
-        min_std[0, j, l+8] += np.std(energy1[:, j, l])
-
-        min_mean[1, j, l+8] += np.mean(energy2[:, j, l])
-        min_std[1, j, l+8] += np.std(energy2[:, j, l])
-
-        min_mean[2, j, l+8] += np.mean(energy3[:, j, l])
-        min_std[2, j, l+8] += np.std(energy3[:, j, l])
-
-        cs_mean[0, j, l+8] += np.mean(energy1cs[:, j, l])
-        cs_std[0, j, l+8] += np.std(energy1cs[:, j, l])
-
-        cs_mean[1, j, l+8] += np.mean(energy2cs[:, j, l])
-        cs_std[1, j, l+8] += np.std(energy2cs[:, j, l])
-
-        cs_mean[2, j, l+8] += np.mean(energy3cs[:, j, l])
-        cs_std[2, j, l+8] += np.std(energy3cs[:, j, l])
-
-        c2v_mean[0, j, l+8] += np.mean(energy1c2v[:, j, l])
-        c2v_std[0, j, l+8] += np.std(energy1c2v[:, j, l])
-
-        c2v_mean[1, j, l+8] += np.mean(energy2c2v[:, j, l])
-        c2v_std[1, j, l+8] += np.std(energy2c2v[:, j, l])
-
-        c2v_mean[2, j, l+8] += np.mean(energy3c2v[:, j, l])
-        c2v_std[2, j, l+8] += np.std(energy3c2v[:, j, l])
-
-energy1 = np.load('Imp_min_energies_min_high.npy')*har2wave
-energy2 = np.load('Imp_cs_energies_min_high.npy')*har2wave
-energy3 = np.load('Imp_c2v_energies_min_high.npy')*har2wave
-
-energy1cs = np.load('Imp_min_energies_cs_high.npy')*har2wave
-energy2cs = np.load('Imp_cs_energies_cs_high.npy')*har2wave
-energy3cs = np.load('Imp_c2v_energies_cs_high.npy')*har2wave
-
-energy1c2v = np.load('Imp_min_energies_c2v_high.npy')*har2wave
-energy2c2v = np.load('Imp_cs_energies_c2v_high.npy')*har2wave
-energy3c2v = np.load('Imp_c2v_energies_c2v_high.npy')*har2wave
-
-for j in range(5):
-    for l in range(10):
-        min_mean[0, j, l+15] += np.mean(energy1[:, j, l])
-        min_std[0, j, l+15] += np.std(energy1[:, j, l])
-
-        min_mean[1, j, l+15] += np.mean(energy2[:, j, l])
-        min_std[1, j, l+15] += np.std(energy2[:, j, l])
-
-        min_mean[2, j, l+15] += np.mean(energy3[:, j, l])
-        min_std[2, j, l+15] += np.std(energy3[:, j, l])
-
-        cs_mean[0, j, l+15] += np.mean(energy1cs[:, j, l])
-        cs_std[0, j, l+15] += np.std(energy1cs[:, j, l])
-
-        cs_mean[1, j, l+15] += np.mean(energy2cs[:, j, l])
-        cs_std[1, j, l+15] += np.std(energy2cs[:, j, l])
-
-        cs_mean[2, j, l+15] += np.mean(energy3cs[:, j, l])
-        cs_std[2, j, l+15] += np.std(energy3cs[:, j, l])
-
-        c2v_mean[0, j, l+15] += np.mean(energy1c2v[:, j, l])
-        c2v_std[0, j, l+15] += np.std(energy1c2v[:, j, l])
-
-        c2v_mean[1, j, l+15] += np.mean(energy2c2v[:, j, l])
-        c2v_std[1, j, l+15] += np.std(energy2c2v[:, j, l])
-
-        c2v_mean[2, j, l+15] += np.mean(energy3c2v[:, j, l])
-        c2v_std[2, j, l+15] += np.std(energy3c2v[:, j, l])
+# energy1 = np.load('Imp_min_energies_min_low.npy')*har2wave
+# energy2 = np.load('Imp_cs_energies_min_low.npy')*har2wave
+# energy3 = np.load('Imp_c2v_energies_min_low.npy')*har2wave
+#
+# energy1cs = np.load('Imp_min_energies_cs_low.npy')*har2wave
+# energy2cs = np.load('Imp_cs_energies_cs_low.npy')*har2wave
+# energy3cs = np.load('Imp_c2v_energies_cs_low.npy')*har2wave
+#
+# energy1c2v = np.load('Imp_min_energies_c2v_low.npy')*har2wave
+# energy2c2v = np.load('Imp_cs_energies_c2v_low.npy')*har2wave
+# energy3c2v = np.load('Imp_c2v_energies_c2v_low.npy')*har2wave
+#
+# for j in range(5):
+#     for l in range(8):
+#         min_mean[0, j, l] += np.mean(energy1[:, j, l])
+#         min_std[0, j, l] += np.std(energy1[:, j, l])
+#
+#         min_mean[1, j, l] += np.mean(energy2[:, j, l])
+#         min_std[1, j, l] += np.std(energy2[:, j, l])
+#
+#         min_mean[2, j, l] += np.mean(energy3[:, j, l])
+#         min_std[2, j, l] += np.std(energy3[:, j, l])
+#
+#         cs_mean[0, j, l] += np.mean(energy1cs[:, j, l])
+#         cs_std[0, j, l] += np.std(energy1cs[:, j, l])
+#
+#         cs_mean[1, j, l] += np.mean(energy2cs[:, j, l])
+#         cs_std[1, j, l] += np.std(energy2cs[:, j, l])
+#
+#         cs_mean[2, j, l] += np.mean(energy3cs[:, j, l])
+#         cs_std[2, j, l] += np.std(energy3cs[:, j, l])
+#
+#         c2v_mean[0, j, l] += np.mean(energy1c2v[:, j, l])
+#         c2v_std[0, j, l] += np.std(energy1c2v[:, j, l])
+#
+#         c2v_mean[1, j, l] += np.mean(energy2c2v[:, j, l])
+#         c2v_std[1, j, l] += np.std(energy2c2v[:, j, l])
+#
+#         c2v_mean[2, j, l] += np.mean(energy3c2v[:, j, l])
+#         c2v_std[2, j, l] += np.std(energy3c2v[:, j, l])
+#
+# energy1 = np.load('Imp_min_energies.npy')*har2wave
+# energy2 = np.load('Imp_cs_energies_min_low.npy')*har2wave
+# energy3 = np.load('Imp_c2v_energies_min_low.npy')*har2wave
+#
+# energy1cs = np.load('Imp_min_energies_cs.npy')*har2wave
+# energy2cs = np.load('Imp_cs_energies_cs.npy')*har2wave
+# energy3cs = np.load('Imp_c2v_energies_cs.npy')*har2wave
+#
+# energy1c2v = np.load('Imp_min_energies_c2v.npy')*har2wave
+# energy2c2v = np.load('Imp_cs_energies_c2v.npy')*har2wave
+# energy3c2v = np.load('Imp_c2v_energies_c2v.npy')*har2wave
+#
+# for j in range(5):
+#     for l in range(7):
+#         min_mean[0, j, l+8] += np.mean(energy1[:, j, l])
+#         min_std[0, j, l+8] += np.std(energy1[:, j, l])
+#
+#         min_mean[1, j, l+8] += np.mean(energy2[:, j, l])
+#         min_std[1, j, l+8] += np.std(energy2[:, j, l])
+#
+#         min_mean[2, j, l+8] += np.mean(energy3[:, j, l])
+#         min_std[2, j, l+8] += np.std(energy3[:, j, l])
+#
+#         cs_mean[0, j, l+8] += np.mean(energy1cs[:, j, l])
+#         cs_std[0, j, l+8] += np.std(energy1cs[:, j, l])
+#
+#         cs_mean[1, j, l+8] += np.mean(energy2cs[:, j, l])
+#         cs_std[1, j, l+8] += np.std(energy2cs[:, j, l])
+#
+#         cs_mean[2, j, l+8] += np.mean(energy3cs[:, j, l])
+#         cs_std[2, j, l+8] += np.std(energy3cs[:, j, l])
+#
+#         c2v_mean[0, j, l+8] += np.mean(energy1c2v[:, j, l])
+#         c2v_std[0, j, l+8] += np.std(energy1c2v[:, j, l])
+#
+#         c2v_mean[1, j, l+8] += np.mean(energy2c2v[:, j, l])
+#         c2v_std[1, j, l+8] += np.std(energy2c2v[:, j, l])
+#
+#         c2v_mean[2, j, l+8] += np.mean(energy3c2v[:, j, l])
+#         c2v_std[2, j, l+8] += np.std(energy3c2v[:, j, l])
+#
+# energy1 = np.load('Imp_min_energies_min_high.npy')*har2wave
+# energy2 = np.load('Imp_cs_energies_min_high.npy')*har2wave
+# energy3 = np.load('Imp_c2v_energies_min_high.npy')*har2wave
+#
+# energy1cs = np.load('Imp_min_energies_cs_high.npy')*har2wave
+# energy2cs = np.load('Imp_cs_energies_cs_high.npy')*har2wave
+# energy3cs = np.load('Imp_c2v_energies_cs_high.npy')*har2wave
+#
+# energy1c2v = np.load('Imp_min_energies_c2v_high.npy')*har2wave
+# energy2c2v = np.load('Imp_cs_energies_c2v_high.npy')*har2wave
+# energy3c2v = np.load('Imp_c2v_energies_c2v_high.npy')*har2wave
+#
+# for j in range(5):
+#     for l in range(10):
+#         min_mean[0, j, l+15] += np.mean(energy1[:, j, l])
+#         min_std[0, j, l+15] += np.std(energy1[:, j, l])
+#
+#         min_mean[1, j, l+15] += np.mean(energy2[:, j, l])
+#         min_std[1, j, l+15] += np.std(energy2[:, j, l])
+#
+#         min_mean[2, j, l+15] += np.mean(energy3[:, j, l])
+#         min_std[2, j, l+15] += np.std(energy3[:, j, l])
+#
+#         cs_mean[0, j, l+15] += np.mean(energy1cs[:, j, l])
+#         cs_std[0, j, l+15] += np.std(energy1cs[:, j, l])
+#
+#         cs_mean[1, j, l+15] += np.mean(energy2cs[:, j, l])
+#         cs_std[1, j, l+15] += np.std(energy2cs[:, j, l])
+#
+#         cs_mean[2, j, l+15] += np.mean(energy3cs[:, j, l])
+#         cs_std[2, j, l+15] += np.std(energy3cs[:, j, l])
+#
+#         c2v_mean[0, j, l+15] += np.mean(energy1c2v[:, j, l])
+#         c2v_std[0, j, l+15] += np.std(energy1c2v[:, j, l])
+#
+#         c2v_mean[1, j, l+15] += np.mean(energy2c2v[:, j, l])
+#         c2v_std[1, j, l+15] += np.std(energy2c2v[:, j, l])
+#
+#         c2v_mean[2, j, l+15] += np.mean(energy3c2v[:, j, l])
+#         c2v_std[2, j, l+15] += np.std(energy3c2v[:, j, l])
 
 
 # sp = np.linspace(1.2, 1.3, 11)
@@ -287,38 +298,38 @@ for j in range(5):
 #     for j in range(5):
 #         axes[l].errorbar()
 
-min_list = np.zeros(25)
-cs_list = np.zeros(25)
-c2v_list = np.zeros(25)
-for i in range(25):
-    for j in range(5):
-        for l in range(3):
-            if min_mean[l, j, i]-min_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= min_mean[l, j, i]+ min_std[l, j, i]:
-                min_list[i] += 1.
-            if cs_mean[l, j, i] - cs_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= cs_mean[l, j, i] + cs_std[l, j, i]:
-                cs_list[i] += 1.
-            if c2v_mean[l, j, i] - c2v_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= c2v_mean[l, j, i] + c2v_std[l, j, i]:
-                c2v_list[i] += 1.
-
-print(min_list)
-print(cs_list)
-print(c2v_list)
-
-avg_min = 0.
-avg_cs = 0.
-avg_c2v = 0.
-for j in range(5):
-    for l in range(3):
-        if min_avg_mean[l, j]-min_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= min_avg_mean[l, j] + min_avg_std[l, j]:
-            avg_min += 1.
-        if cs_avg_mean[l, j] - cs_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= cs_avg_mean[l, j] + cs_avg_std[l, j]:
-            avg_cs += 1.
-        if c2v_avg_mean[l, j] - c2v_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= c2v_avg_mean[l, j] + c2v_avg_std[l, j]:
-            avg_c2v += 1.
-
-print(avg_min)
-print(avg_cs)
-print(avg_c2v)
+# min_list = np.zeros(25)
+# cs_list = np.zeros(25)
+# c2v_list = np.zeros(25)
+# for i in range(25):
+#     for j in range(5):
+#         for l in range(3):
+#             if min_mean[l, j, i]-min_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= min_mean[l, j, i]+ min_std[l, j, i]:
+#                 min_list[i] += 1.
+#             if cs_mean[l, j, i] - cs_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= cs_mean[l, j, i] + cs_std[l, j, i]:
+#                 cs_list[i] += 1.
+#             if c2v_mean[l, j, i] - c2v_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= c2v_mean[l, j, i] + c2v_std[l, j, i]:
+#                 c2v_list[i] += 1.
+#
+# print(min_list)
+# print(cs_list)
+# print(c2v_list)
+#
+# avg_min = 0.
+# avg_cs = 0.
+# avg_c2v = 0.
+# for j in range(5):
+#     for l in range(3):
+#         if min_avg_mean[l, j]-min_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= min_avg_mean[l, j] + min_avg_std[l, j]:
+#             avg_min += 1.
+#         if cs_avg_mean[l, j] - cs_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= cs_avg_mean[l, j] + cs_avg_std[l, j]:
+#             avg_cs += 1.
+#         if c2v_avg_mean[l, j] - c2v_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= c2v_avg_mean[l, j] + c2v_avg_std[l, j]:
+#             avg_c2v += 1.
+#
+# print(avg_min)
+# print(avg_cs)
+# print(avg_c2v)
 
 
 
