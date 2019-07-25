@@ -170,119 +170,157 @@ for j in range(5):
         c2v_std[2, j, l+15] += np.std(energy3c2v[:, j, l])
 
 
-sp = np.linspace(0.6, 1.8, 25)
-geos = ['Minimum', 'cs Saddle', 'c2v Saddle']
-fig, axes = plt.subplots(3, 5, figsize=(20, 10))
-for l in range(3):
-    for j in range(5):
-        axes[l][j].errorbar(sp, [DMC_NIS_mean[l, j]] * len(sp), yerr=[DMC_NIS_std[l, j]] * len(sp), color='cyan',
-                            label='DMC w/o imp samp CH stretch %s' % (j + 1))
-        axes[l][j].errorbar(sp, min_mean[l, j, :],  yerr=min_std[l, j, :], color='C%s' % j,
-                            label='DMC CH stretch %s' % (j+1))
-        axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), 'black', label='DVR CH stretch %s' % (j+1))
-        axes[l][j].set_xlabel('Scan Point (Angstroms)')
-        axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
-        axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
-        axes[l][j].legend(loc='lower left')
-        axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
-    # axes[l].legend()
-plt.tight_layout()
-# fig.suptitle('Ground State Energy for ')
-fig.savefig('Energy_along_tanh_scan_%s_wvfn.png' % geos[0])
-plt.close(fig)
-
-fig, axes = plt.subplots(3, 5, figsize=(20, 10))
-for l in range(3):
-    for j in range(5):
-        axes[l][j].errorbar(sp, [DMC_NIS_mean[l, j]]*len(sp), yerr=[DMC_NIS_std[l, j]]*len(sp), color='cyan',
-                            label='DMC w/o imp samp CH stretch %s' % (j+1))
-        axes[l][j].errorbar(sp, cs_mean[l, j, :], yerr=cs_std[l, j, :], color='C%s' % j,
-                            label='DMC CH stretch %s' % (j+1))
-        axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
-        axes[l][j].set_xlabel('Scan Point (Angstroms)')
-        axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
-        axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
-        axes[l][j].legend(loc='lower left')
-        axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
-    # axes[l].legend()
-plt.tight_layout()
-fig.savefig('Energy_along_tanh_scan_%s_wvfn.png' % 'cs_saddle')
-plt.close(fig)
-
-fig, axes = plt.subplots(3, 5, figsize=(20, 10))
-for l in range(3):
-    for j in range(5):
-        axes[l][j].errorbar(sp, [DMC_NIS_mean[l, j]] * len(sp), yerr=[DMC_NIS_std[l, j]] * len(sp), color='cyan',
-                            label='DMC w/o imp samp CH stretch %s' % (j + 1))
-        axes[l][j].errorbar(sp, c2v_mean[l, j, :], yerr=c2v_std[l, j, :], color='C%s' % j,
-                            label='DMC CH stretch %s' % (j+1))
-        axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
-        axes[l][j].set_xlabel('Scan Point (Angstroms)')
-        axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
-        axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
-        axes[l][j].legend(loc='lower left')
-        axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
-    # axes[l].legend()
-plt.tight_layout()
-fig.savefig('Energy_along_tanh_scan_%s_wvfn.png' % 'c2v_saddle')
-plt.close(fig)
-
-fig, axes = plt.subplots(3, 5, figsize=(20, 10))
-for l in range(3):
-    for j in range(5):
-        axes[l][j].errorbar(sp, [min_avg_mean[l, j]] * len(sp), yerr=[min_avg_std[l, j]] * len(sp), color='cyan',
-                            label='DMC Avg Wvfn CH stretch %s' % (j + 1))
-        axes[l][j].errorbar(sp, min_mean[l, j, :],  yerr=min_std[l, j, :], color='C%s' % j,
-                            label='DMC CH stretch %s' % (j+1))
-        axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), 'black', label='DVR CH stretch %s' % (j+1))
-        axes[l][j].set_xlabel('Scan Point (Angstroms)')
-        axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
-        axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
-        axes[l][j].legend(loc='lower left')
-        axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
-    # axes[l].legend()
-plt.tight_layout()
-# fig.suptitle('Ground State Energy for ')
-fig.savefig('Energy_along_tanh_against_avg_scan_%s_wvfn.png' % geos[0])
-plt.close(fig)
-
-fig, axes = plt.subplots(3, 5, figsize=(20, 10))
-for l in range(3):
-    for j in range(5):
-        axes[l][j].errorbar(sp, [cs_avg_mean[l, j]] * len(sp), yerr=[cs_avg_std[l, j]] * len(sp), color='cyan',
-                            label='DMC Avg Wvfn CH stretch %s' % (j + 1))
-        axes[l][j].errorbar(sp, cs_mean[l, j, :], yerr=cs_std[l, j, :], color='C%s' % j,
-                            label='DMC CH stretch %s' % (j+1))
-        axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
-        axes[l][j].set_xlabel('Scan Point (Angstroms)')
-        axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
-        axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
-        axes[l][j].legend(loc='lower left')
-        axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
-    # axes[l].legend()
-plt.tight_layout()
-fig.savefig('Energy_along_tanh_against_avg_scan_%s_wvfn.png' % 'cs_saddle')
-plt.close(fig)
-
-fig, axes = plt.subplots(3, 5, figsize=(20, 10))
-for l in range(3):
-    for j in range(5):
-        axes[l][j].errorbar(sp, [c2v_avg_mean[l, j]] * len(sp), yerr=[c2v_avg_std[l, j]] * len(sp), color='cyan',
-                            label='DMC Avg Wvfn CH stretch %s' % (j + 1))
-        axes[l][j].errorbar(sp, c2v_mean[l, j, :], yerr=c2v_std[l, j, :], color='C%s' % j,
-                            label='DMC CH stretch %s' % (j+1))
-        axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
-        axes[l][j].set_xlabel('Scan Point (Angstroms)')
-        axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
-        axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
-        axes[l][j].legend(loc='lower left')
-        axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
-    # axes[l].legend()
-plt.tight_layout()
-fig.savefig('Energy_along_tanh_against_avg_scan_%s_wvfn.png' % 'c2v_saddle')
-plt.close(fig)
+# sp = np.linspace(1.2, 1.3, 11)
+# geos = ['Minimum', 'cs Saddle', 'c2v Saddle']
+# fig, axes = plt.subplots(3, 5, figsize=(20, 10))
+# for l in range(3):
+#     for j in range(5):
+#         axes[l][j].errorbar(sp, [DMC_NIS_mean[l, j]] * len(sp), yerr=[DMC_NIS_std[l, j]] * len(sp), color='cyan',
+#                             label='DMC w/o imp samp CH stretch %s' % (j + 1))
+#         axes[l][j].errorbar(sp, min_mean[l, j, :],  yerr=min_std[l, j, :], color='C%s' % j,
+#                             label='DMC CH stretch %s' % (j+1))
+#         axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), 'black', label='DVR CH stretch %s' % (j+1))
+#         axes[l][j].set_xlabel('Scan Point (Angstroms)')
+#         axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
+#         axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
+#         axes[l][j].legend(loc='lower left')
+#         axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
+#     # axes[l].legend()
+# plt.tight_layout()
+# # fig.suptitle('Ground State Energy for ')
+# fig.savefig('Energy_along_tanh_scan_new%s_wvfn.png' % geos[0])
+# plt.close(fig)
+#
+# fig, axes = plt.subplots(3, 5, figsize=(20, 10))
+# for l in range(3):
+#     for j in range(5):
+#         axes[l][j].errorbar(sp, [DMC_NIS_mean[l, j]]*len(sp), yerr=[DMC_NIS_std[l, j]]*len(sp), color='cyan',
+#                             label='DMC w/o imp samp CH stretch %s' % (j+1))
+#         axes[l][j].errorbar(sp, cs_mean[l, j, :], yerr=cs_std[l, j, :], color='C%s' % j,
+#                             label='DMC CH stretch %s' % (j+1))
+#         axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
+#         axes[l][j].set_xlabel('Scan Point (Angstroms)')
+#         axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
+#         axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
+#         axes[l][j].legend(loc='lower left')
+#         axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
+#     # axes[l].legend()
+# plt.tight_layout()
+# fig.savefig('Energy_along_tanh_scan_new%s_wvfn.png' % 'cs_saddle')
+# plt.close(fig)
+#
+# fig, axes = plt.subplots(3, 5, figsize=(20, 10))
+# for l in range(3):
+#     for j in range(5):
+#         axes[l][j].errorbar(sp, [DMC_NIS_mean[l, j]] * len(sp), yerr=[DMC_NIS_std[l, j]] * len(sp), color='cyan',
+#                             label='DMC w/o imp samp CH stretch %s' % (j + 1))
+#         axes[l][j].errorbar(sp, c2v_mean[l, j, :], yerr=c2v_std[l, j, :], color='C%s' % j,
+#                             label='DMC CH stretch %s' % (j+1))
+#         axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
+#         axes[l][j].set_xlabel('Scan Point (Angstroms)')
+#         axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
+#         axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
+#         axes[l][j].legend(loc='lower left')
+#         axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
+#     # axes[l].legend()
+# plt.tight_layout()
+# fig.savefig('Energy_along_tanh_scan_new%s_wvfn.png' % 'c2v_saddle')
+# plt.close(fig)
+#
+# fig, axes = plt.subplots(3, 5, figsize=(20, 10))
+# for l in range(3):
+#     for j in range(5):
+#         axes[l][j].errorbar(sp, [min_avg_mean[l, j]] * len(sp), yerr=[min_avg_std[l, j]] * len(sp), color='cyan',
+#                             label='DMC Avg Wvfn CH stretch %s' % (j + 1))
+#         axes[l][j].errorbar(sp, min_mean[l, j, :],  yerr=min_std[l, j, :], color='C%s' % j,
+#                             label='DMC CH stretch %s' % (j+1))
+#         axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), 'black', label='DVR CH stretch %s' % (j+1))
+#         axes[l][j].set_xlabel('Scan Point (Angstroms)')
+#         axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
+#         axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
+#         axes[l][j].legend(loc='lower left')
+#         axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
+#     # axes[l].legend()
+# plt.tight_layout()
+# # fig.suptitle('Ground State Energy for ')
+# fig.savefig('Energy_along_tanh_against_avg_scan_new%s_wvfn.png' % geos[0])
+# plt.close(fig)
+#
+# fig, axes = plt.subplots(3, 5, figsize=(20, 10))
+# for l in range(3):
+#     for j in range(5):
+#         axes[l][j].errorbar(sp, [cs_avg_mean[l, j]] * len(sp), yerr=[cs_avg_std[l, j]] * len(sp), color='cyan',
+#                             label='DMC Avg Wvfn CH stretch %s' % (j + 1))
+#         axes[l][j].errorbar(sp, cs_mean[l, j, :], yerr=cs_std[l, j, :], color='C%s' % j,
+#                             label='DMC CH stretch %s' % (j+1))
+#         axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
+#         axes[l][j].set_xlabel('Scan Point (Angstroms)')
+#         axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
+#         axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
+#         axes[l][j].legend(loc='lower left')
+#         axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
+#     # axes[l].legend()
+# plt.tight_layout()
+# fig.savefig('Energy_along_tanh_against_avg_scan_new%s_wvfn.png' % 'cs_saddle')
+# plt.close(fig)
+#
+# fig, axes = plt.subplots(3, 5, figsize=(20, 10))
+# for l in range(3):
+#     for j in range(5):
+#         axes[l][j].errorbar(sp, [c2v_avg_mean[l, j]] * len(sp), yerr=[c2v_avg_std[l, j]] * len(sp), color='cyan',
+#                             label='DMC Avg Wvfn CH stretch %s' % (j + 1))
+#         axes[l][j].errorbar(sp, c2v_mean[l, j, :], yerr=c2v_std[l, j, :], color='C%s' % j,
+#                             label='DMC CH stretch %s' % (j+1))
+#         axes[l][j].plot(sp, [DVR_correct[l, j]]*len(sp), color='black', label='DVR CH stretch %s' % (j+1))
+#         axes[l][j].set_xlabel('Scan Point (Angstroms)')
+#         axes[l][j].set_ylabel('Ground State Energy (cm^-1)')
+#         axes[l][j].set_title('Ground State Energy for %s Geometry' % geos[l])
+#         axes[l][j].legend(loc='lower left')
+#         axes[l][j].set_ylim(DVR_correct[l, j]-5., DVR_correct[l, j]+5.)
+#     # axes[l].legend()
+# plt.tight_layout()
+# fig.savefig('Energy_along_tanh_against_avg_scan_new%s_wvfn.png' % 'c2v_saddle')
+# plt.close(fig)
 
 # fig, axes = plt.subplots(3, 1, figsize=(8, 10))
 # for l in range(3):
 #     for j in range(5):
 #         axes[l].errorbar()
+
+min_list = np.zeros(25)
+cs_list = np.zeros(25)
+c2v_list = np.zeros(25)
+for i in range(25):
+    for j in range(5):
+        for l in range(3):
+            if min_mean[l, j, i]-min_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= min_mean[l, j, i]+ min_std[l, j, i]:
+                min_list[i] += 1.
+            if cs_mean[l, j, i] - cs_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= cs_mean[l, j, i] + cs_std[l, j, i]:
+                cs_list[i] += 1.
+            if c2v_mean[l, j, i] - c2v_std[l, j, i] >= DVR_correct[l, j] or DVR_correct[l, j] >= c2v_mean[l, j, i] + c2v_std[l, j, i]:
+                c2v_list[i] += 1.
+
+print(min_list)
+print(cs_list)
+print(c2v_list)
+
+avg_min = 0.
+avg_cs = 0.
+avg_c2v = 0.
+for j in range(5):
+    for l in range(3):
+        if min_avg_mean[l, j]-min_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= min_avg_mean[l, j] + min_avg_std[l, j]:
+            avg_min += 1.
+        if cs_avg_mean[l, j] - cs_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= cs_avg_mean[l, j] + cs_avg_std[l, j]:
+            avg_cs += 1.
+        if c2v_avg_mean[l, j] - c2v_avg_std[l, j] >= DVR_correct[l, j] or DVR_correct[l, j] >= c2v_avg_mean[l, j] + c2v_avg_std[l, j]:
+            avg_c2v += 1.
+
+print(avg_min)
+print(avg_cs)
+print(avg_c2v)
+
+
+
+
+

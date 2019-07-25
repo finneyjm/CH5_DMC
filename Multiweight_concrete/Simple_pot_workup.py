@@ -29,76 +29,43 @@ class Walkers(object):
         self.d = d
 
 
-def lets_get_these_graphs(name, Ecut_array):
-    # coords, d, weights = load_psi(name)
-    # Psi = Walkers(coords, d, weights)
-    # diffs, energy = load_observables(name)
-    # num_dw = len(Psi.d[:, 0, 0])
-    # cuts = len(Psi.d[0, :, 0])
-    # Ecut = np.linspace(0, 100., num=cuts)
-    # E_corrections = np.zeros((num_dw, cuts))
-    # E_correct_mean = np.zeros(cuts)
-    # E_correct_std = np.zeros(cuts)
-    # Energies = np.zeros(cuts)
-    # plt.figure()
-    # for j in range(cuts):
-    #     for k in range(num_dw):
-    #         E_corrections[k, j] += sum(Psi.d[k, j, :] * diffs[k, j, :]) / sum(Psi.d[k, j, :])
-    #     E_correct_mean[j] += np.mean(E_corrections[:, j])
-    #     E_correct_std[j] += np.std(E_corrections[:, j])
-    #     Energies[j] += np.mean(energy[j, 500:]) + E_correct_mean[j]
-    # # plt.errorbar(Ecut, Energies*har2wave, yerr=(E_correct_std*har2wave), label='Multi-weight')
-    # plt.plot(Ecut, Energies*har2wave, label='Multi-weight')
-    # E_corrections_nm = np.zeros((num_dw, cuts))
-    # E_correct_mean_nm = np.zeros(cuts)
-    # E_correct_std_nm = np.zeros(cuts)
-    # Energies_nm = np.zeros(cuts)
-    # for j in range(cuts):
-    #     coords, d, weights = load_psi('_Ecut%s' %Ecut[j])
-    #     Psi = Walkers(coords, d, weights)
-    #     diffs, energy = load_observables('_Ecut%s' %Ecut[j])
-    #     for k in range(num_dw):
-    #         E_corrections_nm[k, j] += sum(Psi.d[k, 0, :] * diffs[k, 0, :]) / sum(Psi.d[k, 0, :])
-    #     E_correct_mean_nm[j] += np.mean(E_corrections_nm[:, j])
-    #     E_correct_std_nm[j] += np.std(E_corrections_nm[:, j])
-    #     Energies_nm[j] += np.mean(energy[0, 500:]) + E_correct_mean_nm[j]
-    # # plt.errorbar(Ecut, Energies_nm*har2wave, yerr=(E_correct_std_nm*har2wave), label='Non_Multi_weight')
-    # plt.plot(Ecut, Energies_nm*har2wave, label='Non_Multi_weight')
+def lets_get_these_graphs(names, Ecut_array):
     for i in range(5):
         fig, axes = plt.subplots()
-        for l in range(5):
-            coords, d, weights = load_psi(name[i][l])
+        E_correct_mean = np.zeros((5, 5))
+        E_correct_std = np.zeros((5, 5))
+        Energies = np.zeros((5, 5))
+        energies = np.zeros(5)
+        en_std = np.zeros(5)
+        for job in range(5):
+            coords, d, weights = load_psi(names[i][job])
             Psi = Walkers(coords, d, weights)
-            diffs, energy = load_observables(name[i][l])
+            diffs, energy = load_observables(names[i][job])
             num_dw = len(Psi.d[:, 0, 0])
             cuts = len(Psi.d[0, :, 0])
-            Ecut = np.linspace(0, Ecut_array[i, l], num=(5))
             E_corrections = np.zeros((num_dw, cuts))
-            E_correct_mean = np.zeros(cuts)
-            E_correct_std = np.zeros(cuts)
-            Energies = np.zeros(cuts)
-            if np.sum(Psi.d[-1, 0, :]) == 0.:
-                print("that's no good")
             for j in range(cuts):
-                for k in range(num_dw):
-                    E_corrections[k, j] += sum(Psi.d[k, j, :] * diffs[k, j, :]) / sum(Psi.d[k, j, :])
-                E_correct_mean[j] += np.mean(E_corrections[:, j])
-                E_correct_std[j] += np.std(E_corrections[:, j])
-                Energies[j] += np.mean(energy[j, 500:]) + E_correct_mean[j]
-            axes.plot(Ecut, Energies * har2wave, label='Num of Des Weight timesteps %s' %(10*(l+1)))
-        x = np.linspace(0, 100*(i+1), num=(i+2))
+                for l in range(num_dw):
+                    E_corrections[l, j] += sum(Psi.d[l, j, :] * diffs[l, j, :]) / sum(Psi.d[l, j, :])
+                E_correct_mean[job, j] += np.mean(E_corrections[:, j])
+                E_correct_std[job, j] += np.std(E_corrections[:, j])
+                Energies[job, j] += np.mean(energy[j, 500:]) + E_correct_mean[job, j]
+        energies += np.mean(Energies, axis=0)
+        en_std += np.mean(E_correct_std, axis=0) + np.std(Energies, axis=0)
+        ecut = np.linspace(0, Ecut_array[i, 0], num=5)
+        axes.errorbar(ecut, energies*har2wave, yerr= en_std*har2wave, label='DMC with correction')
+        x = np.linspace(0, Ecut_array[i, 0], num=i+2)
         DVR = np.array([])
         for j in range(i+2):
             DVR = np.append(DVR, exact_value[j])
-        axes.plot(x, DVR, label='Values From DVR')
+        axes.plot(x, DVR, label='Values from DVR')
         axes.set_xlabel('Ecut (cm^-1)')
-        axes.set_ylabel('Ground State Energy (cm^-1)')
+        axes.set_ylabel('Grounds State Energy (cm^-1)')
         axes.set_title('Ground State Energy with Different Flattening')
-        # axes.set_ylim(450, 520)
+        # axes.set_ylim(450, 500)
         lgd = axes.legend(loc='center right', bbox_to_anchor=(1.67, 0.5))
-        fig.savefig('Energy_after_flattening_multi_simple_more_walkers%s.png' %(str(Ecut_array[i, 0]) + '_des_test'), bbox_extra_artists=(lgd,), bbox_inches='tight')
+        fig.savefig('Energy_after_flattening_multi_simple_fixed_des100%s.png' %str(Ecut_array[i, 0]), bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.close(fig)
-
 
 # def Psi_sqrd(how_many, what_factor):
 #     for i in range(how_many):
@@ -119,7 +86,7 @@ Ecuts = np.zeros((5, 5))
 for i in range(5):
     Ecuts[i, :] += 100*(i+1)
     for j in range(5):
-        names[i][j] += '_to_%s_des' % Ecuts[i, j] + '_{0}'.format(10*(j+1))
+        names[i][j] += '_to_%s_job' % Ecuts[i, j] + '_{0}'.format(j+1)
 lets_get_these_graphs(names, Ecuts)
 
 # name = [['_to_10.0_job_1']]

@@ -3,19 +3,19 @@ import matplotlib.pyplot as plt
 from Coordinerds.CoordinateSystems import *
 import CH5pot
 
-# coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
-#                   [0.1318851447521099, 2.088940054609643, 0.000000000000000],
-#                   [1.786540362044548, -1.386051328559878, 0.000000000000000],
-#                   [2.233806981137821, 0.3567096955165336, 0.000000000000000],
-#                   [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
-#                   [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
-# coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
-#                        [1.931652478009080, -4.5126502395556294E-008, -0.6830921182334913],
-#                        [5.4640011799588715E-017, 0.8923685824271653, 2.083855680290835],
-#                        [-5.4640011799588715E-017, -0.8923685824271653, 2.083855680290835],
-#                        [-1.145620108130841, -1.659539840225091, -0.4971351597887673],
-#                        [-1.145620108130841, 1.659539840225091, -0.4971351597887673]])
-coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.386992362158741],
+coords_initial_min = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+                  [0.1318851447521099, 2.088940054609643, 0.000000000000000],
+                  [1.786540362044548, -1.386051328559878, 0.000000000000000],
+                  [2.233806981137821, 0.3567096955165336, 0.000000000000000],
+                  [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
+                  [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
+coords_initial_cs = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+                       [1.931652478009080, -4.5126502395556294E-008, -0.6830921182334913],
+                       [5.4640011799588715E-017, 0.8923685824271653, 2.083855680290835],
+                       [-5.4640011799588715E-017, -0.8923685824271653, 2.083855680290835],
+                       [-1.145620108130841, -1.659539840225091, -0.4971351597887673],
+                       [-1.145620108130841, 1.659539840225091, -0.4971351597887673]])
+coords_initial_c2v = np.array([[0.000000000000000, 0.000000000000000, 0.386992362158741],
                        [0.000000000000000, 0.000000000000000, -1.810066283748844],
                        [1.797239666982623, 0.000000000000000, 1.381637275550612],
                        [-1.797239666982623, 0.000000000000000, 1.381637275550612],
@@ -30,7 +30,7 @@ har2wave = 219474.6
 ang2bohr = (1.e-10)/(5.291772106712e-11)
 
 
-def grid(a, b, N, CH):
+def grid(a, b, N, CH, coords_initial):
     spacing = np.linspace(a, b, num=N)
     if CH == 1:
         new_coords = CoordinateSet(coords_initial, system=CartesianCoordinates3D)
@@ -87,8 +87,8 @@ def Energy(T, V):
     return En, Eigv
 
 
-def run(CH):
-    g = grid(1., 4., 500, CH)
+def run(CH, type, coords):
+    g = grid(1., 4., 500, CH, coords)
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
@@ -101,33 +101,36 @@ def run(CH):
     # plt.ylabel('Probability Density')
     # plt.legend()
     # plt.savefig('GSW%s.png' %CH)
+    np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
     return g, Eig[:, 0]
 
 
 wvfn = np.zeros((5, 500))
 for i in np.arange(1, 6):
-    g, wvfn[i-1, :] = run(i)
+    run(i, 'min', coords_initial_min)
+    run(i, 'cs', coords_initial_cs)
+    run(i, 'c2v', coords_initial_c2v)
 
-av_wvfn = np.mean(wvfn, axis=0)
-avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
+# av_wvfn = np.mean(wvfn, axis=0)
+# avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
 # np.save('Average_GSW_CH_stretch', avg_wvfn)
 
 
 # plt.legend(loc=3)
 # plt.savefig('Avg_GSW.png')
-for i in range(11):
-    s_point = 1.2 + 0.01*float(i)
-    switch = (np.tanh((g[:, 1, 0]-s_point*ang2bohr)) + 1.)*0.5
-    new_wvfn = wvfn[0, :]*switch + wvfn[1, :]*(1.-switch)
-    new_wvfn = new_wvfn/np.linalg.norm(new_wvfn)
-
-    plt.plot(g[:, 1, 0] / ang2bohr, av_wvfn, label='Average Ground State Wavefunction')
-    plt.plot(g[:, 1, 0]/ang2bohr, new_wvfn, label='Switch wvfn')
-    plt.plot(g[:, 1, 0]/ang2bohr, wvfn[0, :], label='CH 1')
-    plt.plot(g[:, 1, 0]/ang2bohr, wvfn[1, :], label='CH 2')
-    plt.legend()
-    plt.savefig('Switch_min_wvfn_%s.png' %s_point)
-    plt.close()
-
-    new_wvfn = np.vstack((g[:, 1, 0], new_wvfn))
-    np.save('Switch_c2v_wvfn_new_%s' %s_point, new_wvfn)
+# for i in range(11):
+#     s_point = 1.2 + 0.01*float(i)
+#     switch = (np.tanh((g[:, 1, 0]-s_point*ang2bohr)) + 1.)*0.5
+#     new_wvfn = wvfn[0, :]*switch + wvfn[1, :]*(1.-switch)
+#     new_wvfn = new_wvfn/np.linalg.norm(new_wvfn)
+#
+#     plt.plot(g[:, 1, 0] / ang2bohr, av_wvfn, label='Average Ground State Wavefunction')
+#     plt.plot(g[:, 1, 0]/ang2bohr, new_wvfn, label='Switch wvfn')
+#     plt.plot(g[:, 1, 0]/ang2bohr, wvfn[0, :], label='CH 1')
+#     plt.plot(g[:, 1, 0]/ang2bohr, wvfn[1, :], label='CH 2')
+#     plt.legend()
+#     plt.savefig('Switch_min_wvfn_%s.png' %s_point)
+#     plt.close()
+#
+#     new_wvfn = np.vstack((g[:, 1, 0], new_wvfn))
+#     np.save('Switch_c2v_wvfn_new_%s' %s_point, new_wvfn)

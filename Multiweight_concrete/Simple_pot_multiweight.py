@@ -165,7 +165,7 @@ def acquire_dis_data():
     for i in range(5):
         for j in range(5):
             Ecut_array = np.linspace(0, 100*(i+1), num=(5))
-            run(4000, 500, 50, Ecut_array, '_to_%s_job' %Ecut_array[-1] + '_%s' %(j+1))
+            run(4000, 500, 100, Ecut_array, '_to_%s_job' %Ecut_array[-1] + '_%s' %(j+1))
             print('Done with Ecut to %s' %Ecut_array[-1] + ' job %s!' %(j+1))
 
 
