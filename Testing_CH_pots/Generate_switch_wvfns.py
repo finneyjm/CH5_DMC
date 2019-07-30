@@ -77,9 +77,9 @@ def lets_get_these_wvfns(type, switch_speed):
 
 
 for i in range(11):
-    lets_get_these_wvfns('min', 0.5*float(i+1))
-    lets_get_these_wvfns('cs', 0.5*float(i+1))
-    lets_get_these_wvfns('c2v', 0.5*float(i+1))
+    lets_get_these_wvfns('min', float(20*i + 2)*0.5)
+    lets_get_these_wvfns('cs', float(20*i + 2)*0.5)
+    lets_get_these_wvfns('c2v', float(20*i + 2)*0.5)
 
 
 

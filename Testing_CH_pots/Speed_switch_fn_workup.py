@@ -11,13 +11,13 @@ Avg_en = np.load('Average_GSW_DMC_energies.npy')
 
 for n, wvfn in enumerate(indices):
     for m, pot in enumerate(indices):
-        energy_array[n, m, :] += np.load(f'Imp_{pot}_energies_{wvfn}_switch.npy')*har2wave
+        energy_array[n, m, :] += np.load(f'Imp_{pot}_energies_{wvfn}_switch_new.npy')*har2wave
 
 energy_stats = np.zeros((2, 3, 3, 5, 11))
 energy_stats[0, :] += np.mean(energy_array, axis=2)
 energy_stats[1, :] += np.std(energy_array, axis=2)
 
-speed = np.linspace(0.5, 5.5, 11)
+speed = np.linspace(1, 101, 11)
 
 for i in range(3):
     fig, axes = plt.subplots(3, 5, figsize=(20, 10))
@@ -33,7 +33,7 @@ for i in range(3):
             axes[l][j].legend(loc='lower left')
             axes[l][j].set_ylim(DVR[l, j] - 5., DVR[l, j] + 5.)
     plt.tight_layout()
-    fig.savefig(f'Energy_increase_steepness_{indices[i]}_wvfn.png')
+    fig.savefig(f'Energy_increase_steepness_{indices[i]}_wvfn_new.png')
     plt.close(fig)
 
 for i in range(3):
@@ -50,5 +50,5 @@ for i in range(3):
             axes[l][j].legend(loc='lower left')
             axes[l][j].set_ylim(DVR[l, j] - 5., DVR[l, j] + 5.)
     plt.tight_layout()
-    fig.savefig(f'Energy_increase_steepness_vs_avg_{indices[i]}_wvfn.png')
+    fig.savefig(f'Energy_increase_steepness_vs_avg_{indices[i]}_wvfn_new.png')
     plt.close(fig)

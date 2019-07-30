@@ -5,8 +5,8 @@ import Timing_p3 as tm
 
 # DMC parameters
 dtau = 5.
-N_0 = 500
-time_total = 1000.
+N_0 = 10000
+time_total = 1.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -131,12 +131,15 @@ def run(propagation):
             DW = True
         elif i >= (time_total - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
             d_values = descendants(new_psi)
-    E0 = np.mean(Eref[50:])
+    # E0 = np.mean(Eref[50:])
     np.save("DMC_CH5_Energy", Eref)
-    return E0
+    return Eref
 
 
-# E0, E0_time = tm.time_me(run, 50)
-# tm.print_time_list(run, E0_time)
-run(50)
-print(np.mean(walker_reaper))
+test = Walkers(N_0)
+te, te_time = tm.time_me(Potential, test)
+tm.print_time_list(Potential, te_time)
+E0, E0_time = tm.time_me(run, 0)
+tm.print_time_list(run, E0_time)
+# run(50)
+# print(np.mean(walker_reaper))
