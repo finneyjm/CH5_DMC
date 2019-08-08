@@ -101,11 +101,11 @@ def run(CH, type, coords):
     # plt.ylabel('Probability Density')
     # plt.legend()
     # plt.savefig('GSW%s.png' %CH)
-    # np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
+    np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
     return g, Eig[:, 0]
 
 
-wvfn = np.zeros((5, 500))
+wvfn = np.zeros((5, 1000))
 for i in np.arange(1, 6):
     run(i, 'min', coords_initial_min)
     # run(i, 'cs', coords_initial_cs)
