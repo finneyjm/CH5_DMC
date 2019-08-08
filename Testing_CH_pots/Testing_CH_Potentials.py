@@ -18,6 +18,7 @@ m_C = 12.0107 / (Avo_num*me*1000)
 m_H = 1.007825 / (Avo_num*me*1000)
 m_CH = (m_C*m_H)/(m_H+m_C)
 har2wave = 219474.6
+ang2bohr = 1.e-10/5.291772106712e-11
 
 # Values for Simulation
 sigmaH = np.sqrt(dtau/m_H)
@@ -82,6 +83,20 @@ def E_loc(Psi, int):
     psi = psi_t(Psi.coords, int)
     kin = -1./(2.*m_CH)*sec_dir(Psi.coords, int)/psi
     return kin + Psi.V
+
+
+Psi = Walkers(N_0, 40.)
+Psi.coords = np.linspace(0.8, 1.4, num=N_0)*ang2bohr
+Psi_t = np.load('GSW_min_CH_4.npy')
+interp = interpolate.splrep(np.linspace(1, 4, num=500), Psi_t, s=0)
+pot = interpolate.splrep(np.linspace(1, 4, num=500), np.load('Potential_CH_stretch4.npy'), s=0)
+Psi.V = Potential(Psi, pot)
+Psi.El = E_loc(Psi, interp)
+plt.plot(Psi.coords/ang2bohr, Psi.V*har2wave, label='Potential')
+plt.plot(Psi.coords/ang2bohr, Psi.El*har2wave, label='Local Energy')
+plt.legend()
+plt.ylim(0, 22000)
+plt.savefig('Another_test_for_local_energy.png')
 
 
 def E_ref_calc(Psi):
@@ -166,30 +181,33 @@ def run(propagation, CH, type, name, wvfn):
     np.save('Imp_samp_CH_pots_Energy_switch{0}'.format(type + CH + name), Eref_array)
     return Eref_array
 
-num_pts = 11
-Energy1 = np.zeros((6, 5, num_pts))
-Energy2 = np.zeros((6, 5, num_pts))
-Energy3 = np.zeros((6, 5, num_pts))
-for j in range(6):
-    for i in range(5):
-        for l in range(num_pts):
-            energy1 = run(50., str(i+1), str(float(20*l + 2)*0.5), str('_c2v_job' + str(j+1)), str('_c2v'))
-            print('min CH stretch ' + str(i+1) + ' with ' + str(float(20*l + 2)*0.5) + ' switch point job ' + str(j+1) + ' is done!')
 
-            energy2 = run(50., '_cs_saddle' + str(i+1), str(float(20*l + 2)*0.5), str('_c2v_job' + str(j+1)), str('_c2v'))
-            print('cs CH stretch ' + str(i+1) + ' with ' + str(float(20*l + 2)*0.5) + ' switch point job ' + str(j+1) + ' is done!')
 
-            energy3 = run(50., '_c2v_saddle' + str(i+1), str(float(20*l + 2)*0.5), str('_c2v_job' + str(j+1)), str('_c2v'))
-            print('c2v CH stretch ' + str(i+1) + ' with ' + str(float(20*l + 2)*0.5) + ' switch point job ' + str(j+1) + ' is done!')
 
-            # save the mean energies to be entered into the table later
-            Energy1[j, i, l] += np.mean(energy1[500:])
-            Energy2[j, i, l] += np.mean(energy2[500:])
-            Energy3[j, i, l] += np.mean(energy3[500:])
-
-np.save('Imp_min_energies_c2v_switch_new', Energy1)
-np.save('Imp_cs_energies_c2v_switch_new', Energy2)
-np.save('Imp_c2v_energies_c2v_switch_new', Energy3)
+# num_pts = 11
+# Energy1 = np.zeros((6, 5, num_pts))
+# Energy2 = np.zeros((6, 5, num_pts))
+# Energy3 = np.zeros((6, 5, num_pts))
+# for j in range(6):
+#     for i in range(5):
+#         for l in range(num_pts):
+#             energy1 = run(50., str(i+1), str(float(20*l + 2)*0.5), str('_c2v_job' + str(j+1)), str('_c2v'))
+#             print('min CH stretch ' + str(i+1) + ' with ' + str(float(20*l + 2)*0.5) + ' switch point job ' + str(j+1) + ' is done!')
+#
+#             energy2 = run(50., '_cs_saddle' + str(i+1), str(float(20*l + 2)*0.5), str('_c2v_job' + str(j+1)), str('_c2v'))
+#             print('cs CH stretch ' + str(i+1) + ' with ' + str(float(20*l + 2)*0.5) + ' switch point job ' + str(j+1) + ' is done!')
+#
+#             energy3 = run(50., '_c2v_saddle' + str(i+1), str(float(20*l + 2)*0.5), str('_c2v_job' + str(j+1)), str('_c2v'))
+#             print('c2v CH stretch ' + str(i+1) + ' with ' + str(float(20*l + 2)*0.5) + ' switch point job ' + str(j+1) + ' is done!')
+#
+#             # save the mean energies to be entered into the table later
+#             Energy1[j, i, l] += np.mean(energy1[500:])
+#             Energy2[j, i, l] += np.mean(energy2[500:])
+#             Energy3[j, i, l] += np.mean(energy3[500:])
+#
+# np.save('Imp_min_energies_c2v_switch_new', Energy1)
+# np.save('Imp_cs_energies_c2v_switch_new', Energy2)
+# np.save('Imp_c2v_energies_c2v_switch_new', Energy3)
 
 # Energy1 = np.zeros((6, 5, num_pts))
 # Energy2 = np.zeros((6, 5, num_pts))
