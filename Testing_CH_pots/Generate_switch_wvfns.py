@@ -22,12 +22,16 @@ def lets_get_these_wvfns(type, switch_speed):
         new_wvfn = GSW[0, 1, :]*switch + GSW[0, 4, :]*(1.-switch)
         new_wvfn = new_wvfn/np.linalg.norm(new_wvfn)
 
-        plt.plot(grid, new_wvfn, label='Switch wvfn')
-        plt.plot(grid, np.load('Average_GSW_CH_stretch_min.npy')[1, :], label='Average GSW')
-        plt.plot(grid, GSW[0, 1, :], label='CH 2')
-        plt.plot(grid, GSW[0, 4, :], label='CH 5')
-        plt.legend()
-        plt.savefig(f'Switch_min_wvfn_speed_{switch_speed}.png')
+        plt.plot(grid, new_wvfn, label='Switch Wavefunction')
+        # plt.plot(grid, np.load('Average_GSW_CH_stretch_min.npy')[1, :], label='Average Ground State Wavefunction')
+        plt.plot(grid, np.mean([GSW[0, 1, :], GSW[0, 4, :]], axis=0)/np.linalg.norm(np.mean([GSW[0, 1, :], GSW[0, 4, :]], axis=0)), label='Average Ground State Wavefunction')
+        plt.plot(grid, GSW[0, 1, :], label='Low Frequency CH stretch')
+        plt.plot(grid, GSW[0, 0, :], label='High Frequency CH stretch')
+        plt.plot(grid, GSW[0, 4, :], label='Higher Frequency CH stretch')
+        plt.xlabel('rCH (Angstrom)')
+        plt.ylabel('Probability Density')
+        plt.legend(loc='upper right', bbox_to_anchor=(1.13, 1))
+        plt.savefig(f'Switch_min_wvfn_speed_powerpoint_{switch_speed}.png')
         plt.close()
 
     elif type == 'cs':
@@ -76,12 +80,12 @@ def lets_get_these_wvfns(type, switch_speed):
     return
 
 
-for i in range(11):
-    lets_get_these_wvfns('min', float(20*i + 2)*0.5)
-    lets_get_these_wvfns('cs', float(20*i + 2)*0.5)
-    lets_get_these_wvfns('c2v', float(20*i + 2)*0.5)
+# for i in range(11):
+#     lets_get_these_wvfns('min', float(20*i + 2)*0.5)
+#     lets_get_these_wvfns('cs', float(20*i + 2)*0.5)
+#     lets_get_these_wvfns('c2v', float(20*i + 2)*0.5)
 
-
+lets_get_these_wvfns('min', 1.)
 
 
 

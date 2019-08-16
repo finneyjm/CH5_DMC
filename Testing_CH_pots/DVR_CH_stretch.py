@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 from Coordinerds.CoordinateSystems import *
 import CH5pot
@@ -36,7 +35,7 @@ def grid(a, b, N, CH, coords_initial):
         new_coords = CoordinateSet(coords_initial, system=CartesianCoordinates3D)
         new_coords = new_coords.convert(ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
         g = np.array([new_coords]*N)
-        g[:, 1, 0] += spacing
+        g[:, 1, 0] = spacing
     if CH is not 1:
         sub = np.array([coords_initial[1]])
         coords_initial[1] = coords_initial[CH]
@@ -45,6 +44,8 @@ def grid(a, b, N, CH, coords_initial):
         new_coords = new_coords.convert(ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
         g = np.array([new_coords] * N)
         g[:, 1, 0] = spacing
+    else:
+        g = 0
     return g
 
 
@@ -108,8 +109,8 @@ def run(CH, type, coords):
 wvfn = np.zeros((5, 1000))
 for i in np.arange(1, 6):
     run(i, 'min', coords_initial_min)
-    # run(i, 'cs', coords_initial_cs)
-    # run(i, 'c2v', coords_initial_c2v)
+    run(i, 'cs', coords_initial_cs)
+    run(i, 'c2v', coords_initial_c2v)
 
 # av_wvfn = np.mean(wvfn, axis=0)
 # avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
