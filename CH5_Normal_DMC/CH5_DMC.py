@@ -2,11 +2,12 @@ import numpy as np
 import copy
 import CH5pot
 import Timing_p3 as tm
+import matplotlib.pyplot as plt
 
 # DMC parameters
 dtau = 5.
 N_0 = 10000
-time_total = 1.
+time_total = 0.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -112,6 +113,8 @@ def run(propagation):
 
     Psi_tau = 0  #
     for i in range(int(time_total)):
+        if i % 1000 == 0:
+            print(i)
         Psi = Kinetic(new_psi)
         Psi = Potential(Psi)
 
@@ -136,10 +139,18 @@ def run(propagation):
     return Eref
 
 
-test = Walkers(N_0)
-te, te_time = tm.time_me(Potential, test)
-tm.print_time_list(Potential, te_time)
-E0, E0_time = tm.time_me(run, 0)
-tm.print_time_list(run, E0_time)
+Eref, time = tm.time_me(run, 0)
+tm.print_time_list(run, time)
+# plt.plot(Eref*har2wave)
+# plt.xlabel('Time')
+# plt.ylabel('Energy (cm^-1)')
+# plt.ylim(0, 12000)
+# plt.savefig('Non_Importance_sampling_Eref_full.png')
+# print(np.mean(Eref[1000:])*har2wave)
+# test = Walkers(N_0)
+# te, te_time = tm.time_me(Potential, test)
+# tm.print_time_list(Potential, te_time)
+# E0, E0_time = tm.time_me(run, 0)
+# tm.print_time_list(run, E0_time)
 # run(50)
 # print(np.mean(walker_reaper))

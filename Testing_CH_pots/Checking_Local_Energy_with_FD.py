@@ -110,7 +110,7 @@ def local_kinetic(Psi, acc, dx):
                     coords[:, 1, i-3] -= (dx * float(acc//2 - j))
                     Psi.psi_t[:, i, j] += (index[j]*psi_t(distance(coords)))
                     coords = np.array(Psi.coords)
-                elif j > acc//2 + 1:
+                elif j > acc//2:
                     coords[:, 1, i-3] += (dx * float(j - acc//2))
                     Psi.psi_t[:, i, j] += (index[j]*psi_t(distance(coords)))
                     coords = np.array(Psi.coords)
@@ -120,7 +120,8 @@ def local_kinetic(Psi, acc, dx):
     masses = np.array([[1./m_C]*3, [1./m_H]*3]).flatten()
 
     psi = psi_t(distance(Psi.coords))
-    sec_dir = np.sum(Psi.psi_t, axis=2)/(dx**2)
+    sec_dir = np.sum(Psi.psi_t, axis=2)
+    sec_dir *= (dx**2)**-1
     kin = np.tensordot(masses, sec_dir, axes=(0, 1))/psi
 
     return -1./2.*kin
@@ -130,11 +131,12 @@ Psi = Walkers(N_0, 9)
 Psi.coords[:, 1, :] = np.array([np.linspace(0.46188, 0.80829, num=N_0)*ang2bohr + 4.]*3).T
 pot = interpolate.splrep(np.linspace(1, 4, num=500), np.load('Potential_CH_stretch5.npy'), s=0)
 Psi.V = potential(Psi, pot)
-loc_kin = local_kinetic(Psi, 9, 0.01)
+loc_kin = local_kinetic(Psi, 9, 0.001)
 dist = distance(Psi.coords)/ang2bohr
 plt.plot(dist, Psi.V*har2wave, label='Potential')
-plt.plot(dist, loc_kin*har2wave, label='Local Energy')
+plt.plot(dist, loc_kin*har2wave + Psi.V*har2wave, label='Local Energy')
 plt.xlabel('rCH (Angstrom)')
 plt.ylabel('Energy (cm^-1)')
+plt.ylim(0, 2500)
 plt.legend()
 plt.savefig('Testing_imp_samp_FD.png')

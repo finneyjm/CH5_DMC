@@ -59,22 +59,22 @@ def E_loc(Psi, int):
 
 def let_do_some_plotting():
     Psi = Walkers(N_0)
-    Psi.coords = np.linspace(0.8, 1.4, N_0)*ang2bohr
+    Psi.coords = np.linspace(0.8, 1.6, N_0)*ang2bohr
     grid = np.linspace(1, 4, 500)
     psi = np.zeros((4, 500))
     psi[0, :] = np.load('GSW_min_CH_5.npy')
     psi[1, :] = np.load('GSW_min_CH_2.npy')
     psi[2, :] = np.mean([psi[0, :], psi[1, :]], axis=0)/np.linalg.norm(np.mean([psi[0, :], psi[1, :]], axis=0))
     psi[3, :] = np.load('Switch_min_wvfn_speed_1.0.npy')[1, :]
-    pot = interpolate.splrep(grid, np.load('Potential_CH_stretch5.npy'), s=0)
+    pot = interpolate.splrep(grid, np.load('Potential_CH_stretch2.npy'), s=0)
     Psi.V = Potential(Psi, pot)
     fig, axes = plt.subplots()
     axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label='Potential')
     axes.set_ylim(-5000, 7500)
     axes.set_xlabel('rCH (Angstrom)')
     axes.set_ylabel('Energy (cm^-1)')
-    axes.legend(loc='upper right')
-    fig.savefig('Local_energy_powerpoint_potential.png')
+    axes.legend(loc='lower right')
+    fig.savefig('Local_energy_powerpoint_potential_1.png')
     colors = ['red', 'green', 'orange', 'blue']
     labels = ['High Freq CH stretch', 'Low Freq CH stretch', 'Average', 'Switch']
     for i in range(4):
@@ -82,9 +82,10 @@ def let_do_some_plotting():
         Psi.El = E_loc(Psi, interp)
         axes.plot(Psi.coords/ang2bohr, Psi.El*har2wave, color=colors[i], label=labels[i])
         axes.set_ylim(-5000, 7500)
-        axes.legend()
-        fig.savefig(f'Local_energy_powerpoint_{i}.png')
+        axes.legend(loc='lower right')
+        fig.savefig(f'Local_energy_powerpoint_CH_stretch_1{i}.png')
     plt.close(fig)
+
 
 let_do_some_plotting()
 
