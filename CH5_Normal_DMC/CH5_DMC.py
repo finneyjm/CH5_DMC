@@ -1,13 +1,13 @@
 import numpy as np
 import copy
 import CH5pot
-import Timing_p3 as tm
+# import Timing_p3 as tm
 import matplotlib.pyplot as plt
 
 # DMC parameters
 dtau = 5.
-N_0 = 10000
-time_total = 0.
+# N_0 = 10000
+time_total = 20000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -36,7 +36,7 @@ class Walkers(object):
     walkers = 0
 
     def __init__(self, walkers):
-        self.walkers = np.linspace(0, walkers-1, num=walkers)
+        self.walkers = np.arange(0, N_0)
         self.coords = np.array([coords_inital]*walkers)
         self.weights = np.zeros(walkers) + 1.
         self.weights_i = np.zeros(walkers) + 1.
@@ -93,13 +93,11 @@ def Weighting(Vref, Psi, DW):
 
 # Calculates the descendant weight for the walkers before descendant weighting
 def descendants(Psi):
-    d = np.zeros(N_0)
-    for i in range(N_0):
-        d[i] = np.sum(Psi.weights[Psi.walkers == i])
+    d = np.bincount(Psi.walkers, weights=Psi.weights)
     return d
 
 
-def run(propagation):
+def run(propagation, test_number):
     DW = False  # a parameter that will implement descendant weighting when True
     psi = Walkers(N_0)
     Psi = Kinetic(psi)
@@ -135,12 +133,17 @@ def run(propagation):
         elif i >= (time_total - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
             d_values = descendants(new_psi)
     # E0 = np.mean(Eref[50:])
-    np.save("DMC_CH5_Energy", Eref)
+    np.save(f"DMC_CH5_Energy_{N_0}_walkers_{test_number}", Eref)
     return Eref
 
 
-Eref, time = tm.time_me(run, 0)
-tm.print_time_list(run, time)
+test = [500, 1000, 5000, 10000, 20000]
+for j in range(5):
+    for i in range(5):
+        N_0 = test[i]
+        run(50, j+1)
+# Eref, time = tm.time_me(run, 0)
+# tm.print_time_list(run, time)
 # plt.plot(Eref*har2wave)
 # plt.xlabel('Time')
 # plt.ylabel('Energy (cm^-1)')

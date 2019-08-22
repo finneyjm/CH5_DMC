@@ -2,13 +2,13 @@ import copy
 import CH5pot
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
-import Timing_p3 as tm
+# import Timing_p3 as tm
 import matplotlib.pyplot as plt
 
 # DMC parameters
 dtau = 1.
-N_0 = 5000
-time_steps = 10000.
+# N_0 = 1000
+time_steps = 20000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -24,7 +24,7 @@ ang2bohr = 1.e-10/5.291772106712e-11
 # Values for Simulation
 sigmaH = np.sqrt(dtau/m_H)
 sigmaC = np.sqrt(dtau/m_C)
-sigmaCH = np.sqrt(dtau/m_CH)
+sigmaCH = np.array([[sigmaC]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3])
 bonds = 5
 # Starting orientation of walkers
 coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
@@ -45,8 +45,9 @@ class Walkers(object):
     walkers = 0
 
     def __init__(self, walkers):
-        self.walkers = np.linspace(0, walkers-1, num=walkers)
+        self.walkers = np.arange(0, N_0)
         self.coords = np.array([coords_initial]*walkers)
+        self.zmat = CoordinateSet(self.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
         self.weights = np.zeros(walkers) + 1.
         self.d = np.zeros(walkers)
         self.weights_i = np.zeros(walkers) + 1.
@@ -61,42 +62,61 @@ def psi_t(zmatrix):
     return psi
 
 
-def drift(zmatrix):
+def drdx(zmatrix, coords):
+    chain = np.zeros((N_0, 5, 6, 3))
+    for xyz in range(3):
+        for CH in range(bonds):
+            chain[:, CH, 0, xyz] += ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/zmatrix[:, CH, 1])
+            chain[:, CH, CH+1, xyz] += ((coords[:, CH+1, xyz]-coords[:, 0, xyz])/zmatrix[:, CH, 1])
+    return chain
+
+
+def drift(zmatrix, coords):
     psi = psi_t(zmatrix)
+    dr1 = drdx(zmatrix, coords)
     der = np.zeros((N_0, bonds))
     for i in range(bonds):
-        der[:, i] += interpolate.splev(zmatrix[:, i, 1], interp, der=1)
-    return der/psi
+        der[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp, der=1)/psi[:, i])
+    a = dr1.reshape((N_0, 5, 18))
+    b = der.reshape((N_0, 1, 5))
+    drift = np.matmul(b, a)
+    return 2.*drift.reshape((N_0, 6, 3))
 
 
-def metropolis(x, y, Fqx, Fqy):
-    psi_x = psi_t(x)
-    psi_y = psi_t(y)
-    a = 1.
+def metropolis(r1, r2, Fqx, Fqy, x, y):
+    psi_1 = psi_t(r1)
+    psi_2 = psi_t(r2)
+    psi_ratio = 1.
     for i in range(bonds):
-        a *= (psi_y[:, i]/psi_x[:, i])**2 * np.exp(1./2.*(Fqx[:, i] + Fqy[:, i])*(sigmaCH**2/4.*(Fqx[:, i]-Fqy[:, i])
-                                                                                  - (y[:, i, 1]-x[:, i, 1])))
+        psi_ratio *= (psi_2[:, i]/psi_1[:, i])**2
+    a = psi_ratio
+    for atom in range(6):
+        for xyz in range(3):
+            if atom == 0:
+                sigma = sigmaC
+            else:
+                sigma = sigmaH
+            a *= np.exp(1./2.*(Fqx[:, atom, xyz] + Fqy[:, atom, xyz])*(sigma**2/4.*(Fqx[:, atom, xyz]-Fqy[:, atom, xyz])
+                                                                       - (y[:, atom, xyz]-x[:, atom, xyz])))
     return a
 
 
 # Random walk of all the walkers
 def Kinetic(Psi, Fqx):
-    zmatrix = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
     Drift = sigmaCH**2/2.*Fqx
-    zmatrix[:, :, 1] += Drift
-    y = CoordinateSet(zmatrix, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
     randomwalk = np.zeros((N_0, 6, 3))
     randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaH, size=(N_0, 5, 3))
     randomwalk[:, 0, :] = np.random.normal(0.0, sigmaC, size=(N_0, 3))
-    y += randomwalk
+    y = randomwalk + Drift + np.array(Psi.coords)
     zmatriy = CoordinateSet(y, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-    Fqy = drift(zmatriy)
-    a = metropolis(zmatrix, zmatriy, Fqx, Fqy)
+    Fqy = drift(zmatriy, y)
+    a = metropolis(Psi.zmat, zmatriy, Fqx, Fqy, Psi.coords, y)
     check = np.random.random(size=N_0)
     accept = np.argwhere(a > check)
     Psi.coords[accept] = y[accept]
     nah = np.argwhere(a <= check)
     Fqy[nah] = Fqx[nah]
+    Psi.zmat[accept] = zmatriy[accept]
     return Psi, Fqy
 
 
@@ -106,46 +126,20 @@ def Potential(Psi):
     return Psi
 
 
-def local_kinetic(coords):
-    zmatrix = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-    psi = psi_t(zmatrix)
+def local_kinetic(Psi):
+    psi = psi_t(Psi.zmat)
     der1 = np.zeros((N_0, bonds))
     der2 = np.zeros((N_0, bonds))
     for i in range(bonds):
-        der1[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp, der=1)/psi[:, i]*(2./zmatrix[:, i, 1]))
-        der2[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp, der=2)/psi[:, i])
+        der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i]*(2./Psi.zmat[:, i, 1]))
+        der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2)/psi[:, i])
     kin = -1./(2.*m_CH)*np.sum(der2+der1, axis=1)
     return kin
 
 
 def E_loc(Psi):
-    Psi.El = local_kinetic(Psi.coords) + Psi.V
+    Psi.El = local_kinetic(Psi) + Psi.V
     return Psi
-
-
-# Psi = Walkers(N_0)
-# zmatrix = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-# fqx, fq_list = tm.time_me(drift, zmatrix)
-# tm.print_time_list(drift, zmatrix)
-# Psi, Fqx, kin_list = tm.time_me(Kinetic, Psi, fqx)
-# tm.print_time_list(Kinetic, kin_list)
-# zmatrix = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-# zmatrix[:, ch_stretch, 1] = np.linspace(0.8, 1.4, num=N_0)*ang2bohr
-# Psi.coords = CoordinateSet(zmatrix, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-# Psi, psi_list = tm.time_me(Potential, Psi)
-# tm.print_time_list(Potential, psi_list)
-# Psi, psi_list = tm.time_me(E_loc, Psi)
-# tm.print_time_list(E_loc, psi_list)
-# print(Psi.El[5000]*har2wave)
-# plt.plot(zmatrix[:, ch_stretch, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
-# plt.plot(zmatrix[:, ch_stretch, 1]/ang2bohr, Psi.El*har2wave, label='Local Energy')
-# # plt.plot(zmatrix[:, ch_stretch, 1]/ang2bohr, kin*har2wave, label='Local Kinetic Energy')
-# # plt.plot(zmatrix[:, ch_stretch, 1]/ang2bohr, psi_t(zmatrix)[:, ch_stretch]*20000., label='Trial Wavefunction')
-# plt.xlabel('rCH (Angstrom)')
-# plt.ylabel('Energy (cm^-1)')
-# plt.ylim(0, 22000)
-# plt.legend()
-# plt.savefig('Testing_local_energy.png')
 
 
 def E_ref_calc(Psi):
@@ -162,7 +156,7 @@ def Weighting(Eref, Psi, DW):
     for i in death:
         ind = np.argmax(Psi.weights)
         if DW is True:
-            Biggo_num = float(Psi.walkers[ind])
+            Biggo_num = int(Psi.walkers[ind])
             Psi.walkers[i[0]] = Biggo_num
         Biggo_weight = float(Psi.weights[ind])
         Biggo_pos = np.array(Psi.coords[ind])
@@ -177,17 +171,14 @@ def Weighting(Eref, Psi, DW):
 
 
 def descendants(Psi):
-    for i in range(N_0):
-        Psi.d[i] = np.sum(Psi.weights[Psi.walkers == i])
-    return Psi.d
+    d = np.bincount(Psi.walkers, weights=Psi.weights)
+    return d
 
 
-def run(propagation):
+def run(propagation, test_number):
     DW = False
     psi = Walkers(N_0)
-    zmatrix = CoordinateSet(psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
-                                                                               ordering=order).coords
-    Fqx = drift(zmatrix)
+    Fqx = drift(psi.zmat, psi.coords)
     Psi, Fqx = Kinetic(psi, Fqx)
     Psi = Potential(Psi)
     Psi = E_loc(Psi)
@@ -218,15 +209,38 @@ def run(propagation):
             DW = True
         elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
             d_values = descendants(new_psi)
-    np.save('DMC_imp_samp_CH5_energy', Eref_array)
+    np.save(f'DMC_imp_samp_CH5_energy_{N_0}_walkers_{test_number}', Eref_array)
     return Eref_array
 
 
-Eref, time = tm.time_me(run, 25)
-tm.print_time_list(run, time)
-plt.plot(Eref*har2wave)
-plt.xlabel('Time')
-plt.ylabel('Energy (cm^-1)')
-plt.ylim(0, 12000)
-plt.savefig('Importance_sampling_Eref_full.png')
-print(np.mean(Eref[1000:])*har2wave)
+tests = [100, 200, 500, 1000, 2000, 5000, 10000]
+for j in range(5):
+    for i in range(7):
+        N_0 = tests[i]
+        run(50, j+1)
+
+
+# Psi = Walkers(N_0)
+# fqx, fq_list = tm.time_me(drift, Psi.zmat, Psi.coords)
+# tm.print_time_list(drift, fq_list)
+# Psi, Fqx, kin_list = tm.time_me(Kinetic, Psi, fqx)
+# tm.print_time_list(Kinetic, kin_list)
+# Psi, psi_list = tm.time_me(Potential, Psi)
+# tm.print_time_list(Potential, psi_list)
+# Psi, psi_list = tm.time_me(E_loc, Psi)
+# tm.print_time_list(E_loc, psi_list)
+# Eref, eref_list = tm.time_me(E_ref_calc, Psi)
+# tm.print_time_list(E_ref_calc, eref_list)
+# Psi, weight_list = tm.time_me(Weighting, Eref, Psi, True)
+# tm.print_time_list(Weighting, weight_list)
+# d, d_list = tm.time_me(descendants, Psi)
+# tm.print_time_list(descendants, d_list)
+#
+# Eref, time = tm.time_me(run, 0)
+# tm.print_time_list(run, time)
+# plt.plot(Eref*har2wave)
+# plt.xlabel('Time')
+# plt.ylabel('Energy (cm^-1)')
+# plt.ylim(0, 12000)
+# plt.savefig('Importance_sampling_Eref_full.png')
+# print(np.mean(Eref[1000:])*har2wave)
