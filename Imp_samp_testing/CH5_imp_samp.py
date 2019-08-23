@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # DMC parameters
 dtau = 1.
 # N_0 = 1000
-time_steps = 20000.
+time_steps = 10000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -36,7 +36,7 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
 
 # ch_stretch = 4
-Psi_t = np.load('Switch_min_wvfn_speed_1.0.npy')
+Psi_t = np.load('Switch_min_wvfn_speed_5.0.npy')
 interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 
 
@@ -213,12 +213,14 @@ def run(propagation, test_number):
     return Eref_array
 
 
-tests = [100, 200, 500, 1000, 2000, 5000, 10000]
-for j in range(5):
-    for i in range(7):
-        N_0 = tests[i]
-        run(50, j+1)
-
+# tests = [100, 200, 500, 1000, 2000, 5000, 10000]
+# for j in range(5):
+#     for i in range(7):
+#         N_0 = tests[i]
+#         run(50, j+1)
+N_0 = 1000
+Energy = run(50, 'testing_things')
+print(np.mean(Energy[5000:])*har2wave)
 
 # Psi = Walkers(N_0)
 # fqx, fq_list = tm.time_me(drift, Psi.zmat, Psi.coords)

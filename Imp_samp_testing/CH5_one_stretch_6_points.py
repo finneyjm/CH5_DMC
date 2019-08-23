@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import copy
 
 dtau = 1.
-N_0 = 1000
+N_0 = 5000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
 # constants and conversion factors
@@ -24,9 +24,9 @@ sigmaCH = np.array([[sigmaC]*3, [sigmaH]*3])
 # Starting orientation of walkers
 coords_initial = np.array([[4.0, 4.0, 4.0], [6.0, 6.0, 6.0]])
 
-ch_stretch = 5
-Psi_t = np.load(f'GSW_min_CH_{ch_stretch}.npy')
-interp = interpolate.splrep(np.linspace(1, 4, num=500), Psi_t, s=0)
+ch_stretch = 2
+Psi_t = np.load(f'Switch_min_wvfn_speed_51.0.npy')
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 
 
 # Creates the walkers with all of their attributes
@@ -127,7 +127,7 @@ def E_loc(Psi):
 def E_ref_calc(Psi):
     P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    E_ref = sum(Psi.weights*Psi.El)/P - alpha*np.log(P/P0)
+    E_ref = np.average(Psi.El, weights=Psi.weights) - alpha*np.log(P/P0)
     return E_ref
 
 
@@ -192,28 +192,74 @@ def run(propagation):
             DW = True
         elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
             d_values = descendants(new_psi)
-    print(np.mean(Eref_array[5000:]*har2wave))
+    print(np.mean(Eref_array[1000:]*har2wave))
+    return Eref_array
 
 
-run(50)
+# for i in range(5):
+#     run(50)
+#     print(f'test {i+1} done')
+
 # Psi = Walkers(N_0)
-# Psi.coords[:, 1, :] = np.array([np.linspace(0.46188, 0.80829, num=N_0)*ang2bohr + 4.]*3).T
-# asdf = distance(Psi.coords)/ang2bohr
-# pot = interpolate.splrep(np.linspace(1, 4, num=500), np.load('Potential_CH_stretch5.npy'), s=0)
-# Psi.V = potential(Psi, pot)
-# Psi.El, dist, kin1, kin2, extra = E_loc(Psi)
+# Psi.coords[:, 1, :] = np.array([np.linspace(0.46188, 1.04, num=N_0)*ang2bohr + 4.]*3).T
+# dist = distance(Psi.coords)
+# pot = interpolate.splrep(np.linspace(1, 4, num=500), np.load(f'Potential_CH_stretch{ch_stretch}.npy'), s=0)
+# Psi = potential(Psi, pot)
+# alpha = [1.0, 3.0, 5.0]#[1.0, 2.0, 3.0, 4.0, 5.0]
 # plt.plot(dist/ang2bohr, Psi.V*har2wave, label='Potential')
-# # plt.plot(dist/ang2bohr, Psi.El*har2wave + Psi.V*har2wave, label='Local Energy')
-# # plt.plot(dist/ang2bohr, kin1*har2wave, label='Local Energy from Kin1')
-# # plt.plot(dist/ang2bohr, kin2*har2wave, label='Local Energy from Kin2')
-# # plt.plot(dist/ang2bohr, extra*har2wave, label='Extra Term')
-# plt.plot(dist/ang2bohr, Psi.El*har2wave+Psi.V*har2wave, label='Local Energy')
-# # plt.plot(dist/ang2bohr, mass_drdx*har2wave, label='Mass weighted drdx')
-# # plt.plot(dist/ang2bohr, dpsidr*har2wave, label='dPsidr')
-# # plt.plot(dist/ang2bohr, -Psi.El*har2wave, label='Local Kinetic Energy')
+# for i in range(len(alpha)):
+#     Psi_t = np.load(f'Switch_min_wvfn_speed_{alpha[i]}.npy')
+#     interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+#     Psi = E_loc(Psi)
+#     plt.plot(dist/ang2bohr, Psi.El*har2wave, label=f'Local Energy alpha = {alpha[i]}')
+# # # # plt.plot(dist/ang2bohr, kin1*har2wave, label='Local Energy from Kin1')
+# # # # plt.plot(dist/ang2bohr, kin2*har2wave, label='Local Energy from Kin2')
+# # # # plt.plot(dist/ang2bohr, extra*har2wave, label='Extra Term')
+# # # plt.plot(dist/ang2bohr, Psi.El*har2wave+Psi.V*har2wave, label='Local Energy')
+# # # # plt.plot(dist/ang2bohr, mass_drdx*har2wave, label='Mass weighted drdx')
+# # # # plt.plot(dist/ang2bohr, dpsidr*har2wave, label='dPsidr')
+# # # # plt.plot(dist/ang2bohr, -Psi.El*har2wave, label='Local Kinetic Energy')
 # plt.xlabel('rCH (Angstrom)')
 # plt.ylabel('Energy (cm^-1)')
 # plt.legend()
-# plt.ylim(0, 2500)
-# plt.savefig('Testing_6_point_imp_samp.png')
+# plt.ylim(-2000, 10000)
+# plt.savefig('Testing_6_point_imp_samp_testing_alpha.png')
+
+tests = [100, 500, 1000, 5000, 10000]
+# energies1 = np.zeros((10, 5))
+# energies2 = np.zeros((10, 5))
+# for j in range(10):
+#     for i in range(5):
+#         N_0 = tests[i]
+#         interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
+#         Energy = run(50)
+#         energies1[j, i] += np.mean(Energy[1000:]*har2wave)
+#         interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+#         Energy = run(50)
+#         energies2[j, i] += np.mean(Energy[1000:]*har2wave)
+#
+# np.save('Non_imp_samp_energies', energies1)
+# np.save('Imp_samp_energies', energies2)
+#
+energies1 = np.load('Non_imp_samp_energies.npy')
+energies2 = np.load('Imp_samp_energies.npy')
+
+average1 = np.mean(energies1, axis=0)
+average2 = np.mean(energies2, axis=0)
+std1 = np.std(energies1, axis=0)
+std2 = np.std(energies2, axis=0)
+
+fig, axes = plt.subplots(2, 1)
+axes[0].errorbar(tests, average1, yerr=std1)
+axes[0].plot(tests, np.array([1218.70588162167]*len(tests)))
+axes[1].errorbar(tests, average2, yerr=std2)
+axes[1].plot(tests, np.array([1218.70588162167]*len(tests)))
+axes[0].set_xlabel('Number of Walkers')
+axes[1].set_xlabel('Number of Walkers')
+axes[0].set_ylabel('Energy (cm^-1)')
+axes[1].set_ylabel('Energy (cm^-1)')
+axes[0].set_ylim(1200, 1250)
+axes[1].set_ylim(1200, 1250)
+plt.tight_layout()
+fig.savefig('Convergence_two_atom_switch_alpha_5.png')
 
