@@ -5,9 +5,9 @@ import CH5pot
 import matplotlib.pyplot as plt
 
 # DMC parameters
-dtau = 5.
+dtau = 1.
 # N_0 = 10000
-time_total = 20000.
+time_total = 10000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -21,14 +21,14 @@ har2wave = 219474.6
 sigmaH = np.sqrt(dtau/m_H)
 sigmaC = np.sqrt(dtau/m_C)
 # Starting orientation of walkers
-coords_inital = ([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+coords_inital = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
                   [-0.8247121421923925, -0.6295306113384560, 1.775332267901544],
                   [0.1318851447521099, 2.088940054609643, 0.000000000000000],
                   [1.786540362044548, -1.386051328559878, 0.000000000000000],
                   [2.233806981137821, 0.3567096955165336, 0.000000000000000],
-                  [-0.8247121421923925, -0.6295306113384560, -1.775332267901544]])
+                  [-0.8247121421923925, -0.6295306113384560, -1.775332267901544]])*1.05
 
-walker_reaper = np.array([])
+
 
 
 # Creates the walkers with all of their attributes
@@ -69,15 +69,10 @@ def V_ref_calc(Psi):
 
 # The weighting calculation that gets the weights of each walker in the simulation
 def Weighting(Vref, Psi, DW):
-    global walker_reaper
     Psi.weights = Psi.weights * np.exp(-(Psi.V - Vref) * dtau)
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 0.001
     death = np.argwhere(Psi.weights < threshold)
-    if len(death) >= 1:
-        walker_reaper = np.append(walker_reaper, len(death))
-    else:
-        walker_reaper = np.append(walker_reaper, 0)
     for i in death:
         ind = np.argmax(Psi.weights)
         if DW is True:
@@ -94,6 +89,8 @@ def Weighting(Vref, Psi, DW):
 # Calculates the descendant weight for the walkers before descendant weighting
 def descendants(Psi):
     d = np.bincount(Psi.walkers, weights=Psi.weights)
+    while len(d) < N_0:
+        d = np.append(d, 0.)
     return d
 
 
@@ -103,9 +100,13 @@ def run(propagation, test_number):
     Psi = Kinetic(psi)
     Psi = Potential(Psi)
     Eref = np.array([])
+    time = np.array([])
+    weights = np.array([])
     Vref = V_ref_calc(Psi)
     Eref = np.append(Eref, Vref)
     new_psi = Weighting(Vref, Psi, DW)
+    time = np.append(time, 1)
+    weights = np.append(weights, np.sum(new_psi.weights))
 
     # initial parameters before running the calculation
 
@@ -127,21 +128,30 @@ def run(propagation, test_number):
 
         Vref = V_ref_calc(new_psi)
         Eref = np.append(Eref, Vref)
+        time = np.append(time, 2 + i)
+        weights = np.append(weights, np.sum(new_psi.weights))
 
         if i >= (time_total - 1. - float(propagation)) and prop > 0:  # start of descendant weighting
             DW = True
         elif i >= (time_total - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
             d_values = descendants(new_psi)
     # E0 = np.mean(Eref[50:])
-    np.save(f"DMC_CH5_Energy_{N_0}_walkers_{test_number}", Eref)
+    np.save(f'DMC_CH5_coords_{N_0}_walkers_{test_number}', Psi_tau.coords)
+    np.save(f'DMC_CH5_weights_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
+    np.save(f"DMC_CH5_Energy_{N_0}_walkers_{test_number}", np.vstack((time, Eref, weights)))
     return Eref
 
 
-test = [500, 1000, 5000, 10000, 20000]
-for j in range(5):
-    for i in range(5):
-        N_0 = test[i]
-        run(50, j+1)
+N_0 = 10000
+run(200, 1)
+
+# run(100, 'get_dat_wvfn')
+# test = [100, 200, 500, 1000, 2000, 5000, 10000]
+# for j in range(5):
+#     for i in range(7):
+#         N_0 = test[i]
+#         run(50, j+1)
+#         print(f'{test[i]} walker test {j+1} is done!')
 # Eref, time = tm.time_me(run, 0)
 # tm.print_time_list(run, time)
 # plt.plot(Eref*har2wave)

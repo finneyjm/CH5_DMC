@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 # DMC parameters
 dtau = 1.
-# N_0 = 1000
+N_0 = 1000
 time_steps = 10000.
 alpha = 1./(2.*dtau)
 
@@ -37,7 +37,7 @@ order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [
 
 # ch_stretch = 4
 Psi_t = np.load('Switch_min_wvfn_speed_1.0.npy')
-interp = interpolate.splrep(Psi_t[0, :], np.load('GSW_min_CH_2.npy'), s=0)
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 
 
 # Creates the walkers with all of their attributes
@@ -59,6 +59,7 @@ def psi_t(zmatrix):
     psi = np.zeros((N_0, bonds))
     for i in range(bonds):
         psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp, der=0)
+    psi[:, 1:5] = np.zeros((N_0, bonds-1)) + 1.
     return psi
 
 
@@ -204,7 +205,6 @@ def run(propagation, test_number):
     for i in range(int(time_steps)):
         if i % 1000 == 0:
             print(i)
-
         Psi, Fqx, acceptance = Kinetic(new_psi, Fqx)
         Psi = Potential(Psi)
         Psi = E_loc(Psi)
@@ -216,7 +216,6 @@ def run(propagation, test_number):
             if Psi_tau == 0:
                 Psi_tau = copy.deepcopy(Psi)
         new_psi = Weighting(Eref, Psi, DW, Fqx)
-
         Eref = E_ref_calc(new_psi)
         Eref_array = np.append(Eref_array, Eref)
         time = np.append(time, 2 + i)
@@ -227,44 +226,17 @@ def run(propagation, test_number):
             DW = True
         elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
             d_values = descendants(new_psi)
-    np.save(f'Imp_samp_DMC_CH5_coords_GSW_2_{N_0}_walkers_{test_number}', Psi_tau.coords)
-    np.save(f'Imp_samp_DMC_CH5_weights_GSW_2_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
-    np.save(f'DMC_imp_samp_CH5_energy_GSW_2_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
+    np.save(f'Biased_DMC_CH5_coords_alpha_1_{N_0}_walkers_{test_number}', Psi_tau.coords)
+    np.save(f'Biased_DMC_CH5_weights_alpha_1_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
+    np.save(f'Biased_DMC_imp_samp_CH5_energy_alpha_1_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
     return Eref_array
 
 
-tests = [100, 200, 500, 1000, 2000, 5000, 10000]
-for j in range(5):
-    for i in range(7):
-        N_0 = tests[i]
-        run(50, j+1)
-        print(f'{tests[i]} Walker Test {j+1} is done!')
-
-# N_0 = 1000
-# Energy = run(50, 'testing_things')
-# print(np.mean(Energy[5000:])*har2wave)
-
-# Psi = Walkers(N_0)
-# fqx, fq_list = tm.time_me(drift, Psi.zmat, Psi.coords)
-# tm.print_time_list(drift, fq_list)
-# Psi, Fqx, kin_list = tm.time_me(Kinetic, Psi, fqx)
-# tm.print_time_list(Kinetic, kin_list)
-# Psi, psi_list = tm.time_me(Potential, Psi)
-# tm.print_time_list(Potential, psi_list)
-# Psi, psi_list = tm.time_me(E_loc, Psi)
-# tm.print_time_list(E_loc, psi_list)
-# Eref, eref_list = tm.time_me(E_ref_calc, Psi)
-# tm.print_time_list(E_ref_calc, eref_list)
-# Psi, weight_list = tm.time_me(Weighting, Eref, Psi, True)
-# tm.print_time_list(Weighting, weight_list)
-# d, d_list = tm.time_me(descendants, Psi)
-# tm.print_time_list(descendants, d_list)
-#
-# Eref, time = tm.time_me(run, 0)
-# tm.print_time_list(run, time)
-# plt.plot(Eref*har2wave)
-# plt.xlabel('Time')
-# plt.ylabel('Energy (cm^-1)')
-# plt.ylim(0, 12000)
-# plt.savefig('Importance_sampling_Eref_full.png')
-# print(np.mean(Eref[1000:])*har2wave)
+N_0 = 5000
+run(150, 1)
+# tests = [100, 200, 500, 1000, 2000, 5000, 10000]
+# for j in range(5):
+#     for i in range(7):
+#         N_0 = tests[i]
+#         run(50, j+1)
+#         print(f'{tests[i]} Walker Test {j+1} is done!')

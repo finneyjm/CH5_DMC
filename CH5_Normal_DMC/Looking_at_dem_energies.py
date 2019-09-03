@@ -11,11 +11,11 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers):
     energies_non = np.zeros((N_n, 5))
     for j in range(5):
         for i in range(N_i):
-            Energy = np.load(f'DMC_imp_samp_CH5_energy_{imp_samp_walkers[i]}_walkers_{j+1}.npy')*har2wave
-            energies_imp[i, j] += np.mean(Energy[5000:])
+            Energy = np.load(f'Biased_DMC_imp_samp_CH5_energy_alpha_3_{imp_samp_walkers[i]}_walkers_{j+1}.npy')[1, :]*har2wave
+            energies_imp[i, j] += np.mean(Energy[1000:])
         for i in range(N_n):
-            Energy = np.load(f'DMC_CH5_Energy_{non_imp_samp_walkers[i]}_walkers_{j+1}.npy')*har2wave
-            energies_non[i, j] += np.mean(Energy[5000:])
+            Energy = np.load(f'DMC_CH5_Energy_{non_imp_samp_walkers[i]}_walkers_{j+1}.npy')[1, :]*har2wave
+            energies_non[i, j] += np.mean(Energy[1000:])
 
     avg_imp = np.mean(energies_imp, axis=1)
     avg_non = np.mean(energies_non, axis=1)
@@ -31,13 +31,13 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers):
     axes[0].set_ylabel('Energy (cm^-1)')
     axes[1].set_ylabel('Energy (cm^-1)')
     axes[0].set_ylim(10900, 11100)
-    axes[1].set_ylim(10900, 11100)
+    # axes[1].set_ylim(10900, 11100)
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig('Energy_convergence_importance_samp.png')
+    fig.savefig('Biased_Energy_convergence_importance_samp_alpha_3.png')
 
 
-walkers1 = [500, 1000, 5000, 10000, 20000]
+walkers1 = [100, 200, 500, 1000, 2000, 5000, 10000]
 walkers2 = [100, 200, 500, 1000, 2000, 5000, 10000]
 lets_get_some_energies(walkers1, walkers2)

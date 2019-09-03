@@ -25,8 +25,6 @@ sigmaCH = np.array([[sigmaC]*3, [sigmaH]*3])
 coords_initial = np.array([[4.0, 4.0, 4.0], [6.0, 6.0, 6.0]])
 
 
-Psi_t = np.load(f'Switch_min_wvfn_speed_3.0.npy')
-interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
 
 
 # Creates the walkers with all of their attributes
@@ -204,7 +202,7 @@ def run(propagation):
     wvfn[0, :] += distance(Psi_tau.coords)
     wvfn[1, :] += Psi_tau.weights
     wvfn[2, :] += Psi_tau.d
-    np.save(f'Wavefunction_CH_stretch_non_imp_samp_{ch_stretch}', wvfn)
+    np.save(f'Wavefunction_alpha_5_CH_stretch_{ch_stretch}', wvfn)
     return Eref_array
 
 
@@ -236,47 +234,48 @@ def run(propagation):
 # plt.ylim(-5000, 10000)
 # plt.savefig(f'Testing_6_point_imp_samp_testing_alpha{ch_stretch}.png')
 #
-tests = [100, 500, 1000, 5000, 10000]
-# # energies1 = np.zeros((10, 5))
-for l in range(5):
-    energies2 = np.zeros((10, 5))
-    ch_stretch = l + 1
-    for j in range(10):
-        for i in range(5):
-            N_0 = tests[i]
-            # interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
-            Energy = run(50)
-            print(f'CH {l+1} with {tests[i]} walkers, test {j+1} is done!')
-            energies2[j, i] += np.mean(Energy[1000:]*har2wave)
 
-# np.save('Non_imp_samp_energies', energies1)
-    np.save(f'non_Imp_samp_energies_CH_{ch_stretch}', energies2)
-#
-# energies1 = np.load('Non_imp_samp_energies.npy')
-# average1 = np.mean(energies1, axis=0)
-# std1 = np.std(energies1, axis=0)
-# DVR = [1488.113887, 1218.705882, 1224.753528, 1577.102303]
-# blah = np.zeros((10, 5))
-# for l in range(4):
+Psi_t = np.load(f'Switch_min_wvfn_speed_5.0.npy')
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+
+tests = [100, 500, 1000, 5000, 10000]
+
+# for l in range(5):
+#     energies2 = np.zeros((5, 5))
 #     ch_stretch = l + 1
-#     energies2 = np.load(f'Imp_samp_energies_alpha_5_CH_{ch_stretch}.npy') - blah
-#     blah = np.load(f'Imp_samp_energies_alpha_5_CH_{ch_stretch}.npy')
-#     average2 = np.mean(energies2, axis=0)
-#     std2 = np.std(energies2, axis=0)
-#     fig, axes = plt.subplots()
-#     # axes[0].errorbar(tests, average1, yerr=std1)
-#     # axes[0].plot(tests, np.array([1218.70588162167]*len(tests)))
-#     axes.errorbar(tests, average2, yerr=std2)
-#     axes.plot(tests, np.array([DVR[l]]*len(tests)))
-#     # axes[0].set_xlabel('Number of Walkers')
-#     axes.set_xlabel('Number of Walkers')
-#     # axes[0].set_ylabel('Energy (cm^-1)')
-#     axes.set_ylabel('Energy (cm^-1)')
-#     # axes[0].set_ylim(1200, 1250)
-#     # axes.set_ylim(DVR[l] - 20., DVR[l] + 20.)
-#     plt.tight_layout()
-#     fig.savefig(f'Convergence_two_atom_switch_alpha_5_CH_{ch_stretch}.png')
-#     plt.close(fig)
+#     for j in range(5):
+#         for i in range(5):
+#             N_0 = tests[i]
+#             # interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+#             Energy = run(50)
+#             print(f'CH {l+1} with {tests[i]} walkers, test {j+1} is done!')
+#             energies2[j, i] += np.mean(Energy[1000:]*har2wave)
+#
+#     np.save(f'Imp_samp_energies_alpha_5_CH_{ch_stretch}', energies2)
+
+DVR = [1488.113887, 1218.705882, 1224.753528, 1577.102303, 1577.102303]
+for l in range(5):
+    ch_stretch = l + 1
+    energies1 = np.load(f'non_Imp_samp_energies_CH_{ch_stretch}.npy')
+    average1 = np.mean(energies1[0:5, :], axis=0)
+    std1 = np.std(energies1[0:5, :], axis=0)
+    energies2 = np.load(f'Imp_samp_energies_alpha_1_CH_{ch_stretch}.npy')
+    average2 = np.mean(energies2[0:5, :], axis=0)
+    std2 = np.std(energies2[0:5, :], axis=0)
+    fig, axes = plt.subplots(2, 1)
+    axes[0].errorbar(tests, average1, yerr=std1)
+    axes[0].plot(tests, np.array([DVR[l]]*len(tests)))
+    axes[1].errorbar(tests, average2, yerr=std2)
+    axes[1].plot(tests, np.array([DVR[l]]*len(tests)))
+    axes[0].set_xlabel('Number of Walkers')
+    axes[1].set_xlabel('Number of Walkers')
+    axes[0].set_ylabel('Energy (cm^-1)')
+    axes[1].set_ylabel('Energy (cm^-1)')
+    axes[0].set_ylim(DVR[l] - 20., DVR[l] + 20.)
+    axes[1].set_ylim(DVR[l] - 20., DVR[l] + 20.)
+    plt.tight_layout()
+    fig.savefig(f'Convergence_two_atom_switch_alpha_1_CH_{ch_stretch}.png')
+    plt.close(fig)
 
 # test = (np.load('Imp_samp_energies_alpha_5_CH_4.npy') - np.load('Imp_samp_energies_alpha_5_CH_3.npy'))
 # asdf
