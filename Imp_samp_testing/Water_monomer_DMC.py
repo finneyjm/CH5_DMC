@@ -1,32 +1,29 @@
-import numpy as np
 import copy
-import CH5pot
-# import Timing_p3 as tm
-import matplotlib.pyplot as plt
+from scipy import interpolate
+import numpy as np
+import Water_monomer_pot_fns as wm
 
 # DMC parameters
 dtau = 1.
-# N_0 = 10000
-time_total = 20000.
+time_steps = 20000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.0107 / (Avo_num*me*1000)
+m_O = 15.994915 / (Avo_num*me*1000)
 m_H = 1.007825 / (Avo_num*me*1000)
+m_OH = (m_H*m_O)/(m_H+m_O)
 har2wave = 219474.6
+ang2bohr = 1.e-10/5.291772106712e-11
 
 # Values for Simulation
 sigmaH = np.sqrt(dtau/m_H)
-sigmaC = np.sqrt(dtau/m_C)
-# Starting orientation of walkers
-coords_inital = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
-                  [-0.8247121421923925, -0.6295306113384560, 1.775332267901544],
-                  [0.1318851447521099, 2.088940054609643, 0.000000000000000],
-                  [1.786540362044548, -1.386051328559878, 0.000000000000000],
-                  [2.233806981137821, 0.3567096955165336, 0.000000000000000],
-                  [-0.8247121421923925, -0.6295306113384560, -1.775332267901544]])
+sigmaO = np.sqrt(dtau/m_O)
+
+coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+                           [0.957840000000000, 0.000000000000000, 0.000000000000000],
+                           [-0.23995350000000, 0.927297000000000, 0.000000000000000]])*ang2bohr*1.05
 
 
 # Creates the walkers with all of their attributes
@@ -35,27 +32,23 @@ class Walkers(object):
 
     def __init__(self, walkers):
         self.walkers = np.arange(0, N_0)
-        self.coords = np.array([coords_inital]*walkers)
-        rand_idx = np.random.rand(N_0, 5).argsort(axis=1) + 1
-        b = self.coords[np.arange(N_0)[:, None], rand_idx]
-        self.coords[:, 1:6, :] = b
+        self.coords = np.array([coords_initial]*walkers)
         self.weights = np.zeros(walkers) + 1.
+        self.d = np.zeros(walkers)
         self.weights_i = np.zeros(walkers) + 1.
-        self.V = np.zeros(walkers)
 
 
 # Random walk of all the walkers
 def Kinetic(Psi):
-    randomwalkC = np.random.normal(0.0, sigmaC, size=(N_0, 3))
-    randomwalkH = np.random.normal(0.0, sigmaH, size=(N_0, 5, 3))
-    Psi.coords[:, 0, :] += randomwalkC
-    Psi.coords[:, 1:6, :] += randomwalkH
+    randomwalkO = np.random.normal(0.0, sigmaO, size=(N_0, 3))
+    randomwalkH = np.random.normal(0.0, sigmaH, size=(N_0, 2, 3))
+    Psi.coords[:, 0, :] += randomwalkO
+    Psi.coords[:, 1:3, :] += randomwalkH
     return Psi
 
 
-# Using the potential call to calculate the potential of all the walkers
 def Potential(Psi):
-    V = CH5pot.mycalcpot(Psi.coords, N_0)
+    V = wm.PatrickShinglePotential(Psi.coords, 0)
     Psi.V = np.array(V)
     return Psi
 
@@ -112,7 +105,7 @@ def run(propagation, test_number):
     # initial parameters before running the calculation
 
     Psi_tau = 0  #
-    for i in range(int(time_total)):
+    for i in range(int(time_steps)):
         if i % 1000 == 0:
             print(i)
         Psi = Kinetic(new_psi)
@@ -132,39 +125,26 @@ def run(propagation, test_number):
         time = np.append(time, 2 + i)
         weights = np.append(weights, np.sum(new_psi.weights))
 
-        if i >= (time_total - 1. - float(propagation)) and prop > 0:  # start of descendant weighting
+        if i >= (time_steps - 1. - float(propagation)) and prop > 0:  # start of descendant weighting
             DW = True
-        elif i >= (time_total - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
+        elif i >= (time_steps - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
             d_values = descendants(new_psi)
-    # E0 = np.mean(Eref[50:])
-    np.save(f'DMC_CH5_randomly_sampled_coords_{N_0}_walkers_{test_number}', Psi_tau.coords)
-    np.save(f'DMC_CH5_randomly_sampled_weights_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
-    np.save(f"DMC_CH5_randomly_sampled_Energy_{N_0}_walkers_{test_number}", np.vstack((time, Eref, weights)))
+    np.save(f'DMC_water_coords_{N_0}_walkers_{test_number}', Psi_tau.coords)
+    np.save(f'DMC_water_weights_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
+    np.save(f'DMC_water_energy_{N_0}_walkers_{test_number}', np.vstack((time, Eref, weights)))
     return Eref
 
 
-# N_0 = 10000
-# run(200, 1)
+# tests = [100, 200, 500, 1000, 2000, 5000, 10000]
+# for j in range(5):
+#     for i in range(7):
+#         N_0 = tests[i]
+#         run(250, j + 6)
+#         print(f'{tests[i]} Walker Test {j + 1} is done!')
+for i in range(10):
+    N_0 = 20000
+    run(250, i+1)
+    print(f'{N_0} Walker Test {j+1} is done!')
 
-# run(100, 'get_dat_wvfn')
-test = [100, 200, 500, 1000, 2000, 5000, 10000]
-for j in range(5):
-    for i in range(7):
-        N_0 = test[i]
-        run(250, j+1)
-        print(f'{test[i]} walker test {j+1} is done!')
-# Eref, time = tm.time_me(run, 0)
-# tm.print_time_list(run, time)
-# plt.plot(Eref*har2wave)
-# plt.xlabel('Time')
-# plt.ylabel('Energy (cm^-1)')
-# plt.ylim(0, 12000)
-# plt.savefig('Non_Importance_sampling_Eref_full.png')
-# print(np.mean(Eref[1000:])*har2wave)
-# test = Walkers(N_0)
-# te, te_time = tm.time_me(Potential, test)
-# tm.print_time_list(Potential, te_time)
-# E0, E0_time = tm.time_me(run, 0)
-# tm.print_time_list(run, E0_time)
-# run(50)
-# print(np.mean(walker_reaper))
+
+

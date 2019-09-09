@@ -1,42 +1,38 @@
 import copy
-import CH5pot
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
-# import Timing_p3 as tm
-import matplotlib.pyplot as plt
+import Water_monomer_pot_fns as wm
+import Timing_p3 as tm
 
 # DMC parameters
 dtau = 1.
-# N_0 = 1000
-time_steps = 20000.
+time_steps = 0.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.0107 / (Avo_num*me*1000)
+m_O = 15.994915 / (Avo_num*me*1000)
 m_H = 1.007825 / (Avo_num*me*1000)
-m_CH = (m_C*m_H)/(m_H+m_C)
-m_CH5 = ((m_C + m_H*4)*m_H)/(m_H*5 + m_C)
+m_OH = (m_H*m_O)/(m_H+m_O)
 har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11
 
 # Values for Simulation
 sigmaH = np.sqrt(dtau/m_H)
-sigmaC = np.sqrt(dtau/m_C)
-sigmaCH = np.array([[sigmaC]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3])
-bonds = 5
-# Starting orientation of walkers
+sigmaO = np.sqrt(dtau/m_O)
+sigmaOH = np.array([[sigmaO]*3, [sigmaH]*3, [sigmaH]*3])
+
+bonds = 2
+atoms = 3
 coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
-                          [0.1318851447521099, 2.088940054609643, 0.000000000000000],
-                          [1.786540362044548, -1.386051328559878, 0.000000000000000],
-                          [2.233806981137821, 0.3567096955165336, 0.000000000000000],
-                          [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
-                          [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
-order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
+                           [0.957840000000000, 0.000000000000000, 0.000000000000000],
+                           [-0.23995350000000, 0.927297000000000, 0.000000000000000]])*ang2bohr*1.05
 
-# ch_stretch = 4
+order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 1]]
 
+Psi_t = np.load('Water_oh_stretch_GSW.npy')
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 
 
 # Creates the walkers with all of their attributes
@@ -46,9 +42,6 @@ class Walkers(object):
     def __init__(self, walkers):
         self.walkers = np.arange(0, N_0)
         self.coords = np.array([coords_initial]*walkers)
-        rand_idx = np.random.rand(N_0, 5).argsort(axis=1) + 1
-        b = self.coords[np.arange(N_0)[:, None], rand_idx]
-        self.coords[:, 1:6, :] = b
         self.zmat = CoordinateSet(self.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
         self.weights = np.zeros(walkers) + 1.
         self.d = np.zeros(walkers)
@@ -57,7 +50,7 @@ class Walkers(object):
         self.El = np.zeros(walkers)
 
 
-def psi_t(zmatrix, interp):
+def psi_t(zmatrix):
     psi = np.zeros((N_0, bonds))
     for i in range(bonds):
         psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp, der=0)
@@ -65,7 +58,7 @@ def psi_t(zmatrix, interp):
 
 
 def drdx(zmatrix, coords):
-    chain = np.zeros((N_0, 5, 6, 3))
+    chain = np.zeros((N_0, bonds, atoms, 3))
     for xyz in range(3):
         for CH in range(bonds):
             chain[:, CH, 0, xyz] += ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/zmatrix[:, CH, 1])
@@ -73,29 +66,29 @@ def drdx(zmatrix, coords):
     return chain
 
 
-def drift(zmatrix, coords, interp):
-    psi = psi_t(zmatrix, interp)
+def drift(zmatrix, coords):
+    psi = psi_t(zmatrix)
     dr1 = drdx(zmatrix, coords)
     der = np.zeros((N_0, bonds))
     for i in range(bonds):
         der[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp, der=1)/psi[:, i])
-    a = dr1.reshape((N_0, 5, 18))
-    b = der.reshape((N_0, 1, 5))
+    a = dr1.reshape((N_0, bonds, 9))
+    b = der.reshape((N_0, 1, bonds))
     drift = np.matmul(b, a)
-    return 2.*drift.reshape((N_0, 6, 3))
+    return 2.*drift.reshape((N_0, atoms, 3))
 
 
-def metropolis(r1, r2, Fqx, Fqy, x, y, interp):
-    psi_1 = psi_t(r1, interp)
-    psi_2 = psi_t(r2, interp)
+def metropolis(r1, r2, Fqx, Fqy, x, y):
+    psi_1 = psi_t(r1)
+    psi_2 = psi_t(r2)
     psi_ratio = 1.
     for i in range(bonds):
         psi_ratio *= (psi_2[:, i]/psi_1[:, i])**2
     a = psi_ratio
-    for atom in range(6):
+    for atom in range(atoms):
         for xyz in range(3):
             if atom == 0:
-                sigma = sigmaC
+                sigma = sigmaO
             else:
                 sigma = sigmaH
             a *= np.exp(1./2.*(Fqx[:, atom, xyz] + Fqy[:, atom, xyz])*(sigma**2/4.*(Fqx[:, atom, xyz]-Fqy[:, atom, xyz])
@@ -104,15 +97,15 @@ def metropolis(r1, r2, Fqx, Fqy, x, y, interp):
 
 
 # Random walk of all the walkers
-def Kinetic(Psi, Fqx, interp):
-    Drift = sigmaCH**2/2.*Fqx
-    randomwalk = np.zeros((N_0, 6, 3))
-    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaH, size=(N_0, 5, 3))
-    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaC, size=(N_0, 3))
+def Kinetic(Psi, Fqx):
+    Drift = sigmaOH**2/2.*Fqx
+    randomwalk = np.zeros((N_0, atoms, 3))
+    randomwalk[:, 1:3, :] = np.random.normal(0.0, sigmaH, size=(N_0, bonds, 3))
+    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaO, size=(N_0, 3))
     y = randomwalk + Drift + np.array(Psi.coords)
     zmatriy = CoordinateSet(y, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-    Fqy = drift(zmatriy, y, interp)
-    a = metropolis(Psi.zmat, zmatriy, Fqx, Fqy, Psi.coords, y, interp)
+    Fqy = drift(zmatriy, y)
+    a = metropolis(Psi.zmat, zmatriy, Fqx, Fqy, Psi.coords, y)
     check = np.random.random(size=N_0)
     accept = np.argwhere(a > check)
     Psi.coords[accept] = y[accept]
@@ -124,24 +117,24 @@ def Kinetic(Psi, Fqx, interp):
 
 
 def Potential(Psi):
-    V = CH5pot.mycalcpot(Psi.coords, N_0)
+    V = wm.PatrickShinglePotential(Psi.coords, 4)
     Psi.V = np.array(V)
     return Psi
 
 
-def local_kinetic(Psi, interp):
-    psi = psi_t(Psi.zmat, interp)
+def local_kinetic(Psi):
+    psi = psi_t(Psi.zmat)
     der1 = np.zeros((N_0, bonds))
     der2 = np.zeros((N_0, bonds))
     for i in range(bonds):
         der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i]*(2./Psi.zmat[:, i, 1]))
         der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2)/psi[:, i])
-    kin = -1./(2.*m_CH)*np.sum(der2+der1, axis=1)
+    kin = -1./(2.*m_OH)*np.sum(der2+der1, axis=1)
     return kin
 
 
-def E_loc(Psi, interp):
-    Psi.El = local_kinetic(Psi, interp) + Psi.V
+def E_loc(Psi):
+    Psi.El = local_kinetic(Psi) + Psi.V
     return Psi
 
 
@@ -184,15 +177,14 @@ def descendants(Psi):
     return d
 
 
-def run(propagation, test_number, alph):
-    Psi_t = np.load(f'Switch_min_wvfn_speed_{alph}.0.npy')
-    interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+def run(propagation, test_number):
     DW = False
     psi = Walkers(N_0)
-    Fqx = drift(psi.zmat, psi.coords, interp)
-    Psi, Fqx, acceptance = Kinetic(psi, Fqx, interp)
-    Psi = Potential(Psi)
-    Psi = E_loc(Psi, interp)
+    Fqx = drift(psi.zmat, psi.coords)
+    Psi, Fqx, acceptance = Kinetic(psi, Fqx)
+    Psi, pot_time = tm.time_me(Potential, Psi)
+    tm.print_time_list(Potential, pot_time)
+    Psi = E_loc(Psi)
     time = np.array([])
     weights = np.array([])
     accept = np.array([])
@@ -209,9 +201,9 @@ def run(propagation, test_number, alph):
         if i % 1000 == 0:
             print(i)
 
-        Psi, Fqx, acceptance = Kinetic(new_psi, Fqx, interp)
+        Psi, Fqx, acceptance = Kinetic(new_psi, Fqx)
         Psi = Potential(Psi)
-        Psi = E_loc(Psi, interp)
+        Psi = E_loc(Psi)
 
         if DW is False:
             prop = float(propagation)
@@ -231,17 +223,22 @@ def run(propagation, test_number, alph):
             DW = True
         elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
             d_values = descendants(new_psi)
-    np.save(f'Imp_samp_DMC_CH5_randomly_sampled_coords_alpha_{alph}_{N_0}_walkers_{test_number}', Psi_tau.coords)
-    np.save(f'Imp_samp_DMC_CH5_randomly_sampled_weights_alpha_{alph}_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
-    np.save(f'DMC_imp_samp_CH5_randomly_sampled_energy_alpha_{alph}_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
+    # np.save(f'Imp_samp_water_coords_{N_0}_walkers_{test_number}', Psi_tau.coords)
+    # np.save(f'Imp_samp_water_weights_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
+    # np.save(f'Imp_samp_water_energy_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
     return Eref_array
 
 
-tests = [100, 200, 500, 1000, 2000, 5000, 10000]
-alpha_test = [11, 21, 31, 41, 51]
-for j in range(5):
-    for i in range(7):
-        N_0 = tests[i]
-        run(250, j+1, alpha_test[4])
-        print(f'{tests[i]} Walker Test {j+1} is done!')
-
+# tests = [100, 200, 500, 1000, 2000, 5000, 10000]
+# for j in range(5):
+#     for i in range(7):
+#         N_0 = tests[i]
+#         run(250, j+6)
+#         print(f'{tests[i]} Walker Test {j+1} is done!')
+# for i in range(10):
+#     N_0 = 20000
+#     run(250, i+1)
+#     print(f'{N_0} Walker Test {j+1} is done!')
+N_0 = 10000
+eref, time_list = tm.time_me(run, 0, 'testtesttest')
+tm.print_time_list(run, time_list)
