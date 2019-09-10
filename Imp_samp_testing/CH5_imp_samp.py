@@ -46,9 +46,9 @@ class Walkers(object):
     def __init__(self, walkers):
         self.walkers = np.arange(0, N_0)
         self.coords = np.array([coords_initial]*walkers)
-        rand_idx = np.random.rand(N_0, 5).argsort(axis=1) + 1
-        b = self.coords[np.arange(N_0)[:, None], rand_idx]
-        self.coords[:, 1:6, :] = b
+        # rand_idx = np.random.rand(N_0, 5).argsort(axis=1) + 1
+        # b = self.coords[np.arange(N_0)[:, None], rand_idx]
+        # self.coords[:, 1:6, :] = b
         self.zmat = CoordinateSet(self.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
         self.weights = np.zeros(walkers) + 1.
         self.d = np.zeros(walkers)
@@ -237,11 +237,36 @@ def run(propagation, test_number, alph):
     return Eref_array
 
 
-tests = [100, 200, 500, 1000, 2000, 5000, 10000]
-alpha_test = [11, 21, 31, 41, 51]
-for j in range(5):
-    for i in range(7):
-        N_0 = tests[i]
-        run(250, j+1, alpha_test[4])
-        print(f'{tests[i]} Walker Test {j+1} is done!')
+# tests = [100, 200, 500, 1000, 2000, 5000, 10000]
+# alpha_test = [11, 21, 31, 41, 51]
+# for j in range(5):
+#     for i in range(7):
+#         N_0 = tests[i]
+#         run(250, j+1, alpha_test[4])
+#         print(f'{tests[i]} Walker Test {j+1} is done!')
 
+
+N_0 = 5000
+alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
+for j in range(15):
+    alph = alpha_test[j]
+    Psi_t = np.load(f'Switch_min_wvfn_speed_{alph}.0.npy')
+    interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+    fig, axes = plt.subplots(1, 5, figsize=(20, 8))
+    for i in range(5):
+        ch = i + 1
+        Psi = Walkers(N_0)
+        Psi.zmat[:, ch-1, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
+        Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+        Psi = Potential(Psi)
+        Psi = E_loc(Psi, interp)
+        import matplotlib.pyplot as plt
+        axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
+        axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy alpha = {alph}')
+        axes[i].set_xlabel('rCH (Angstrom)')
+        axes[i].set_ylabel('Energy (cm^-1)')
+        axes[i].set_ylim(-10000, 20000)
+        axes[i].legend(loc='lower left')
+    plt.tight_layout()
+    fig.savefig(f'Local_energy_plot_alpha_{alph}.png')
+    plt.close(fig)

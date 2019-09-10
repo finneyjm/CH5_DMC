@@ -2,11 +2,11 @@ import copy
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
 import Water_monomer_pot_fns as wm
-import Timing_p3 as tm
+# import Timing_p3 as tm
 
 # DMC parameters
 dtau = 1.
-time_steps = 0.
+time_steps = 20000.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -182,8 +182,7 @@ def run(propagation, test_number):
     psi = Walkers(N_0)
     Fqx = drift(psi.zmat, psi.coords)
     Psi, Fqx, acceptance = Kinetic(psi, Fqx)
-    Psi, pot_time = tm.time_me(Potential, Psi)
-    tm.print_time_list(Potential, pot_time)
+    Psi = Potential(Psi)
     Psi = E_loc(Psi)
     time = np.array([])
     weights = np.array([])
@@ -235,10 +234,10 @@ def run(propagation, test_number):
 #         N_0 = tests[i]
 #         run(250, j+6)
 #         print(f'{tests[i]} Walker Test {j+1} is done!')
-# for i in range(10):
-#     N_0 = 20000
-#     run(250, i+1)
-#     print(f'{N_0} Walker Test {j+1} is done!')
-N_0 = 10000
-eref, time_list = tm.time_me(run, 0, 'testtesttest')
-tm.print_time_list(run, time_list)
+for i in range(10):
+    N_0 = 20000
+    run(250, i+1)
+    print(f'{N_0} Walker Test {i+1} is done!')
+# N_0 = 10000
+# eref, time_list = tm.time_me(run, 0, 'testtesttest')
+# tm.print_time_list(run, time_list)

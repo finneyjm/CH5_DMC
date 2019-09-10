@@ -144,7 +144,7 @@ def run(propagation, test_number):
 for i in range(10):
     N_0 = 20000
     run(250, i+1)
-    print(f'{N_0} Walker Test {j+1} is done!')
+    print(f'{N_0} Walker Test {i+1} is done!')
 
 
 
