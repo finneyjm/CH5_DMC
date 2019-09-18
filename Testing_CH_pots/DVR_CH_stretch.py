@@ -89,7 +89,7 @@ def Energy(T, V):
 
 
 def run(CH, type, coords):
-    g = grid(1., 4., 500, CH, coords)
+    g = grid(0.4, 6., 5000, CH, coords)
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
@@ -109,8 +109,8 @@ def run(CH, type, coords):
 wvfn = np.zeros((5, 1000))
 for i in np.arange(1, 6):
     run(i, 'min', coords_initial_min)
-    run(i, 'cs', coords_initial_cs)
-    run(i, 'c2v', coords_initial_c2v)
+    # run(i, 'cs', coords_initial_cs)
+    # run(i, 'c2v', coords_initial_c2v)
 
 # av_wvfn = np.mean(wvfn, axis=0)
 # avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))

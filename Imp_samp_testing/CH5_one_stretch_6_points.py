@@ -22,9 +22,7 @@ sigmaH = np.sqrt(dtau/m_H)
 sigmaC = np.sqrt(dtau/m_C)
 sigmaCH = np.array([[sigmaC]*3, [sigmaH]*3])
 # Starting orientation of walkers
-coords_initial = np.array([[4.0, 4.0, 4.0], [6.0, 6.0, 6.0]])
-
-
+coords_initial = np.array([[0.0, 0.0, 0.0], [6.0, 0.0, 0.0]])
 
 
 # Creates the walkers with all of their attributes
@@ -42,7 +40,7 @@ class Walkers(object):
         self.El = np.zeros(walkers)
 
 
-def psi_t(dist):
+def psi_t(dist, interp):
     return interpolate.splev(dist, interp, der=0)
 
 
@@ -66,8 +64,8 @@ def drdx(dist, coords):
     return chain
 
 
-def drift(dist, coords):
-    psi = psi_t(dist)
+def drift(dist, coords, interp):
+    psi = psi_t(dist, interp)
     dr1 = drdx(dist, coords)
     der = (interpolate.splev(dist, interp, der=1)/psi)
     a = dr1.reshape((N_0, 1, 6))
@@ -76,9 +74,9 @@ def drift(dist, coords):
     return 2.*drift.reshape((N_0, 2, 3))
 
 
-def metropolis(r1, r2, Fqx, Fqy, x, y):
-    psi_1 = psi_t(r1)
-    psi_2 = psi_t(r2)
+def metropolis(r1, r2, Fqx, Fqy, x, y, interp):
+    psi_1 = psi_t(r1, interp)
+    psi_2 = psi_t(r2, interp)
     psi_ratio = (psi_2/psi_1)**2
     a = psi_ratio
     for atom in range(2):
@@ -92,15 +90,15 @@ def metropolis(r1, r2, Fqx, Fqy, x, y):
     return a
 
 
-def Kinetic(Psi, Fqx):
+def Kinetic(Psi, Fqx, interp):
     Drift = sigmaCH**2/2.*Fqx
     randomwalk = np.zeros((N_0, 2, 3))
     randomwalk[:, 0, :] = np.random.normal(0.0, sigmaC, size=(N_0, 3))
     randomwalk[:, 1, :] = np.random.normal(0.0, sigmaH, size=(N_0, 3))
     y = randomwalk + Drift + np.array(Psi.coords)
     disty = distance(y)
-    Fqy = drift(disty, y)
-    a = metropolis(Psi.zmat, disty, Fqx, Fqy, Psi.coords, y)
+    Fqy = drift(disty, y, interp)
+    a = metropolis(Psi.zmat, disty, Fqx, Fqy, Psi.coords, y, interp)
     check = np.random.random(size=N_0)
     accept = np.argwhere(a > check)
     Psi.coords[accept] = y[accept]
@@ -110,15 +108,16 @@ def Kinetic(Psi, Fqx):
     return Psi, Fqy
 
 
-def E_loc(Psi):
+def E_loc(Psi, interp456):
     dist = distance(Psi.coords)
-    psi = psi_t(dist)
+    psi = psi_t(dist, interp456)
 
-    der1 = interpolate.splev(dist, interp, der=1)/psi
-    der2 = interpolate.splev(dist, interp, der=2)/psi
+    der1 = interpolate.splev(dist, interp456, der=1)/psi
+    der2 = interpolate.splev(dist, interp456, der=2)/psi
 
     kin = -1./(2.*m_CH)*(der2 + der1*2./dist)
-    Psi.El = kin + Psi.V
+    Psi.El = np.zeros(N_0)
+    Psi.El += kin + Psi.V
     return Psi
 
 
@@ -234,9 +233,9 @@ def run(propagation):
 # plt.ylim(-5000, 10000)
 # plt.savefig(f'Testing_6_point_imp_samp_testing_alpha{ch_stretch}.png')
 #
-
-Psi_t = np.load(f'Switch_min_wvfn_speed_5.0.npy')
-interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+#
+# Psi_t = np.load(f'Switch_min_wvfn_speed_5.0.npy')
+# interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 
 tests = [100, 500, 1000, 5000, 10000]
 
@@ -254,28 +253,70 @@ tests = [100, 500, 1000, 5000, 10000]
 #     np.save(f'Imp_samp_energies_alpha_5_CH_{ch_stretch}', energies2)
 
 DVR = [1488.113887, 1218.705882, 1224.753528, 1577.102303, 1577.102303]
-for l in range(5):
-    ch_stretch = l + 1
-    energies1 = np.load(f'non_Imp_samp_energies_CH_{ch_stretch}.npy')
-    average1 = np.mean(energies1[0:5, :], axis=0)
-    std1 = np.std(energies1[0:5, :], axis=0)
-    energies2 = np.load(f'Imp_samp_energies_alpha_1_CH_{ch_stretch}.npy')
-    average2 = np.mean(energies2[0:5, :], axis=0)
-    std2 = np.std(energies2[0:5, :], axis=0)
-    fig, axes = plt.subplots(2, 1)
-    axes[0].errorbar(tests, average1, yerr=std1)
-    axes[0].plot(tests, np.array([DVR[l]]*len(tests)))
-    axes[1].errorbar(tests, average2, yerr=std2)
-    axes[1].plot(tests, np.array([DVR[l]]*len(tests)))
-    axes[0].set_xlabel('Number of Walkers')
-    axes[1].set_xlabel('Number of Walkers')
-    axes[0].set_ylabel('Energy (cm^-1)')
-    axes[1].set_ylabel('Energy (cm^-1)')
-    axes[0].set_ylim(DVR[l] - 20., DVR[l] + 20.)
-    axes[1].set_ylim(DVR[l] - 20., DVR[l] + 20.)
-    plt.tight_layout()
-    fig.savefig(f'Convergence_two_atom_switch_alpha_1_CH_{ch_stretch}.png')
-    plt.close(fig)
+# for l in range(5):
+#     ch_stretch = l + 1
+#     energies1 = np.load(f'non_Imp_samp_energies_CH_{ch_stretch}.npy')
+#     average1 = np.mean(energies1[0:5, :], axis=0)
+#     std1 = np.std(energies1[0:5, :], axis=0)
+#     energies2 = np.load(f'Imp_samp_energies_alpha_1_CH_{ch_stretch}.npy')
+#     average2 = np.mean(energies2[0:5, :], axis=0)
+#     std2 = np.std(energies2[0:5, :], axis=0)
+#     fig, axes = plt.subplots(2, 1)
+#     axes[0].errorbar(tests, average1, yerr=std1)
+#     axes[0].plot(tests, np.array([DVR[l]]*len(tests)))
+#     axes[1].errorbar(tests, average2, yerr=std2)
+#     axes[1].plot(tests, np.array([DVR[l]]*len(tests)))
+#     axes[0].set_xlabel('Number of Walkers')
+#     axes[1].set_xlabel('Number of Walkers')
+#     axes[0].set_ylabel('Energy (cm^-1)')
+#     axes[1].set_ylabel('Energy (cm^-1)')
+#     axes[0].set_ylim(DVR[l] - 20., DVR[l] + 20.)
+#     axes[1].set_ylim(DVR[l] - 20., DVR[l] + 20.)
+#     plt.tight_layout()
+#     fig.savefig(f'Convergence_two_atom_switch_alpha_1_CH_{ch_stretch}.png')
+#     plt.close(fig)
 
 # test = (np.load('Imp_samp_energies_alpha_5_CH_4.npy') - np.load('Imp_samp_energies_alpha_5_CH_3.npy'))
 # asdf
+
+
+N_0 = 5000
+broad_test = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]
+psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
+interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
+for j in range(len(broad_test)):
+    Psi_t = np.load(f'5_Gauss_Switch_wvfn_min_alpha_1_{broad_test[j]}x_broadening.npy')
+    interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+    fig, axes = plt.subplots(1, 5, figsize=(20, 8))
+    for i in range(5):
+        pot = interpolate.splrep(np.linspace(1, 4, num=500), np.load(f'Potential_CH_stretch{i+1}.npy'), s=0)
+        Psi = Walkers(N_0)
+        Psi.zmat = np.linspace(0.6, 1.8, N_0)*ang2bohr
+        Psi.coords[:, 1, 0] = Psi.zmat
+        Psi.coords[:, 0, :] = np.zeros((N_0, 3))
+        Psi.coords[:, 1, 1:3] = np.zeros((N_0, 2))
+        Psi = potential(Psi, pot)
+        Psi = E_loc(Psi, interp)
+        axes[i].plot(Psi.zmat/ang2bohr, Psi.V*har2wave, label='Potential')
+        axes[i].plot(Psi.zmat/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
+        axes[i].plot(Psi.zmat / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
+        loc_1 = np.array(Psi.El)
+        Psi = E_loc(Psi, interp2)
+        # diff = Psi.El - loc_1
+        # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, diff*har2wave)
+        axes[i].plot(Psi.zmat/ang2bohr, Psi.El*har2wave, label=f'Local Energy no fit')
+        axes[i].plot(Psi.zmat/ang2bohr, Psi.El*har2wave - Psi.V*har2wave, label='Kinetic no fit')
+        # psi = psi_t(Psi.zmat, interp)
+        # # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, psi[:, ch-1], label='Gaussians')
+        # psi1 = psi_t(Psi.zmat, interp2)
+        # diff = psi1-psi
+        # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El, label='difference')
+        axes[i].set_xlabel('rCH (Angstrom)')
+        # axes[i].set_xlim(0.8, 1.6)
+        # axes[i].set_ylim(-5, 5)
+        axes[i].set_ylabel('Energy (cm^-1)')
+        axes[i].set_ylim(-20000, 20000)
+        axes[i].legend(loc='lower left')
+    plt.tight_layout()
+    fig.savefig(f'5_Gaussian_fit_local_energy_1d_{broad_test[j]}.png')
+    plt.close(fig)

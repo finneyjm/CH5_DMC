@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ang2bohr = 1.e-10/5.291772106712e-11
-grid = np.linspace(1., 4., 500)/ang2bohr
+grid = np.linspace(0.4, 6., 5000)/ang2bohr
 
-GSW = np.zeros((3, 5, 500))
+GSW = np.zeros((3, 5, 5000))
 for i in range(5):
     GSW[0, i, :] += np.load(f'GSW_min_CH_{i+1}.npy')
-    GSW[1, i, :] += np.load(f'GSW_cs_CH_{i+1}.npy')
-    GSW[2, i, :] += np.load(f'GSW_c2v_CH_{i+1}.npy')
+    # GSW[1, i, :] += np.load(f'GSW_cs_CH_{i+1}.npy')
+    # GSW[2, i, :] += np.load(f'GSW_c2v_CH_{i+1}.npy')
 
 
 def lets_get_these_wvfns(type, switch_speed):
