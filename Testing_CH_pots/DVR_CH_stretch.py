@@ -52,13 +52,6 @@ def grid(a, b, N, CH, coords_initial):
 def Potential(grid, CH):
     V = CH5pot.mycalcpot(grid, len(grid[:, 0, 0]))
     V_final = np.diag(np.array(V))
-    # plt.plot(grid[:, 1, 0]/ang2bohr, np.diag(V_final)*har2wave, label='CH stretch %s' %CH, color='C%s' %(CH+1))
-    # plt.legend(loc=2)
-    # plt.xlabel('Bond Distance (Angstrom)')
-    # plt.ylabel(r'Energy (cm${-1}$)')
-    # plt.ylim(0, 5000)
-    # plt.xlim(0.75, 1.5)
-
     return V_final
 
 
@@ -102,6 +95,8 @@ def run(CH, type, coords):
     # plt.ylabel('Probability Density')
     # plt.legend()
     # plt.savefig('GSW%s.png' %CH)
+    if np.max(Eig[:, 0]) < 0.005:
+        Eig[:, 0] *= -1.
     np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
     return g, Eig[:, 0]
 

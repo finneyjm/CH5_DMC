@@ -12,6 +12,8 @@
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/1d_Potentials" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Biased_stuff" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Convergence_plots" />
+      <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Coordinerds" />
+      <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Fits_CH_stretch_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Gauss_wvfn_fits" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/HH_distances" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Harmonic_oscillator" />
@@ -24,7 +26,9 @@
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/PES4" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Switch_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Trial_wvfn_testing" />
+      <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/c2v_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/checking_f" />
+      <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/cs_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/local_energy_plots" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/min_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/water_tests" />

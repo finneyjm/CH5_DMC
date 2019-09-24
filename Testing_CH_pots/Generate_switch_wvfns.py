@@ -80,12 +80,12 @@ def lets_get_these_wvfns(type, switch_speed):
     return
 
 
-# for i in range(11):
-#     lets_get_these_wvfns('min', float(20*i + 2)*0.5)
+for i in range(11):
+    lets_get_these_wvfns('min', float(20*i + 2)*0.5)
 #     lets_get_these_wvfns('cs', float(20*i + 2)*0.5)
 #     lets_get_these_wvfns('c2v', float(20*i + 2)*0.5)
 
-lets_get_these_wvfns('min', 1.)
+# lets_get_these_wvfns('min', 5.)
 
 
 
