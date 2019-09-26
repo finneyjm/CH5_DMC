@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 import scipy.optimize
+
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
 ang2bohr = 1.e-10/5.291772106712e-11
@@ -57,8 +58,8 @@ def sex_norm(x, *args):
     return ret
 
 
-psi = np.load(f'Switch_wvfns/Switch_min_wvfn_speed_1.0.npy')
-psi[0, :] /= ang2bohr
+# psi = np.load(f'Switch_wvfns/Switch_min_wvfn_speed_1.0.npy')
+# psi[0, :] /= ang2bohr
 
 params = [1.16255402,
           0.15132058,
@@ -69,9 +70,9 @@ params2 = [1.04606652, 1.22983871,
 params3 = [1.07620131, 1.29043464, 1.24081179,
            0.09054991, 0.10427892, 0.04978319,
            0.0216147,  0.01515032, 0.00332449]
-params4 = [1.35281857e+00, 1.23710693e+00, 1.10441447e+00, 1.15000767e+00, # alpha 1
-           0.1, 0.1, 0.1, 0.1,
-           0.001, 0.001, 0.001, 0.01]
+params4 = [1.21281857e+00, 1.23710693e+00, 1.10441447e+00, 1.15000767e+00, # alpha 1
+           3.07846157e-02, 5.45377168e-02, 9.55975280e-02, 9.83518356e-02,
+           6.08981341e-04, 2.02412967e-03, 1.05996284e-02, 4.11202869e-03]
 # params4 = [1.21466852e+00, 1.27331772e+00, 1.08774732e+00, 1.32837319e+00,  # alpha 61
 #            3.07846157e-02, 5.45377168e-02, 9.55975280e-02, 9.83518356e-02,
 #            6.08981341e-04, 2.02412967e-03, 1.05996284e-02, 4.11202869e-03]
@@ -89,13 +90,7 @@ params6 = [1.25613356e+00, 9.55986225e-01, 1.32108354e+00, 1.17716270e+00, 1.027
 #            2.28421107e-03, -3.46397657e-08, 5.22218916e-03, 5.36755415e-04, 3.06070649e-04, 8.99633494e-03]
 
 
-x = np.linspace(0.4, 6, 5000)/ang2bohr
-# fitted_params, _ = scipy.optimize.curve_fit(uni_norm, psi[0, :], psi[1, :], p0=params)
-# fitted_params2, _ = scipy.optimize.curve_fit(bi_norm, psi[0, :], psi[1, :], p0=params2)
-# fitted_params3, _ = scipy.optimize.curve_fit(tri_norm, psi[0, :], psi[1, :], p0=params3)
-# fitted_params4, _ = scipy.optimize.curve_fit(quad_norm, psi[0, :], psi[1, :], p0=params4)
-# fitted_params5, _ = scipy.optimize.curve_fit(cat_norm, psi[0, :], psi[1, :], p0=params5)
-# fitted_params6, _ = scipy.optimize.curve_fit(sex_norm, psi[0, :], psi[1, :], p0=params6)
+
 # print(fitted_params6)
 # broad = 1.00
 # fitted_params2 = np.array(fitted_params2)
@@ -179,33 +174,51 @@ x = np.linspace(0.4, 6, 5000)/ang2bohr
 # plt.title(f'Difference Between d2$\psi$/dr2 and the Fit')
 # plt.savefig('Difference_between_dpsidr2_and_fit.png')
 # plt.close()
-bings = 50
+x = np.linspace(0.4, 6, 5000)/ang2bohr
+
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
-amp_all = np.zeros((5, 5, bings))
+# x = np.linspace(0.4, 6., 5000)/ang2bohr
+amp_all = np.zeros((5, 5, len(x)))
 for i in range(5):
-    coords = np.load(f'Non_imp_sampled/DMC_CH5_coords_20000_walkers_{i+1}.npy')
+    coords = np.load(f'Non_imp_sampled/DMC_CH5_coords_10000_walkers_{i+1}.npy')
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-    weights = np.load(f'Non_imp_sampled/DMC_CH5_weights_20000_walkers_{i+1}.npy')
+    weights = np.load(f'Non_imp_sampled/DMC_CH5_weights_10000_walkers_{i+1}.npy')
     for CH in range(5):
-        amp, xx = np.histogram(zmat[:, CH, 1]/ang2bohr, weights=weights[0, :], bins=bings, range=(0.6, 1.8), density=True)
-        bins = (xx[1:] + xx[:-1])/2.
-        amp_all[i, CH, :] += amp
+        density = scipy.stats.gaussian_kde(zmat[:, CH, 1]/ang2bohr, weights=weights[1, :])
+        amp_all[i, CH, :] += density(x)
 
-amp = np.mean(np.mean(amp_all, axis=0), axis=0)
+amp = np.mean(np.mean(amp_all, axis=0), axis=0)**0.5
 
-x = np.linspace(0.4, 6., 5000)/ang2bohr
+# fitted_params, _ = scipy.optimize.curve_fit(uni_norm, x, amp, p0=params)
+fitted_params2, _ = scipy.optimize.curve_fit(bi_norm, x, amp, p0=params2)
+# fitted_params3, _ = scipy.optimize.curve_fit(tri_norm, x, amp, p0=params3)
+# fitted_params4, _ = scipy.optimize.curve_fit(quad_norm, x, amp, p0=params4)
+# fitted_params5, _ = scipy.optimize.curve_fit(cat_norm, x, amp, p0=params5)
+# fitted_params6, _ = scipy.optimize.curve_fit(sex_norm, x, amp, p0=params6)
+
+plt.plot(x, amp, label='tryin to fit this')
+# plt.plot(x, uni_norm(x, *fitted_params), label='1 Guassian')
+plt.plot(x, bi_norm(x, *fitted_params2), label='2 Guassian')
+# plt.plot(x, tri_norm(x, *fitted_params3), label='3 Guassian')
+# plt.plot(x, quad_norm(x, *fitted_params4), label='4 Guassian')
+# plt.plot(x, cat_norm(x, *fitted_params5), label='5 Guassian')
+# plt.plot(x, sex_norm(x, *fitted_params6), label='6 Guassian')
+
+
+
 psi = np.zeros((5, 5000))
 type = 'min'
 for i in range(5):
     psi[i, :] += np.load(f'{type}_wvfns/GSW_{type}_CH_{i+1}.npy')
 
 min_psi = np.mean(psi, axis=0)
+psi = np.zeros((5, 5000))
 type = 'cs'
 for i in range(5):
     psi[i, :] += np.load(f'{type}_wvfns/GSW_{type}_CH_{i+1}.npy')
 
 cs_psi = np.mean(psi, axis=0)
-
+psi = np.zeros((5, 5000))
 type = 'c2v'
 for i in range(5):
     psi[i, :] += np.load(f'{type}_wvfns/GSW_{type}_CH_{i+1}.npy')
@@ -220,7 +233,7 @@ new_psi = np.mean(np.vstack((min_psi, cs_psi, c2v_psi)), axis=0)
 # # fitted_params5, _ = scipy.optimize.curve_fit(cat_norm, bins, amp, p0=params5)
 # # fitted_params6, _ = scipy.optimize.curve_fit(sex_norm, bins, amp, p0=params6)
 #
-plt.plot(bins, amp, label='averaged wvfn')
+# plt.plot(bins, amp, label='averaged wvfn')
 
 # plt.plot(x, min_psi*112., label='averaged min psi')
 # plt.plot(x, cs_psi*42., label='averaged cs psi')
@@ -243,4 +256,5 @@ plt.savefig('testing_these_fits.png')
 # np.save('Fits_CH_stretch_wvfns/4_Guass_fit', np.vstack((x*ang2bohr, quad_norm(x, *fitted_params4))))
 # np.save('Fits_CH_stretch_wvfns/1_Guass_fit', np.vstack((x*ang2bohr, uni_norm(x, *fitted_params))))
 # np.save('Fits_CH_stretch_wvfns/2_Guass_fit', np.vstack((x*ang2bohr, bi_norm(x, *fitted_params2))))
-np.save(f'Fits_CH_stretch_wvfns/Average_no_fit', np.vstack((x*ang2bohr, new_psi)))
+# np.save(f'Fits_CH_stretch_wvfns/Average_no_fit', np.vstack((x*ang2bohr, new_psi)))
+np.save('Fits_CH_stretch_wvfns/2_Gaussian_sqrt_phi_sqrd', np.vstack((x*ang2bohr, bi_norm(x, *fitted_params2))))

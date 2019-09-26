@@ -43,7 +43,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Switch_test_sp" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/wavefunction_graphs" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.7" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

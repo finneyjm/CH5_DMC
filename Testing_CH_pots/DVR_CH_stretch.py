@@ -86,18 +86,10 @@ def run(CH, type, coords):
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
-    # plt.plot(g[:, 1, 0]/ang2bohr, np.array([En[0]]*50)*har2wave, color='C%s' %(CH+1))
-    # plt.savefig('Potential_CH_stretch_c2v_saddle%s.png' % CH)
     print(En[0]*har2wave)
-    # np.save('CH_stretch_wavefunction%s' %CH, Eig[:, 0])
-    # plt.plot(g[:, 1, 0]/ang2bohr, -Eig[:, 0], label='Ground State Wavefunction CH stretch %s' %CH)
-    # plt.xlabel('Bond Distance (Angstrom)')
-    # plt.ylabel('Probability Density')
-    # plt.legend()
-    # plt.savefig('GSW%s.png' %CH)
-    if np.max(Eig[:, 0]) < 0.005:
-        Eig[:, 0] *= -1.
-    np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
+    # if np.max(Eig[:, 0]) < 0.005:
+    #     Eig[:, 0] *= -1.
+    # np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
     return g, Eig[:, 0]
 
 
@@ -107,26 +99,4 @@ for i in np.arange(1, 6):
     # run(i, 'cs', coords_initial_cs)
     # run(i, 'c2v', coords_initial_c2v)
 
-# av_wvfn = np.mean(wvfn, axis=0)
-# avg_wvfn = np.vstack((g[:, 1, 0], av_wvfn))
-# np.save('Average_GSW_CH_stretch', avg_wvfn)
 
-
-# plt.legend(loc=3)
-# plt.savefig('Avg_GSW.png')
-# for i in range(11):
-#     s_point = 1.2 + 0.01*float(i)
-#     switch = (np.tanh((g[:, 1, 0]-s_point*ang2bohr)) + 1.)*0.5
-#     new_wvfn = wvfn[0, :]*switch + wvfn[1, :]*(1.-switch)
-#     new_wvfn = new_wvfn/np.linalg.norm(new_wvfn)
-#
-#     plt.plot(g[:, 1, 0] / ang2bohr, av_wvfn, label='Average Ground State Wavefunction')
-#     plt.plot(g[:, 1, 0]/ang2bohr, new_wvfn, label='Switch wvfn')
-#     plt.plot(g[:, 1, 0]/ang2bohr, wvfn[0, :], label='CH 1')
-#     plt.plot(g[:, 1, 0]/ang2bohr, wvfn[1, :], label='CH 2')
-#     plt.legend()
-#     plt.savefig('Switch_min_wvfn_%s.png' %s_point)
-#     plt.close()
-#
-#     new_wvfn = np.vstack((g[:, 1, 0], new_wvfn))
-#     np.save('Switch_c2v_wvfn_new_%s' %s_point, new_wvfn)

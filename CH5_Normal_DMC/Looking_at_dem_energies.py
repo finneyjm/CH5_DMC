@@ -2,22 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 har2wave = 219474.6
-trials = 1
 
 
-def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, broad):
+def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, trials_i, broad):
     N_i = len(imp_samp_walkers)
     N_n = len(non_imp_samp_walkers)
-    energies_imp = np.zeros((N_i, trials))
-    energies_non = np.zeros((N_n, trials))
-    for j in range(trials):
+    energies_imp = np.zeros((N_i, trials_i))
+    energies_non = np.zeros((N_n, trials_ni))
+    for j in range(trials_ni):
         for i in range(N_n):
             Energy = np.load(f'Non_imp_sampled/DMC_CH5_Energy_{non_imp_samp_walkers[i]}_' +
                              f'walkers_{j+1}.npy')[1, :]*har2wave
             energies_non[i, j] += np.mean(Energy[1000:])
+    for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/Avg_wvfn/energies/' +
-                             f'Imp_samp_CH5_energy_full_avg_{imp_samp_walkers[i]}_' +
+            Energy = np.load(f'Trial_wvfn_testing/phi_sqrt/energies/' +
+                             f'Imp_samp_CH5_energy_phi_sqrt_{imp_samp_walkers[i]}_' +
                              f'walkers_{j+1}.npy')[1, :]*har2wave
             energies_imp[i, j] += np.mean(Energy[1000:])
 
@@ -43,12 +43,13 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, broad):
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_full_avg_wvfn.png')
+    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_phi_sqrt_wvfn.png')
     plt.close(fig)
 
 
 walkers1 = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+walkers3 = [100, 200, 500, 1000, 2000, 5000, 10000]
 walkers2 = [500, 1000, 2000, 5000, 10000]
 # braod = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]
 # for i in range(9):
-lets_get_some_energies(walkers1, walkers1, 4)
+lets_get_some_energies(walkers1, walkers1, 5, 5, 4)

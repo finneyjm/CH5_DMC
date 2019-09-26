@@ -94,7 +94,7 @@ def plotting(Ecut, scaling):
     fig2.savefig(f'Simple_concrete_filling_corrected.png')
 
 
-plotting([0, 100, 300, 500, 700, 1000], 5000.)
+# plotting([0, 100, 300, 500, 700, 1000], 5000.)
 
 
 # cut = 100
@@ -112,7 +112,7 @@ plotting([0, 100, 300, 500, 700, 1000], 5000.)
 # plt.savefig('GSW_test_small_cut_overlap%s.png' %cut)
 # en, eig, g = run(500)
 # print(np.dot((eig[:, 0]*eig[:, 0]), g))
-run(600)
+run(0)
 
 
 

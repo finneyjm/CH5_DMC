@@ -185,8 +185,8 @@ def descendants(Psi):
 
 def run(propagation, test_number):
     Psi_t = np.load(f'Fits_CH_stretch_wvfns/Average_no_fit.npy')
-    # interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
-    interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
+    interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+    # interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
     DW = False
     psi = Walkers(N_0)
     Fqx = drift(psi.zmat, psi.coords, interp)
@@ -241,45 +241,12 @@ def run(propagation, test_number):
 
 
 tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
-# broad_test = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
 # for j in range(5):
-j = 1
-# for i in range(8):
-N_0 = tests[7]
-run(250, j+1)
-print(f'{tests[7]} Walker Test {j+1} is done!')
-# Psi_t, time_list = tm.time_me(np.load, f'Fits_CH_stretch_wvfns/Average_no_fit.npy')
-# tm.print_time_list(np.load, time_list)
-#
-#
-# def asygh():
-#     interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
-#     return 4
-#
-#
-# four, interp_list = tm.time_me(asygh)
-# tm.print_time_list(asygh, interp_list)
-# interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
-# N_0 = tests[6]
-# for i in range(5):
-#     psi, psi_list = tm.time_me(Walkers, N_0)
-#     tm.print_time_list(Walkers, psi_list)
-#     f, f_time = tm.time_me(drift, psi.zmat, psi.coords, interp)
-#     tm.print_time_list(drift, f_time)
-#     psi, asdf, asdfa, psi_time = tm.time_me(Kinetic, psi, f, interp)
-#     tm.print_time_list(Kinetic, psi_time)
-#     pot, pot_time = tm.time_me(Potential, psi)
-#     tm.print_time_list(Potential, pot_time)
-#     psi, psi_time = tm.time_me(E_loc, psi, interp)
-#     tm.print_time_list(E_loc, psi_time)
-#     er, er_time = tm.time_me(E_ref_calc, psi)
-#     tm.print_time_list(E_ref_calc, er_time)
-#     psi, psi_time = tm.time_me(Weighting, er, psi, True, f)
-#     tm.print_time_list(Weighting, psi_time)
-#     d, d_time = tm.time_me(descendants, psi)
-#     tm.print_time_list(descendants, d_time)
-#     e, e_time = tm.time_me(run, 0, 'test')
-#     tm.print_time_list(run, e_time)
+j = 4
+for i in range(8):
+    N_0 = tests[i]
+    run(250, j+1)
+    print(f'{tests[i]} Walker Test {j+1} is done!')
 
 # N_0 = 5000
 # # alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
