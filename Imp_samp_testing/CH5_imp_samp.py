@@ -183,8 +183,8 @@ def descendants(Psi):
     return d
 
 
-def run(propagation, test_number):
-    Psi_t = np.load(f'Fits_CH_stretch_wvfns/Average_no_fit.npy')
+def run(propagation, test_number, bro):
+    Psi_t = np.load(f'min_wvfns/Average_min_broadening_{bro}x.npy')
     interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
     # interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
     DW = False
@@ -231,9 +231,9 @@ def run(propagation, test_number):
             DW = True
         elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
             d_values = descendants(new_psi)
-    np.save(f'Trial_wvfn_testing/Avg_wvfn/coords/Imp_samp_DMC_CH5_coords_full_avg_{N_0}_walkers_{test_number}', Psi_tau.coords)
-    np.save(f'Trial_wvfn_testing/Avg_wvfn/weights/Imp_samp_DMC_CH5_weights_full_avg_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
-    np.save(f'Trial_wvfn_testing/Avg_wvfn/energies/Imp_samp_CH5_energy_full_avg_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
+    np.save(f'Trial_wvfn_testing/broad_{bro}/coords/Imp_samp_DMC_CH5_coords_min_avg_broad{bro}_{N_0}_walkers_{test_number}', Psi_tau.coords)
+    np.save(f'Trial_wvfn_testing/broad_{bro}/weights/Imp_samp_DMC_CH5_weights_min_avg_broad{bro}_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
+    np.save(f'Trial_wvfn_testing/broad_{bro}/energies/Imp_samp_CH5_energy_min_avg_broad{bro}_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
     # np.save(f'Non_imp_sampled/DMC_CH5_Energy_{N_0}_walkers_{test_number}.npy', np.vstack((time, Eref_array, weights, accept)))
     # np.save(f'Non_imp_sampled/DMC_CH5_coords_{N_0}_walkers_{test_number}.noy', Psi_tau.coords)
     # np.save(f'Non_imp_sampled/DMC_CH5_weights_{N_0}_walkers_{test_number}.npy', np.vstack((Psi_tau.weights, d_values)))
@@ -241,17 +241,19 @@ def run(propagation, test_number):
 
 
 tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+# broad = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 # for j in range(5):
+#     b = 8
 j = 4
 for i in range(8):
     N_0 = tests[i]
-    run(250, j+1)
-    print(f'{tests[i]} Walker Test {j+1} is done!')
+    run(250, j+1, 1.2)
+    print(f'{tests[i]} Walker broadening {1.2}x Test {j+1} is done!')
 
 # N_0 = 5000
 # # alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
 # # for j in range(9):
-# Psi_t = np.load(f'Fits_CH_stretch_wvfns/Average_no_fit.npy')
+# Psi_t = np.load(f'min_wvfns/Average_min_broadening_{1.1}x.npy')
 # interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 # # psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
 # # interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
@@ -285,5 +287,5 @@ for i in range(8):
 #     axes[i].set_ylim(-20000, 20000)
 #     axes[i].legend(loc='lower left')
 # plt.tight_layout()
-# fig.savefig(f'local_energy_plots/Average_no_fit.png')
+# fig.savefig(f'local_energy_plots/Average_min_broadening_{1.1}x.png')
 # plt.close(fig)
