@@ -52,4 +52,4 @@ walkers3 = [100, 200, 500, 1000, 2000, 5000, 10000]
 walkers2 = [500, 1000, 2000, 5000, 10000]
 braod = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 # for i in range(9):
-lets_get_some_energies(walkers1, walkers1, 5, 5, braod[9])
+lets_get_some_energies(walkers1, walkers1, 5, 5, 1.2)
