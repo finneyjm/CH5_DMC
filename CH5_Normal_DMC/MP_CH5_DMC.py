@@ -2,12 +2,11 @@ import numpy as np
 import copy
 import CH5pot
 import multiprocessing as mp
+import Timing_p3 as tm
 
-pool = mp.Pool(mp.cpu_count()-1)
+
 # DMC parameters
 dtau = 1.
-N_0 = 100
-time_total = 200.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -34,39 +33,42 @@ class Walkers(object):
     walkers = 0
 
     def __init__(self, walkers):
-        self.walkers = np.arange(0, N_0)
+        self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_inital]*walkers)
-        rand_idx = np.random.rand(N_0, 5).argsort(axis=1) + 1
-        b = self.coords[np.arange(N_0)[:, None], rand_idx]
+        rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
+        b = self.coords[np.arange(walkers)[:, None], rand_idx]
         self.coords[:, 1:6, :] = b
-        self.weights = np.zeros(walkers) + 1.
-        self.weights_i = np.zeros(walkers) + 1.
+        self.weights = np.ones(walkers)
         self.V = np.zeros(walkers)
 
 
 # Random walk of all the walkers
 def Kinetic(Psi):
-    randomwalkC = np.random.normal(0.0, sigmaC, size=(N_0, 3))
-    randomwalkH = np.random.normal(0.0, sigmaH, size=(N_0, 5, 3))
+    randomwalkC = np.random.normal(0.0, sigmaC, size=(len(Psi.coords), 3))
+    randomwalkH = np.random.normal(0.0, sigmaH, size=(len(Psi.coords), 5, 3))
     Psi.coords[:, 0, :] += randomwalkC
     Psi.coords[:, 1:6, :] += randomwalkH
     return Psi
 
 
+# Function for the potential for the mp to use
 def get_pot(coords):
-    return np.array(CH5pot.mycalcpot(coords, len(coords[:, 0, 0])))
-
-
-def Potential(Psi):
-    V = pool.map(get_pot, Psi.coords)
+    V = CH5pot.mycalcpot(coords, len(coords))
     return V
+
+
+# Split up those coords to speed up dat potential
+def Potential(Psi):
+    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    V = pool.map(get_pot, coords)
+    Psi.V = np.concatenate(V)
+    return Psi
 
 
 # Calculate V_ref for the weighting calculation and to determine the ground state energy
 def V_ref_calc(Psi):
-    P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    V_ref = sum(Psi.weights*Psi.V)/P - alpha*(sum((Psi.weights-Psi.weights_i))/P0)
+    V_ref = sum(Psi.weights*Psi.V)/P - alpha*(np.log(P/len(Psi.coords)))
     return V_ref
 
 
@@ -74,7 +76,7 @@ def V_ref_calc(Psi):
 def Weighting(Vref, Psi, DW):
     Psi.weights = Psi.weights * np.exp(-(Psi.V - Vref) * dtau)
     # Conditions to prevent one walker from obtaining all the weight
-    threshold = 1./float(N_0)
+    threshold = 1./float(len(Psi.coords))
     death = np.argwhere(Psi.weights < threshold)
     for i in death:
         ind = np.argmax(Psi.weights)
@@ -92,12 +94,12 @@ def Weighting(Vref, Psi, DW):
 # Calculates the descendant weight for the walkers before descendant weighting
 def descendants(Psi):
     d = np.bincount(Psi.walkers, weights=Psi.weights)
-    while len(d) < N_0:
+    while len(d) < len(Psi.coords):
         d = np.append(d, 0.)
     return d
 
 
-def run(propagation, test_number):
+def run(N_0, time_total, propagation, test_number):
     DW = False  # a parameter that will implement descendant weighting when True
     psi = Walkers(N_0)
     Psi = Kinetic(psi)
@@ -113,19 +115,21 @@ def run(propagation, test_number):
 
     # initial parameters before running the calculation
 
-    Psi_tau = 0  #
+    Psi_tau = Walkers(1)  #
     for i in range(int(time_total)):
+        # if i % 1000 == 0:
+        #     print(i)
         Psi = Kinetic(new_psi)
         Psi = Potential(Psi)
+        new_psi = Weighting(Vref, Psi, DW)
 
         if DW is False:
             prop = float(propagation)
 
         elif DW is True:
             prop -= 1.
-            if Psi_tau == 0:
+            if len(Psi_tau.coords) == 1:
                 Psi_tau = copy.deepcopy(Psi)
-        new_psi = Weighting(Vref, Psi, DW)
 
         Vref = V_ref_calc(new_psi)
         Eref = np.append(Eref, Vref)
@@ -136,6 +140,20 @@ def run(propagation, test_number):
             DW = True
         elif i >= (time_total - 1. - float(propagation)) and prop == 0:  # end of descendant weighting
             d_values = descendants(new_psi)
+        # np.save(f'Non_imp_sampled/DMC_CH5_Energy_{N_0}_walkers_{test_number}.npy', np.vstack((time, Eref, weights)))
+        # np.save(f'Non_imp_sampled/DMC_CH5_coords_{N_0}_walkers_{test_number}.noy', Psi_tau.coords)
+        # np.save(f'Non_imp_sampled/DMC_CH5_weights_{N_0}_walkers_{test_number}.npy', np.vstack((Psi_tau.weights, d_values)))
+    return np.mean(Eref)
 
 
-run(0, 0)
+pool = mp.Pool(mp.cpu_count()-1)
+psi = Walkers(20000)
+Psi, pot_list = tm.time_me(Potential, psi)
+tm.print_time_list(Potential, pot_list)
+def pot(Psi):
+    V = np.array(CH5pot.mycalcpot(Psi.coords, len(Psi.coords)))
+    Psi.V = V
+    return Psi
+
+phi, new_pot_list = tm.time_me(pot, psi)
+tm.print_time_list(pot, new_pot_list)

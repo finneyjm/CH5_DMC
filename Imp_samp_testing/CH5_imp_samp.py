@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # DMC parameters
 dtau = 1.
 # N_0 = 1000
-time_steps = 20000.
+# time_steps = 100.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -42,11 +42,11 @@ class Walkers(object):
     walkers = 0
 
     def __init__(self, walkers):
-        self.walkers = np.arange(0, N_0)
+        self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_initial]*walkers)
-        # rand_idx = np.random.rand(N_0, 5).argsort(axis=1) + 1
-        # b = self.coords[np.arange(N_0)[:, None], rand_idx]
-        # self.coords[:, 1:6, :] = b
+        rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
+        b = self.coords[np.arange(walkers)[:, None], rand_idx]
+        self.coords[:, 1:6, :] = b
         self.zmat = CoordinateSet(self.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
         self.weights = np.zeros(walkers) + 1.
         self.d = np.zeros(walkers)
@@ -56,14 +56,14 @@ class Walkers(object):
 
 
 def psi_t(zmatrix, interp):
-    psi = np.zeros((N_0, bonds))
+    psi = np.zeros((len(Psi.coords), bonds))
     for i in range(bonds):
         psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp, der=0)
     return psi
 
 
 def drdx(zmatrix, coords):
-    chain = np.zeros((N_0, 5, 6, 3))
+    chain = np.zeros((len(Psi.coords), 5, 6, 3))
     for xyz in range(3):
         for CH in range(bonds):
             chain[:, CH, 0, xyz] += ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/zmatrix[:, CH, 1])
@@ -74,13 +74,13 @@ def drdx(zmatrix, coords):
 def drift(zmatrix, coords, interp):
     psi = psi_t(zmatrix, interp)
     dr1 = drdx(zmatrix, coords)
-    der = np.zeros((N_0, bonds))
+    der = np.zeros((len(Psi.coords), bonds))
     for i in range(bonds):
         der[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp, der=1)/psi[:, i])
-    a = dr1.reshape((N_0, 5, 18))
-    b = der.reshape((N_0, 1, 5))
+    a = dr1.reshape((len(Psi.coords), 5, 18))
+    b = der.reshape((len(Psi.coords), 1, 5))
     drift = np.matmul(b, a)
-    return 2.*drift.reshape((N_0, 6, 3))
+    return 2.*drift.reshape((len(Psi.coords), 6, 3))
 
 
 def metropolis(r1, r2, Fqx, Fqy, x, y, interp):
@@ -104,33 +104,33 @@ def metropolis(r1, r2, Fqx, Fqy, x, y, interp):
 # Random walk of all the walkers
 def Kinetic(Psi, Fqx, interp):
     Drift = sigmaCH**2/2.*Fqx
-    randomwalk = np.zeros((N_0, 6, 3))
-    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaH, size=(N_0, 5, 3))
-    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaC, size=(N_0, 3))
+    randomwalk = np.zeros((len(Psi.coords), 6, 3))
+    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaH, size=(len(Psi.coords), 5, 3))
+    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaC, size=(len(Psi.coords), 3))
     y = randomwalk + Drift + np.array(Psi.coords)
     zmatriy = CoordinateSet(y, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
     Fqy = drift(zmatriy, y, interp)
     a = metropolis(Psi.zmat, zmatriy, Fqx, Fqy, Psi.coords, y, interp)
-    check = np.random.random(size=N_0)
+    check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
     Psi.coords[accept] = y[accept]
     nah = np.argwhere(a <= check)
     Fqy[nah] = Fqx[nah]
     Psi.zmat[accept] = zmatriy[accept]
-    acceptance = float(len(accept)/N_0)*100.
+    acceptance = float(len(accept)/len(Psi.coords))*100.
     return Psi, Fqy, acceptance
 
 
 def Potential(Psi):
-    V = CH5pot.mycalcpot(Psi.coords, N_0)
+    V = CH5pot.mycalcpot(Psi.coords, len(Psi.coords))
     Psi.V = np.array(V)
     return Psi
 
 
 def local_kinetic(Psi, interp):
     psi = psi_t(Psi.zmat, interp)
-    der1 = np.zeros((N_0, bonds))
-    der2 = np.zeros((N_0, bonds))
+    der1 = np.zeros((len(Psi.coords), bonds))
+    der2 = np.zeros((len(Psi.coords), bonds))
     for i in range(bonds):
         der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i]*(2./Psi.zmat[:, i, 1]))
         der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2)/psi[:, i])
@@ -144,16 +144,17 @@ def E_loc(Psi, interp):
 
 
 def E_ref_calc(Psi):
-    P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    E_ref = sum(Psi.weights*Psi.El)/P - alpha*np.log(P/P0)
+    E_ref = sum(Psi.weights*Psi.El)/P - alpha*np.log(P/len(Psi.coords))
+    print(sum(Psi.weights*Psi.El)/P*har2wave)
+    print(alpha*np.log(P/len(Psi.coords))*har2wave)
     return E_ref
 
 
 def Weighting(Eref, Psi, DW, Fqx):
     Psi.weights = Psi.weights * np.exp(-(Psi.El - Eref) * dtau)
     # print(np.max(Psi.weights))
-    threshold = 1./float(N_0)
+    threshold = 1./float(len(Psi.coords))
     death = np.argwhere(Psi.weights < threshold)
     for i in death:
         ind = np.argmax(Psi.weights)
@@ -176,15 +177,34 @@ def Weighting(Eref, Psi, DW, Fqx):
     return Psi
 
 
+Psi_t = np.load('Fits_CH_stretch_wvfns/Average_min_no_fit.npy')
+walkers = np.load('Trial_wvfn_testing/Avg_wvfn/coords/Imp_samp_DMC_CH5_coords_avg_20000_walkers_4.npy')
+weights = np.load('Trial_wvfn_testing/Avg_wvfn/weights/Imp_samp_DMC_CH5_weights_avg_20000_walkers_4.npy')
+energies = np.load('Trial_wvfn_testing/Avg_wvfn/energies/Imp_samp_CH5_energy_avg_20000_walkers_4.npy')
+print(energies[1, -250]*har2wave)
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+Psi = Walkers(20000)
+Psi.coords = walkers
+Psi.zmat = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
+F = sigmaCH**2/2. * drift(Psi.zmat, Psi.coords, interp)
+V = np.array(CH5pot.mycalcpot(Psi.coords))
+Psi.V = V
+Psi = E_loc(Psi, interp)
+Psi.weights = weights[0, :]
+Psi = Weighting(energies[1, -251], Psi, False, F)
+E_ref = E_ref_calc(Psi)
+print(E_ref*har2wave)
+
+
 def descendants(Psi):
     d = np.bincount(Psi.walkers, weights=Psi.weights)
-    while len(d) < N_0:
+    while len(d) < len(Psi.coords):
         d = np.append(d, 0.)
     return d
 
 
-def run(propagation, test_number, bro):
-    Psi_t = np.load(f'min_wvfns/Average_min_broadening_{bro}x.npy')
+def run(N_0, time_steps, propagation, test_number, bro):
+    Psi_t = np.load(f'Fits_CH_stretch_wvfns/Average_min_no_fit.npy')
     interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
     # interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
     DW = False
@@ -206,12 +226,13 @@ def run(propagation, test_number, bro):
 
     Psi_tau = 0
     for i in range(int(time_steps)):
-        if i % 1000 == 0:
-            print(i)
+        # if i % 1000 == 0:
+        # print(i)
 
         Psi, Fqx, acceptance = Kinetic(new_psi, Fqx, interp)
         Psi = Potential(Psi)
         Psi = E_loc(Psi, interp)
+        new_psi = Weighting(Eref, Psi, DW, Fqx)
 
         if DW is False:
             prop = float(propagation)
@@ -219,7 +240,6 @@ def run(propagation, test_number, bro):
             prop -= 1.
             if Psi_tau == 0:
                 Psi_tau = copy.deepcopy(Psi)
-        new_psi = Weighting(Eref, Psi, DW, Fqx)
 
         Eref = E_ref_calc(new_psi)
         Eref_array = np.append(Eref_array, Eref)
@@ -231,61 +251,64 @@ def run(propagation, test_number, bro):
             DW = True
         elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
             d_values = descendants(new_psi)
-    np.save(f'Trial_wvfn_testing/broad_{bro}/coords/Imp_samp_DMC_CH5_coords_min_avg_broad{bro}_{N_0}_walkers_{test_number}', Psi_tau.coords)
-    np.save(f'Trial_wvfn_testing/broad_{bro}/weights/Imp_samp_DMC_CH5_weights_min_avg_broad{bro}_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
-    np.save(f'Trial_wvfn_testing/broad_{bro}/energies/Imp_samp_CH5_energy_min_avg_broad{bro}_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
+    # np.save(f'Trial_wvfn_testing/Avg_wvfn/coords/Imp_samp_DMC_CH5_coords_min_avg_{N_0}_walkers_{test_number}', Psi_tau.coords)
+    # np.save(f'Trial_wvfn_testing/Avg_wvfn/weights/Imp_samp_DMC_CH5_weights_min_avg_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
+    # np.save(f'Trial_wvfn_testing/Avg_wvfn/energies/Imp_samp_CH5_energy_min_avg_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
     # np.save(f'Non_imp_sampled/DMC_CH5_Energy_{N_0}_walkers_{test_number}.npy', np.vstack((time, Eref_array, weights, accept)))
     # np.save(f'Non_imp_sampled/DMC_CH5_coords_{N_0}_walkers_{test_number}.noy', Psi_tau.coords)
     # np.save(f'Non_imp_sampled/DMC_CH5_weights_{N_0}_walkers_{test_number}.npy', np.vstack((Psi_tau.weights, d_values)))
     return Eref_array
 
 
+# N_0 = 100
+# run(250, 0, 0)
+
 # tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 # # broad = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 # # for j in range(5):
 # #     b = 8
-# j = 4
+# j = 0
 # for i in range(8):
 #     N_0 = tests[i]
-#     run(250, j+1, 1.2)
-#     print(f'{tests[i]} Walker broadening {1.2}x Test {j+1} is done!')
+#     run(250, j+1, 1.1)
+#     print(f'{tests[i]} Walker Test {j+1} is done!')
 
-N_0 = 5000
-# alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
-# for j in range(9):
-Psi_t = np.load(f'min_wvfns/Average_min_broadening_{1.5}x.npy')
-interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
-# psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
-# interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
-fig, axes = plt.subplots(1, 5, figsize=(20, 8))
-for i in range(5):
-    Psi = Walkers(N_0)
-    Psi.zmat[:, i, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
-    Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-    Psi = Potential(Psi)
-    Psi = E_loc(Psi, interp)
-    # psi = psi_t(Psi.zmat, interp)
-    axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
-    # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
-    axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
-    axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
-    # loc_1 = np.array(Psi.El)
-    # Psi = E_loc(Psi, interp2)
-    # diff = Psi.El - loc_1
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, diff*har2wave)
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy no fit')
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave - Psi.V*har2wave, label='Kinetic no fit')
-    # psi = psi_t(Psi.zmat, interp)
-    # # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, psi[:, ch-1], label='Gaussians')
-    # psi1 = psi_t(Psi.zmat, interp2)
-    # diff = psi1-psi
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El, label='difference')
-    axes[i].set_xlabel('rCH (Angstrom)')
-    # axes[i].set_xlim(0.8, 1.6)
-    # axes[i].set_ylim(-5, 5)
-    axes[i].set_ylabel('Energy (cm^-1)')
-    axes[i].set_ylim(-20000, 20000)
-    axes[i].legend(loc='lower left')
-plt.tight_layout()
-fig.savefig(f'local_energy_plots/Average_min_broadening_{1.5}x.png')
-plt.close(fig)
+# N_0 = 5000
+# # alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
+# # for j in range(9):
+# Psi_t = np.load(f'min_wvfns/Average_min_broadening_{1.5}x.npy')
+# interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+# # psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
+# # interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
+# fig, axes = plt.subplots(1, 5, figsize=(20, 8))
+# for i in range(5):
+#     Psi = Walkers(N_0)
+#     Psi.zmat[:, i, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
+#     Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+#     Psi = Potential(Psi)
+#     Psi = E_loc(Psi, interp)
+#     # psi = psi_t(Psi.zmat, interp)
+#     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
+#     # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
+#     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
+#     axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
+#     # loc_1 = np.array(Psi.El)
+#     # Psi = E_loc(Psi, interp2)
+#     # diff = Psi.El - loc_1
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, diff*har2wave)
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy no fit')
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave - Psi.V*har2wave, label='Kinetic no fit')
+#     # psi = psi_t(Psi.zmat, interp)
+#     # # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, psi[:, ch-1], label='Gaussians')
+#     # psi1 = psi_t(Psi.zmat, interp2)
+#     # diff = psi1-psi
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El, label='difference')
+#     axes[i].set_xlabel('rCH (Angstrom)')
+#     # axes[i].set_xlim(0.8, 1.6)
+#     # axes[i].set_ylim(-5, 5)
+#     axes[i].set_ylabel('Energy (cm^-1)')
+#     axes[i].set_ylim(-20000, 20000)
+#     axes[i].legend(loc='lower left')
+# plt.tight_layout()
+# fig.savefig(f'local_energy_plots/Average_min_broadening_{1.5}x.png')
+# plt.close(fig)

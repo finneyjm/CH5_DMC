@@ -25,6 +25,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/PES3" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/PES4" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Switch_wvfns" />
+      <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Test_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/Trial_wvfn_testing" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/c2v_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/checking_f" />
