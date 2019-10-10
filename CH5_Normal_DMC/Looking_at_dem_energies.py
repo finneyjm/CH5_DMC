@@ -16,8 +16,8 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             energies_non[i, j] += np.mean(Energy[1000:])
     for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/Test_right_broad_{broad}/energies/' +
-                             f'Imp_samp_CH5_energy_full_avg_right_broad{broad}_{imp_samp_walkers[i]}_' +
+            Energy = np.load(f'Trial_wvfn_testing/broad_{broad}/energies/' +
+                             f'Imp_samp_CH5_energy_min_avg_{imp_samp_walkers[i]}_' +
                              f'walkers_{j+1}.npy')[1, :]*har2wave
             energies_imp[i, j] += np.mean(Energy[1000:])
 
@@ -43,7 +43,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_full_avg_right_broad_{broad}.png')
+    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_min_avg_broad_{broad}.png')
     plt.close(fig)
 
 
@@ -52,4 +52,4 @@ walkers3 = [100, 200, 500, 1000, 2000, 5000, 10000]
 walkers2 = [500, 1000, 2000, 5000, 10000]
 braod = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 # for i in range(9):
-lets_get_some_energies(walkers1, walkers1, 5, 5, 1.1)
+lets_get_some_energies(walkers1, walkers1, 5, 5, 2.0)

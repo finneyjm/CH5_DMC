@@ -68,16 +68,12 @@ b = np.argmax(new_psi)
 plt.plot(x, new_psi*a/new_psi[b], label='average')
 b_new = np.argmax(min_psi)
 plt.plot(x, min_psi*a/min_psi[b_new], label='min average')
-new_x = np.zeros(x.shape)
-for i in range(len(x)):
-    if x[i] >= x[b]:
-        new_x[i] = (x[i] - x[b])*(1.1) + x[b]
-    else:
-        new_x[i] = x[i]
-# np.save(f'min_wvfns/Average_min_broadening_{1.1}x', np.vstack((new_x*ang2bohr, trial_psi)))
+# for i in range(10):
+
+new_x = (x - x[b])*(1.05) + x[b]
+np.save(f'min_wvfns/Average_min_broadening_{1.05}x', np.vstack((new_x*ang2bohr, trial_psi)))
 # b = np.max(trial_psi)
-np.save(f'Test_wvfns/Full_Average_right_broadening_{1.1}x', np.vstack((new_x*ang2bohr, new_psi)))
-plt.plot(new_x, new_psi*a/new_psi[b], label='min with 1.1x broadening')
+plt.plot(new_x, new_psi*a/new_psi[b], label='min with 2.0x broadening')
 # new_psi = np.mean(np.vstack((min_psi, cs_psi, c2v_psi)), axis=0)
 # plt.plot(x, get_this_fit(x, *fitted_params), label='fit')
 # lkj = np.load('Fits_CH_stretch_wvfns/Average_no_fit.npy')

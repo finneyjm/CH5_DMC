@@ -4,6 +4,7 @@ from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
 # import Timing_p3 as tm
 import matplotlib.pyplot as plt
+import multiprocessing as mp
 
 # DMC parameters
 dtau = 1.
@@ -56,14 +57,14 @@ class Walkers(object):
 
 
 def psi_t(zmatrix, interp):
-    psi = np.zeros((len(Psi.coords), bonds))
+    psi = np.zeros((len(zmatrix), bonds))
     for i in range(bonds):
         psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp, der=0)
     return psi
 
 
 def drdx(zmatrix, coords):
-    chain = np.zeros((len(Psi.coords), 5, 6, 3))
+    chain = np.zeros((len(coords), 5, 6, 3))
     for xyz in range(3):
         for CH in range(bonds):
             chain[:, CH, 0, xyz] += ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/zmatrix[:, CH, 1])
@@ -74,13 +75,13 @@ def drdx(zmatrix, coords):
 def drift(zmatrix, coords, interp):
     psi = psi_t(zmatrix, interp)
     dr1 = drdx(zmatrix, coords)
-    der = np.zeros((len(Psi.coords), bonds))
+    der = np.zeros((len(coords), bonds))
     for i in range(bonds):
         der[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp, der=1)/psi[:, i])
-    a = dr1.reshape((len(Psi.coords), 5, 18))
-    b = der.reshape((len(Psi.coords), 1, 5))
+    a = dr1.reshape((len(coords), 5, 18))
+    b = der.reshape((len(coords), 1, 5))
     drift = np.matmul(b, a)
-    return 2.*drift.reshape((len(Psi.coords), 6, 3))
+    return 2.*drift.reshape((len(coords), 6, 3))
 
 
 def metropolis(r1, r2, Fqx, Fqy, x, y, interp):
@@ -121,9 +122,18 @@ def Kinetic(Psi, Fqx, interp):
     return Psi, Fqy, acceptance
 
 
+# Function for the potential for the mp to use
+def get_pot(coords):
+    V = CH5pot.mycalcpot(coords, len(coords))
+    return V
+
+
+# Split up those coords to speed up dat potential
 def Potential(Psi):
-    V = CH5pot.mycalcpot(Psi.coords, len(Psi.coords))
-    Psi.V = np.array(V)
+    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    V = pool.map(get_pot, coords)
+    Psi.V = np.concatenate(V)
+    # Psi.V = np.array(CH5pot.mycalcpot(Psi.coords, len(Psi.coords)))
     return Psi
 
 
@@ -146,8 +156,6 @@ def E_loc(Psi, interp):
 def E_ref_calc(Psi):
     P = sum(Psi.weights)
     E_ref = sum(Psi.weights*Psi.El)/P - alpha*np.log(P/len(Psi.coords))
-    print(sum(Psi.weights*Psi.El)/P*har2wave)
-    print(alpha*np.log(P/len(Psi.coords))*har2wave)
     return E_ref
 
 
@@ -177,25 +185,6 @@ def Weighting(Eref, Psi, DW, Fqx):
     return Psi
 
 
-Psi_t = np.load('Fits_CH_stretch_wvfns/Average_min_no_fit.npy')
-walkers = np.load('Trial_wvfn_testing/Avg_wvfn/coords/Imp_samp_DMC_CH5_coords_avg_20000_walkers_4.npy')
-weights = np.load('Trial_wvfn_testing/Avg_wvfn/weights/Imp_samp_DMC_CH5_weights_avg_20000_walkers_4.npy')
-energies = np.load('Trial_wvfn_testing/Avg_wvfn/energies/Imp_samp_CH5_energy_avg_20000_walkers_4.npy')
-print(energies[1, -250]*har2wave)
-interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
-Psi = Walkers(20000)
-Psi.coords = walkers
-Psi.zmat = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-F = sigmaCH**2/2. * drift(Psi.zmat, Psi.coords, interp)
-V = np.array(CH5pot.mycalcpot(Psi.coords))
-Psi.V = V
-Psi = E_loc(Psi, interp)
-Psi.weights = weights[0, :]
-Psi = Weighting(energies[1, -251], Psi, False, F)
-E_ref = E_ref_calc(Psi)
-print(E_ref*har2wave)
-
-
 def descendants(Psi):
     d = np.bincount(Psi.walkers, weights=Psi.weights)
     while len(d) < len(Psi.coords):
@@ -204,7 +193,7 @@ def descendants(Psi):
 
 
 def run(N_0, time_steps, propagation, test_number, bro):
-    Psi_t = np.load(f'Fits_CH_stretch_wvfns/Average_min_no_fit.npy')
+    Psi_t = np.load(f'min_wvfns/Average_min_broadening_{bro}x.npy')
     interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
     # interp = interpolate.splrep(Psi_t[0, :], np.array([1.]*len(Psi_t[1, :])), s=0)
     DW = False
@@ -226,8 +215,8 @@ def run(N_0, time_steps, propagation, test_number, bro):
 
     Psi_tau = 0
     for i in range(int(time_steps)):
-        # if i % 1000 == 0:
-        # print(i)
+        if i % 1000 == 0:
+            print(i)
 
         Psi, Fqx, acceptance = Kinetic(new_psi, Fqx, interp)
         Psi = Potential(Psi)
@@ -251,19 +240,25 @@ def run(N_0, time_steps, propagation, test_number, bro):
             DW = True
         elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
             d_values = descendants(new_psi)
-    # np.save(f'Trial_wvfn_testing/Avg_wvfn/coords/Imp_samp_DMC_CH5_coords_min_avg_{N_0}_walkers_{test_number}', Psi_tau.coords)
-    # np.save(f'Trial_wvfn_testing/Avg_wvfn/weights/Imp_samp_DMC_CH5_weights_min_avg_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
-    # np.save(f'Trial_wvfn_testing/Avg_wvfn/energies/Imp_samp_CH5_energy_min_avg_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
+    # np.save(f'Trial_wvfn_testing/broad_{bro}/coords/Imp_samp_DMC_CH5_coords_min_avg_{N_0}_walkers_{test_number}', Psi_tau.coords)
+    # np.save(f'Trial_wvfn_testing/broad_{bro}/weights/Imp_samp_DMC_CH5_weights_min_avg_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
+    # np.save(f'Trial_wvfn_testing/broad_{bro}/energies/Imp_samp_CH5_energy_min_avg_{N_0}_walkers_{test_number}', np.vstack((time, Eref_array, weights, accept)))
     # np.save(f'Non_imp_sampled/DMC_CH5_Energy_{N_0}_walkers_{test_number}.npy', np.vstack((time, Eref_array, weights, accept)))
     # np.save(f'Non_imp_sampled/DMC_CH5_coords_{N_0}_walkers_{test_number}.noy', Psi_tau.coords)
     # np.save(f'Non_imp_sampled/DMC_CH5_weights_{N_0}_walkers_{test_number}.npy', np.vstack((Psi_tau.weights, d_values)))
+    np.savez(f'Trial_wvfn_testing/broad_{bro}/all_da_things/Imp_samp_DMC_min_avg_{N_0}_walkers_{test_number}', coords=Psi_tau.coords, weights=Psi_tau.weights,
+             descendants=d_values, time=time, Eref=Eref_array, sum_weights=weights, accept=accept)
     return Eref_array
 
-
-# N_0 = 100
-# run(250, 0, 0)
-
-# tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+pool = mp.Pool(mp.cpu_count()-1)
+# # N_0 = 100
+# # run(250, 0, 0)
+# run(100, 100, 25, 1, 2.0)
+tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+for j in range(5):
+    for i in range(len(tests)):
+        run(tests[i], 20000, 250, j+1, 1.05)
+        print(f'{tests[i]} Walker Test {j+1} is done!')
 # # broad = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 # # for j in range(5):
 # #     b = 8
