@@ -32,12 +32,14 @@
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/cs_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/local_energy_plots" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/min_wvfns" />
+      <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/params" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/water_tests" />
       <excludeFolder url="file://$MODULE_DIR$/Multiweight_concrete/Energy_after_flattening" />
       <excludeFolder url="file://$MODULE_DIR$/Multiweight_concrete/Old_npy_files" />
       <excludeFolder url="file://$MODULE_DIR$/Multiweight_concrete/Wavefunctions" />
       <excludeFolder url="file://$MODULE_DIR$/Overlaps/Overlap_testing" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Big_energy_plots" />
+      <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Coordinerds" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Old_npy_files" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Potentials" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Switch_test_alpha" />

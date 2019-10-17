@@ -26,8 +26,13 @@ for i in range(5):
     psi[i, :] += np.load(f'{type}_wvfns/GSW_{type}_CH_{i+1}.npy')
     if np.max(psi[i, :]) < 0.02:
         psi[i, :] *= -1.
+trial_psi = np.mean(psi, axis=0)
 
-trial_psi = np.mean(psi[0:3, :], axis=0)
+psi = np.zeros((5, 5000))
+type = 'min'
+for i in range(5):
+    psi[i, :] += np.load(f'{type}_wvfns/GSW_{type}_CH_{i+1}.npy')
+
 
 min_psi = np.mean(psi, axis=0)
 psi = np.zeros((5, 5000))
@@ -63,24 +68,26 @@ a = np.max(amp)
 # fitted_params, _ = scipy.optimize.curve_fit(get_this_fit, x, amp, p0=params)
 # print(np.abs(fitted_params)/np.linalg.norm(fitted_params))
 
-new_psi = np.average(np.vstack((min_psi, cs_psi, c2v_psi)), axis=0)
-b = np.argmax(new_psi)
-plt.plot(x, new_psi*a/new_psi[b], label='average')
+# new_psi = np.average(np.vstack((min_psi, cs_psi, c2v_psi)), axis=0)
+# b = np.argmax(new_psi)
+# plt.plot(x, new_psi*a/new_psi[b], label='average')
 b_new = np.argmax(min_psi)
-plt.plot(x, min_psi*a/min_psi[b_new], label='min average')
+plt.plot(x, min_psi*a/min_psi[b_new], label='incorrect min average')
+b = np.argmax(trial_psi)
+plt.plot(x, trial_psi*a/trial_psi[b], label='min average')
 # for i in range(10):
-
-new_x = (x - x[b])*(1.05) + x[b]
-np.save(f'min_wvfns/Average_min_broadening_{1.05}x', np.vstack((new_x*ang2bohr, trial_psi)))
+# bro = 1.0
+# new_x = (x - x[b_new])*(bro) + x[b_new]
+# np.save(f'min_wvfns/Average_min_broadening_{bro}x', np.vstack((new_x*ang2bohr, min_psi)))
 # b = np.max(trial_psi)
-plt.plot(new_x, new_psi*a/new_psi[b], label='min with 2.0x broadening')
+# plt.plot(new_x, min_psi*a/min_psi[b_new], label=f'min with {bro}x broadening')
 # new_psi = np.mean(np.vstack((min_psi, cs_psi, c2v_psi)), axis=0)
 # plt.plot(x, get_this_fit(x, *fitted_params), label='fit')
 # lkj = np.load('Fits_CH_stretch_wvfns/Average_no_fit.npy')
 # plt.plot(x, lkj[1, :]*42., label='average?')
 # plt.plot(x, new_psi*42., label='averaged psi')
-# plt.xlim(0.8, 1.8)
+plt.xlim(0.8, 1.8)
 plt.xlabel('rCH (Angstrom)')
 plt.legend()
-plt.show()
+plt.savefig('show_dis_to_Anne.png')
 

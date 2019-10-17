@@ -109,6 +109,7 @@ def run(equilibration, wait_time, propagation, Ecut, naming):
     Eref = np.zeros((cuts, int(time_steps) + 1))
     Psi_tau = 0.
     wait = float(wait_time)
+    prop = float(propagation)
     j = 0
     num_of_dw = int(round((time_steps - equilibration) / (wait_time + propagation)))
     des_weights = np.zeros((num_of_dw, cuts, N_0))

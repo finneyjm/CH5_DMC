@@ -45,9 +45,9 @@ class Walkers(object):
     def __init__(self, walkers):
         self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_initial]*walkers)
-        rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
-        b = self.coords[np.arange(walkers)[:, None], rand_idx]
-        self.coords[:, 1:6, :] = b
+        # rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
+        # b = self.coords[np.arange(walkers)[:, None], rand_idx]
+        # self.coords[:, 1:6, :] = b
         self.zmat = CoordinateSet(self.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
         self.weights = np.zeros(walkers) + 1.
         self.d = np.zeros(walkers)
@@ -130,10 +130,10 @@ def get_pot(coords):
 
 # Split up those coords to speed up dat potential
 def Potential(Psi):
-    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
-    V = pool.map(get_pot, coords)
-    Psi.V = np.concatenate(V)
-    # Psi.V = np.array(CH5pot.mycalcpot(Psi.coords, len(Psi.coords)))
+    # coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    # V = pool.map(get_pot, coords)
+    # Psi.V = np.concatenate(V)
+    Psi.V = np.array(CH5pot.mycalcpot(Psi.coords, len(Psi.coords)))
     return Psi
 
 
@@ -250,16 +250,17 @@ def run(N_0, time_steps, propagation, test_number, bro):
              descendants=d_values, time=time, Eref=Eref_array, sum_weights=weights, accept=accept)
     return Eref_array
 
-pool = mp.Pool(mp.cpu_count()-1)
+# pool = mp.Pool(mp.cpu_count()-1)
 # # N_0 = 100
 # # run(250, 0, 0)
 # run(100, 100, 25, 1, 2.0)
-tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
-for j in range(5):
-    for i in range(len(tests)):
-        run(tests[i], 20000, 250, j+1, 1.05)
-        print(f'{tests[i]} Walker Test {j+1} is done!')
-# # broad = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
+# tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
+# # for j in range(5):
+# j = 3
+# for i in range(len(tests)):
+#     run(tests[i], 20000, 250, j+1, 1.1)
+#     print(f'{tests[i]} Walker Test {j+1} is done!')
+# broad = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 # # for j in range(5):
 # #     b = 8
 # j = 0
@@ -268,42 +269,43 @@ for j in range(5):
 #     run(250, j+1, 1.1)
 #     print(f'{tests[i]} Walker Test {j+1} is done!')
 
-# N_0 = 5000
-# # alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
-# # for j in range(9):
-# Psi_t = np.load(f'min_wvfns/Average_min_broadening_{1.5}x.npy')
-# interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
-# # psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
-# # interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
-# fig, axes = plt.subplots(1, 5, figsize=(20, 8))
-# for i in range(5):
-#     Psi = Walkers(N_0)
-#     Psi.zmat[:, i, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
-#     Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-#     Psi = Potential(Psi)
-#     Psi = E_loc(Psi, interp)
-#     # psi = psi_t(Psi.zmat, interp)
-#     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
-#     # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
-#     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
-#     axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
-#     # loc_1 = np.array(Psi.El)
-#     # Psi = E_loc(Psi, interp2)
-#     # diff = Psi.El - loc_1
-#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, diff*har2wave)
-#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy no fit')
-#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave - Psi.V*har2wave, label='Kinetic no fit')
-#     # psi = psi_t(Psi.zmat, interp)
-#     # # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, psi[:, ch-1], label='Gaussians')
-#     # psi1 = psi_t(Psi.zmat, interp2)
-#     # diff = psi1-psi
-#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El, label='difference')
-#     axes[i].set_xlabel('rCH (Angstrom)')
-#     # axes[i].set_xlim(0.8, 1.6)
-#     # axes[i].set_ylim(-5, 5)
-#     axes[i].set_ylabel('Energy (cm^-1)')
-#     axes[i].set_ylim(-20000, 20000)
-#     axes[i].legend(loc='lower left')
-# plt.tight_layout()
-# fig.savefig(f'local_energy_plots/Average_min_broadening_{1.5}x.png')
-# plt.close(fig)
+N_0 = 5000
+# alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
+# for j in range(9):
+bro = 1.0
+Psi_t = np.load(f'min_wvfns/Average_min_broadening_{bro}x.npy')
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+# psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
+# interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
+fig, axes = plt.subplots(1, 5, figsize=(20, 8))
+for i in range(5):
+    Psi = Walkers(N_0)
+    Psi.zmat[:, i, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
+    Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+    Psi = Potential(Psi)
+    Psi = E_loc(Psi, interp)
+    # psi = psi_t(Psi.zmat, interp)
+    axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
+    # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
+    axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
+    axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
+    # loc_1 = np.array(Psi.El)
+    # Psi = E_loc(Psi, interp2)
+    # diff = Psi.El - loc_1
+    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, diff*har2wave)
+    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy no fit')
+    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave - Psi.V*har2wave, label='Kinetic no fit')
+    # psi = psi_t(Psi.zmat, interp)
+    # # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, psi[:, ch-1], label='Gaussians')
+    # psi1 = psi_t(Psi.zmat, interp2)
+    # diff = psi1-psi
+    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El, label='difference')
+    axes[i].set_xlabel('rCH (Angstrom)')
+    # axes[i].set_xlim(0.8, 1.6)
+    # axes[i].set_ylim(-5, 5)
+    axes[i].set_ylabel('Energy (cm^-1)')
+    axes[i].set_ylim(-20000, 20000)
+    axes[i].legend(loc='lower left')
+plt.tight_layout()
+fig.savefig(f'local_energy_plots/Average_min_broadening_{bro}x.png')
+plt.close(fig)
