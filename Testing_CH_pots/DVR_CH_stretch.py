@@ -82,21 +82,27 @@ def Energy(T, V):
 
 
 def run(CH, type, coords):
-    g = grid(0.4, 6., 5000, CH, coords)
+    g = grid(0.4, 6., 500, CH, coords)
     V = Potential(g, CH)
     T = Kinetic_Calc(g)
     En, Eig = Energy(T, V)
     print(En[0]*har2wave)
-    # if np.max(Eig[:, 0]) < 0.005:
-    #     Eig[:, 0] *= -1.
+    if np.max(Eig[:, 0]) < 0.005:
+        Eig[:, 0] *= -1.
+    plt.plot(g[:, 1, 0], np.diag(V)*har2wave)
+    plt.plot(g[:, 1, 0], (Eig[:, 0])*50000 + En[0]*har2wave)
+    plt.xlim(0.6*ang2bohr, 1.8*ang2bohr)
+    plt.ylim(0, 20000)
+    plt.show()
+    plt.close()
     # np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
     return g, Eig[:, 0]
 
 
-wvfn = np.zeros((5, 1000))
+# wvfn = np.zeros((5, 1000))
 for i in np.arange(1, 6):
     run(i, 'min', coords_initial_min)
-    # run(i, 'cs', coords_initial_cs)
-    # run(i, 'c2v', coords_initial_c2v)
+    run(i, 'cs', coords_initial_cs)
+    run(i, 'c2v', coords_initial_c2v)
 
 

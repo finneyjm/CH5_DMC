@@ -144,6 +144,9 @@ def local_kinetic(Psi, interp):
     for i in range(bonds):
         der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i]*(2./Psi.zmat[:, i, 1]))
         der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2)/psi[:, i])
+        # der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)*(2./Psi.zmat[:, i, 1]))
+        # der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2))
+    # kin = der2+der1
     kin = -1./(2.*m_CH)*np.sum(der2+der1, axis=1)
     return kin
 
@@ -273,8 +276,10 @@ N_0 = 5000
 # alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
 # for j in range(9):
 bro = 1.0
-Psi_t = np.load(f'min_wvfns/Average_min_broadening_{bro}x.npy')
-interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+Psi_t = np.load(f'min_wvfns/GSW_min_CH_1.npy')
+x = np.linspace(0.4, 6., 5000)
+print(x[np.argmin(Psi_t)])
+interp = interpolate.splrep(x, Psi_t, s=0)
 # psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
 # interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
 fig, axes = plt.subplots(1, 5, figsize=(20, 8))
@@ -289,6 +294,7 @@ for i in range(5):
     # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
     axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
+    # axes[i].plot(Psi.coords[:, ])
     # loc_1 = np.array(Psi.El)
     # Psi = E_loc(Psi, interp2)
     # diff = Psi.El - loc_1
@@ -308,4 +314,5 @@ for i in range(5):
     axes[i].legend(loc='lower left')
 plt.tight_layout()
 fig.savefig(f'local_energy_plots/Average_min_broadening_{bro}x.png')
-plt.close(fig)
+plt.show()
+plt.close()

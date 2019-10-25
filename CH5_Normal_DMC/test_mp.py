@@ -19,14 +19,25 @@ def hh_dist(coords):
     blah = hh[mask].reshape(N, 5, 4)
     return blah
 
-
+wvfn = np.load('Non_imp_sampled/DMC_CH5_coords_20000_walkers_1.npy')
 coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
                           [0.1318851447521099, 2.088940054609643, 0.000000000000000],
                           [1.786540362044548, -1.386051328559878, 0.000000000000000],
                           [2.233806981137821, 0.3567096955165336, 0.000000000000000],
                           [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
                           [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
+print(np.sqrt(coords_initial[1, 0]**2 + coords_initial[1, 1]**2))
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
+wvfn_zmat = CoordinateSet(wvfn, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
+blah = np.array(wvfn_zmat)
+blah[:, :, 1] = np.ones((20000, 5))
+# wvfn_coords = CoordinateSet(blah, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+wvfn_hh = hh_dist(wvfn)
+# plt.scatter(np.std(wvfn_hh[5], axis=1), wvfn_zmat[5, :, 1], label='random walker 1')
+# plt.scatter(np.std(wvfn_hh[6], axis=1), wvfn_zmat[6, :, 1], label='random walker 2')
+# plt.scatter(np.std(wvfn_hh[7], axis=1), wvfn_zmat[7, :, 1], label='random walker 3')
+# plt.scatter(np.std(wvfn_hh[8], axis=1), wvfn_zmat[8, :, 1], label='random walker 4')
+# plt.scatter(np.std(wvfn_hh[9], axis=1), wvfn_zmat[9, :, 1], label='random walker 5')
 
 coords = np.array([coords_initial]*10000)
 zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
@@ -87,13 +98,14 @@ fitted_params, _ = scipy.optimize.curve_fit(exp_fit, new_hh, new_rch, p0=params)
 print(fitted_params)
 # params2 = [1, 2]
 # fitted_params2, _ = scipy.optimize.curve_fit(quad_fit, new_hh, new_rch, p0=params2)
-g = np.linspace(0, 0.5, num=2000)
+g = np.linspace(0, 1., num=5000)
+np.save('sigma_hh_to_rch_exp_relationship', np.vstack((g, exp_fit(g, *fitted_params))))
 plt.scatter(np.std(hh[0], axis=1), zmat[0, :, 1], label='min geo')
 plt.scatter(np.std(hh_cs[0], axis=1), zmat_cs[0, :, 1], label='cs saddle')
 plt.scatter(np.std(hh_c2v[0], axis=1), zmat_c2v[0, :, 1], label='c2v saddle')
 plt.plot(new_hh, new_rch)
 plt.plot(g, exp_fit(g, *fitted_params), label='exp fit')
-# plt.plot(g, quad_fit(g, *fitted_params2), label='quadratic fit')
+# # plt.plot(g, quad_fit(g, *fitted_params2), label='quadratic fit')
 plt.legend()
 plt.xlabel(r'$\sigma_{HH}$')
 plt.ylabel('rCH (Bohr)')

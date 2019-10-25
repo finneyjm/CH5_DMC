@@ -16,9 +16,9 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             energies_non[i, j] += np.mean(Energy[1000:])
     for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/broad_{broad}/all_da_things/' +
-                             f'Imp_samp_DMC_min_avg_{imp_samp_walkers[i]}_' +
-                             f'walkers_{j+1}.npz')['Eref']*har2wave
+            Energy = np.load(f'Trial_wvfn_testing/hh_to_rch/' +
+                             f'hh_to_rch_min_CH_2_{imp_samp_walkers[i]}_' +
+                             f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
             energies_imp[i, j] += np.mean(Energy[1000:])
 
     avg_imp = np.mean(energies_imp, axis=1)
@@ -52,4 +52,4 @@ walkers3 = [100, 200, 500, 1000, 2000, 5000, 10000]
 walkers2 = [500, 1000, 2000, 5000, 10000]
 braod = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 # for i in range(9):
-lets_get_some_energies(walkers1, walkers1, 5, 5, 1.1)
+lets_get_some_energies(walkers1, [100], 5, 1, 1.5)

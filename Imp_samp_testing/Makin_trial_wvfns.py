@@ -27,6 +27,7 @@ for i in range(5):
     if np.max(psi[i, :]) < 0.02:
         psi[i, :] *= -1.
 trial_psi = np.mean(psi, axis=0)
+other_psi = np.mean(psi[0:3], axis=0)
 
 psi = np.zeros((5, 5000))
 type = 'min'
@@ -75,6 +76,18 @@ b_new = np.argmax(min_psi)
 plt.plot(x, min_psi*a/min_psi[b_new], label='incorrect min average')
 b = np.argmax(trial_psi)
 plt.plot(x, trial_psi*a/trial_psi[b], label='min average')
+b = np.argmax(other_psi)
+plt.plot(x, other_psi*a/other_psi[b], label='other psi')
+# b = np.argmax(c2v_psi)
+# plt.plot(x, c2v_psi*a/c2v_psi[b], label='c2v average')
+# b = np.argmax(cs_psi)
+# plt.plot(x, cs_psi*a/cs_psi[b], label='cs average')
+# b = np.argmax(-psi[0, :])
+# plt.plot(x, -psi[0, :]*a/(-psi[0, b]), label='CH stretch 1')
+# b = np.argmax(psi[1, :])
+# plt.plot(x, psi[1, :]*a/psi[1, b], label='CH stretch 2')
+# b = np.argmax(psi[4, :])
+# plt.plot(x, psi[4, :]*a/psi[4, b], label='CH stretch 5')
 # for i in range(10):
 # bro = 1.0
 # new_x = (x - x[b_new])*(bro) + x[b_new]
@@ -89,5 +102,5 @@ plt.plot(x, trial_psi*a/trial_psi[b], label='min average')
 plt.xlim(0.8, 1.8)
 plt.xlabel('rCH (Angstrom)')
 plt.legend()
-plt.savefig('show_dis_to_Anne.png')
+plt.show()
 
