@@ -31,8 +31,8 @@ order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [
 wvfn_zmat = CoordinateSet(wvfn, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
 blah = np.array(wvfn_zmat)
 blah[:, :, 1] = np.ones((20000, 5))
-# wvfn_coords = CoordinateSet(blah, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-wvfn_hh = hh_dist(wvfn)
+wvfn_coords = CoordinateSet(blah, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+wvfn_hh = hh_dist(wvfn_coords)
 # plt.scatter(np.std(wvfn_hh[5], axis=1), wvfn_zmat[5, :, 1], label='random walker 1')
 # plt.scatter(np.std(wvfn_hh[6], axis=1), wvfn_zmat[6, :, 1], label='random walker 2')
 # plt.scatter(np.std(wvfn_hh[7], axis=1), wvfn_zmat[7, :, 1], label='random walker 3')
@@ -89,23 +89,25 @@ def exp_fit(x, *args):
 
 
 def quad_fit(x, *args):
-    a, c = args
-    return a*x**2 + c
+    a, b, c, d = args
+    return d*x**3 + a*x**2 + b*x + c
 
 
 params = [0.02388915, 6.29098812, 2.0149631]
 fitted_params, _ = scipy.optimize.curve_fit(exp_fit, new_hh, new_rch, p0=params)
 print(fitted_params)
-# params2 = [1, 2]
-# fitted_params2, _ = scipy.optimize.curve_fit(quad_fit, new_hh, new_rch, p0=params2)
+params2 = [1, 1, 1, 1]
+fitted_params2, _ = scipy.optimize.curve_fit(quad_fit, new_hh, new_rch, p0=params2)
+print(fitted_params2)
 g = np.linspace(0, 1., num=5000)
 np.save('sigma_hh_to_rch_exp_relationship', np.vstack((g, exp_fit(g, *fitted_params))))
+np.save('sigma_hh_to_rch_cub_relationship', np.vstack((g, quad_fit(g, *fitted_params2))))
 plt.scatter(np.std(hh[0], axis=1), zmat[0, :, 1], label='min geo')
 plt.scatter(np.std(hh_cs[0], axis=1), zmat_cs[0, :, 1], label='cs saddle')
 plt.scatter(np.std(hh_c2v[0], axis=1), zmat_c2v[0, :, 1], label='c2v saddle')
 plt.plot(new_hh, new_rch)
 plt.plot(g, exp_fit(g, *fitted_params), label='exp fit')
-# # plt.plot(g, quad_fit(g, *fitted_params2), label='quadratic fit')
+plt.plot(g, quad_fit(g, *fitted_params2), label='quadratic fit')
 plt.legend()
 plt.xlabel(r'$\sigma_{HH}$')
 plt.ylabel('rCH (Bohr)')

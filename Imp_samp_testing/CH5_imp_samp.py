@@ -294,6 +294,10 @@ for i in range(5):
     # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
     axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
+    if i is 0:
+        asdf = np.load('asdfasdfasdf.npy')
+        blah = asdf/(Psi.El-Psi.V)
+        one = 1
     # axes[i].plot(Psi.coords[:, ])
     # loc_1 = np.array(Psi.El)
     # Psi = E_loc(Psi, interp2)
