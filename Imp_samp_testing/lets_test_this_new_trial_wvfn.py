@@ -21,10 +21,11 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
                           [2.233806981137821, 0.3567096955165336, 0.000000000000000],
                           [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
                           [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
+
 bonds = 5
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
 
-Psi_t = np.load('params/min_wvfns/GSW_min_CH_1.npy')
+Psi_t = np.load('params/min_wvfns/GSW_min_CH_2.npy')
 x = np.linspace(0.4, 6., 5000)
 if np.max(Psi_t) < 0.02:
     shift = x[np.argmin(Psi_t)]
@@ -32,12 +33,13 @@ else:
     shift = x[np.argmax(Psi_t)]
 # shift = np.dot(Psi_t**2, x)
 # shift = 2.2611644678388316
-shift = 2.0930991957283878
+# shift = 2.0930991957283878
+shift = 0.
 x = x - shift
 exp = np.load('params/sigma_hh_to_rch_cub_relationship.npy')
 interp_exp = interpolate.splrep(exp[0, :], exp[1, :], s=0)
 interp = interpolate.splrep(x, Psi_t, s=0)
-dx = 1.e-6
+dx = 1.e-4
 
 
 # Creates the walkers with all of their attributes
@@ -47,9 +49,9 @@ class Walkers(object):
     def __init__(self, walkers):
         self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_initial]*walkers)
-        rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
-        b = self.coords[np.arange(walkers)[:, None], rand_idx]
-        self.coords[:, 1:6, :] = b
+        # rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
+        # b = self.coords[np.arange(walkers)[:, None], rand_idx]
+        # self.coords[:, 1:6, :] = b
         self.weights = np.ones(walkers)
         self.V = np.zeros(walkers)
         self.El = np.zeros(walkers)
@@ -99,20 +101,23 @@ def full_psi_t(coords):
     psi = np.zeros((len(coords), bonds))
     shift = np.zeros((len(coords), bonds))
     for i in range(bonds):
-        shift[:, i] = interpolate.splev(hh[:, i], interp_exp, der=0)
+        # shift[:, i] = interpolate.splev(hh[:, i], interp_exp, der=0)
+        # shift[:, i] += 2.2842168433686734
         psi[:, i] = interpolate.splev(rch[:, i]-shift[:, i], interp, der=0)
     return psi, shift
 
 
 def changin_psi_t(coords, atom, shift, psi):
+    psit = np.zeros(psi.shape)
     if atom is 0:
         rch = ch_dist(coords)
         for i in range(bonds):
-            psi[:, i] = interpolate.splev(rch[:, i]-shift[:, i], interp, der=0)
+            psit[:, i] = interpolate.splev(rch[:, i]-shift[:, i], interp, der=0)
     else:
         rch = one_ch_dist(coords, atom)
-        psi[:, atom-1] = interpolate.splev(rch - shift[:, atom-1], interp, der=0)
-    return np.prod(psi, axis=1)
+        psit = np.array(psi)
+        psit[:, atom-1] = interpolate.splev(rch - shift[:, atom-1], interp, der=0)
+    return np.prod(psit, axis=1)
 
 
 def get_da_psi(coords):
@@ -140,6 +145,80 @@ def all_da_psi(coords):
 def drift(psi):
     dpsidx = (psi[:, 2] - psi[:, 0])/(2.*dx)
     return 2.*dpsidx/psi[:, 1]
+
+
+# Function for the potential for the mp to use
+def get_pot(coords):
+    V = CH5pot.mycalcpot(coords, len(coords))
+    return V
+
+
+# Split up those coords to speed up dat potential
+def Potential(Psi):
+    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    V = pool.map(get_pot, coords)
+    Psi.V = np.concatenate(V)
+    return Psi
+
+
+def E_loc(Psi, sigmaCH, dtau):
+    d2psidx2 = ((Psi.psit[:, 0] - 2.*Psi.psit[:, 1] + Psi.psit[:, 2])/dx**2)/Psi.psit[:, 1]
+    kin = -1./2.*np.sum(np.sum(sigmaCH**2/dtau*d2psidx2, axis=1), axis=1)
+    Psi.El = kin + Psi.V
+    blah = Psi.El*har2wave
+    return Psi
+
+
+pool = mp.Pool(mp.cpu_count()-1)
+import Timing_p3 as tm
+psi = Walkers(10000)
+psi.coords = np.load('Non_imp_sampled/DMC_CH5_coords_10000_walkers_5.npy')
+rch, rch_time = tm.time_me(ch_dist, psi.coords)
+tm.print_time_list(ch_dist, rch_time)
+hh, hh_time = tm.time_me(hh_dist, psi.coords, rch)
+tm.print_time_list(hh_dist, hh_time)
+# psi_trial, trial_time = tm.time_me(full_psi_t, psi.coords)
+# tm.print_time_list(full_psi_t, trial_time)
+psit, psit_time = tm.time_me(get_da_psi, psi.coords)
+tm.print_time_list(get_da_psi, psit_time)
+psi.psit = get_da_psi(psi.coords)
+# print(drift(psi.psit))
+psi.V, v_time = tm.time_me(get_pot, psi.coords)
+tm.print_time_list(get_pot, v_time)
+dtau = 1
+sigmaH = np.sqrt(dtau/m_H)
+sigmaC = np.sqrt(dtau/m_C)
+sigmaCH = np.array([[sigmaC]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3, [sigmaH]*3])
+psi = E_loc(psi, sigmaCH, dtau)
+print(psi.El*har2wave)
+#
+#
+# import matplotlib.pyplot as plt
+# from Coordinerds.CoordinateSystems import *
+# N_0 = 10000
+#
+# fig, axes = plt.subplots(1, 5, figsize=(20, 8))
+# for i in range(5):
+#     Psi = Walkers(N_0)
+#     zmat = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
+#     zmat[:, i, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
+#     Psi.coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+#     Psi.psit = get_da_psi(Psi.coords)
+#     Psi = Potential(Psi)
+#     Psi = E_loc(Psi, sigmaCH, dtau)
+#     axes[i].plot(zmat[:, i, 1] / ang2bohr, Psi.V * har2wave, label='Potential')
+#     axes[i].plot(zmat[:, i, 1] / ang2bohr, Psi.El * har2wave, label=f'Local Energy')
+#     axes[i].plot(zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V * har2wave, label=f'Kinetic')
+#     axes[i].set_xlabel('rCH (Angstrom)')
+#     axes[i].set_ylabel('Energy (cm^-1)')
+#     axes[i].set_ylim(-20000, 20000)
+#     axes[i].legend(loc='lower left')
+# plt.tight_layout()
+# plt.show()
+# plt.close()
+
+# N, run_time = tm.time_me(run, 100, 20000, 1, 5000, 500, 'testing_dis_function')
+# tm.print_time_list(run, run_time)
 
 
 # The metropolis step based on those crazy Green's functions
@@ -178,31 +257,10 @@ def Kinetic(Psi, Fqx, sigmaCH, sigmaH, sigmaC):
     return Psi, Fqy, acceptance
 
 
-# Function for the potential for the mp to use
-def get_pot(coords):
-    V = CH5pot.mycalcpot(coords, len(coords))
-    return V
-
-
-# Split up those coords to speed up dat potential
-def Potential(Psi):
-    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
-    V = pool.map(get_pot, coords)
-    Psi.V = np.concatenate(V)
-    return Psi
-
-
-def E_loc(Psi, sigmaCH, dtau):
-    d2psidx2 = ((Psi.psit[:, 0] - 2.*Psi.psit[:, 1] + Psi.psit[:, 2])/dx**2)
-    kin = -1./2.*np.sum(np.sum(sigmaCH**2/dtau*d2psidx2, axis=1), axis=1)/Psi.psit[:, 1, 0, 0]
-    Psi.El = kin + Psi.V
-    return Psi
-
-
 # Calculate the Eref for use in the weighting
 def E_ref_calc(Psi, alpha):
     P = sum(Psi.weights)
-    E_ref = np.average(Psi.El, weights=Psi.weights)/P - alpha*np.log(P/len(Psi.coords))
+    E_ref = sum(Psi.weights*Psi.El)/P - alpha*np.log(P/len(Psi.coords))
     return E_ref
 
 
@@ -211,7 +269,6 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
     Psi.weights = Psi.weights * np.exp(-(Psi.El - Eref) * dtau)
     threshold = 1./float(len(Psi.coords))
     death = np.argwhere(Psi.weights < threshold)  # should I kill a walker?
-    print(f'death = {len(death)}')
     for i in death:
         ind = np.argmax(Psi.weights)
         # copy things over
@@ -222,12 +279,14 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
         Biggo_pos = np.array(Psi.coords[ind])
         Biggo_pot = float(Psi.V[ind])
         Biggo_el = float(Psi.El[ind])
+        Biggo_psit = np.array(Psi.psit[ind])
         Biggo_force = np.array(Fqx[ind])
         Psi.weights[i[0]] = Biggo_weight/2.
         Psi.weights[ind] = Biggo_weight/2.
         Psi.coords[i[0]] = Biggo_pos
         Psi.V[i[0]] = Biggo_pot
         Psi.El[i[0]] = Biggo_el
+        Psi.psit[i[0]] = Biggo_psit
         Fqx[i[0]] = Biggo_force
     return Psi
 
@@ -279,8 +338,9 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
     wait = float(wait_time)
     for i in range(int(time_steps)):
         wait -= 1.
-        # if i+1 % 1000 is 0:
-        print(f'step = {i}')
+        if i % 1000 == 0:
+            print(i)
+
         psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH, sigmaH, sigmaC)
         psi = Potential(psi)
         psi = E_loc(psi, sigmaCH, dtau)
@@ -291,15 +351,11 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
         psi = Weighting(Eref, psi, Fqx, dtau, DW)
 
         Eref = E_ref_calc(psi, alpha)
+        # print(Eref*har2wave)
         Eref_array[i] += Eref
         time[i] += i + 1
         sum_weights[i] += np.sum(psi.weights)
-        print(f'sum of weights = {sum_weights[i]}')
-        if sum_weights[i] >= 150.:
-            blah = 1
-        print(f'Eref = {Eref_array[i]*har2wave}')
         accept[i] += acceptance
-        print(f'acceptance rate = {accept[i]}\n')
 
         if i >= int(equilibration)-1 and wait <= 0.:
             wait = float(wait_time)
@@ -313,21 +369,29 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
         weights = wvfn['weights'][dw_num-1]
     np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, des=des)
-    return N_0
+    print(np.mean(Eref_array[5000:])*har2wave)
 
 
-pool = mp.Pool(mp.cpu_count()-1)
-import Timing_p3 as tm
-psi = Walkers(10000)
-rch, rch_time = tm.time_me(ch_dist, psi.coords)
-tm.print_time_list(ch_dist, rch_time)
-hh, hh_time = tm.time_me(hh_dist, psi.coords, rch)
-tm.print_time_list(hh_dist, hh_time)
-# psi_trial, trial_time = tm.time_me(full_psi_t, psi.coords)
-# tm.print_time_list(full_psi_t, trial_time)
-psit, psit_time = tm.time_me(get_da_psi, psi.coords)
-tm.print_time_list(get_da_psi, psit_time)
-psi, v_time = tm.time_me(get_pot, psi.coords)
-tm.print_time_list(get_pot, v_time)
-# N, run_time = tm.time_me(run, 100, 20000, 1, 5000, 500, 'testing_dis_function')
-# tm.print_time_list(run, run_time)
+# pool = mp.Pool(mp.cpu_count()-1)
+# run(5000, 10000, 1, 5000, 500, 'testytest')
+# print(0.04936915844038702*har2wave)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -19,7 +19,7 @@ coords_initial = np.array([[4.0, 4.0, 4.0], [5.0, 5.0, 5.0]])
 
 ch_stretch = 4
 Psi_t = np.load(f'GSW_min_CH_{ch_stretch+1}.npy')
-interp = interpolate.splrep(np.linspace(1, 4, num=500), Psi_t, s=0)
+interp = interpolate.splrep(np.linspace(0.4, 6, num=5000), Psi_t, s=0)
 
 
 # Creates the walkers with all of their attributes
@@ -131,12 +131,15 @@ Psi = Walkers(N_0, 9)
 Psi.coords[:, 1, :] = np.array([np.linspace(0.46188, 0.80829, num=N_0)*ang2bohr + 4.]*3).T
 pot = interpolate.splrep(np.linspace(1, 4, num=500), np.load('Potential_CH_stretch5.npy'), s=0)
 Psi.V = potential(Psi, pot)
-loc_kin = local_kinetic(Psi, 9, 0.001)
+loc_kin = local_kinetic(Psi, 9, 0.0001)
 dist = distance(Psi.coords)/ang2bohr
 plt.plot(dist, Psi.V*har2wave, label='Potential')
 plt.plot(dist, loc_kin*har2wave + Psi.V*har2wave, label='Local Energy')
+plt.plot(dist, loc_kin*har2wave, label='Kinetic')
 plt.xlabel('rCH (Angstrom)')
 plt.ylabel('Energy (cm^-1)')
-plt.ylim(0, 2500)
+plt.ylim(-2500, 2500)
 plt.legend()
-plt.savefig('Testing_imp_samp_FD.png')
+plt.show()
+plt.close()
+# plt.savefig('Testing_imp_samp_FD.png')

@@ -8,8 +8,6 @@ import multiprocessing as mp
 
 # DMC parameters
 dtau = 1.
-# N_0 = 1000
-# time_steps = 100.
 alpha = 1./(2.*dtau)
 
 # constants and conversion factors
@@ -59,7 +57,7 @@ class Walkers(object):
 def psi_t(zmatrix, interp):
     psi = np.zeros((len(zmatrix), bonds))
     for i in range(bonds):
-        psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp, der=0)
+        psi[:, i] = interpolate.splev(zmatrix[:, i, 1], interp, der=0)
     return psi
 
 
@@ -67,9 +65,48 @@ def drdx(zmatrix, coords):
     chain = np.zeros((len(coords), 5, 6, 3))
     for xyz in range(3):
         for CH in range(bonds):
-            chain[:, CH, 0, xyz] += ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/zmatrix[:, CH, 1])
-            chain[:, CH, CH+1, xyz] += ((coords[:, CH+1, xyz]-coords[:, 0, xyz])/zmatrix[:, CH, 1])
+            chain[:, CH, 0, xyz] = ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/zmatrix[:, CH, 1])
+            chain[:, CH, CH+1, xyz] = ((coords[:, CH+1, xyz]-coords[:, 0, xyz])/zmatrix[:, CH, 1])
     return chain
+
+
+def drdx2(zmatrix, coords):
+    chain = np.zeros((len(coords), 5, 6, 3))
+    for xyz in range(3):
+        for CH in range(bonds):
+            chain[:, CH, 0, xyz] = (1./zmatrix[:, CH, 1] - (coords[:, 0, xyz]-coords[:, CH+1, xyz])**2/zmatrix[:, CH, 1]**3)
+            chain[:, CH, CH + 1, xyz] = (1./zmatrix[:, CH, 1] - (coords[:, CH + 1, xyz] - coords[:, 0, xyz])**2 / zmatrix[:, CH, 1]**3)
+    return chain
+
+
+def dpsidx2(zmatrix, coords, interp):
+    psi = psi_t(zmatrix, interp)
+    dr1 = drdx(zmatrix, coords)
+    dr2 = drdx2(zmatrix, coords)
+    der1 = np.zeros((len(coords), bonds))
+    der2 = np.zeros((len(coords), bonds))
+    for i in range(bonds):
+        der1[:, i] = (interpolate.splev(zmatrix[:, i, 1], interp, der=1)/psi[:, i])
+        der2[:, i] = (interpolate.splev(zmatrix[:, i, 1], interp, der=2)/psi[:, i])
+    c = dr1.reshape((len(coords), 5, 18))**2
+    b = der1.reshape((len(coords), 1, 5))
+    a = dr2.reshape((len(coords), 5, 18))
+    d = der2.reshape((len(coords), 1, 5))
+    pt1 = np.matmul(b, a)
+    pt1 = pt1.reshape((len(coords), 6, 3))
+    pt2 = np.matmul(d, c)
+    pt2 = pt2.reshape((len(coords), 6, 3))
+    blah = pt1 + pt2
+    pt3 = np.zeros((len(coords), 5, 5, 3))
+    for i in range(bonds):
+        for j in range(i+1, bonds):
+            for xyz in range(3):
+                pt3[:, i, j, xyz] = der1[:, j]*dr1[:, j, 0, xyz]*der1[:, i]*dr1[:, i, 0, xyz]
+    pt3 += np.transpose(pt3, (0, 2, 1, 3))
+    pt3 = np.sum(np.sum(pt3, axis=1), axis=1)
+    blah[:, 0] += pt3
+    blah2 = -1./2.*(np.sum(np.sum(sigmaCH**2/dtau*blah, axis=1), axis=1))
+    return blah2
 
 
 def drift(zmatrix, coords, interp):
@@ -130,29 +167,15 @@ def get_pot(coords):
 
 # Split up those coords to speed up dat potential
 def Potential(Psi):
-    # coords = np.array_split(Psi.coords, mp.cpu_count()-1)
-    # V = pool.map(get_pot, coords)
-    # Psi.V = np.concatenate(V)
-    Psi.V = np.array(CH5pot.mycalcpot(Psi.coords, len(Psi.coords)))
+    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    V = pool.map(get_pot, coords)
+    Psi.V = np.concatenate(V)
+    # Psi.V = np.array(CH5pot.mycalcpot(Psi.coords, len(Psi.coords)))
     return Psi
 
 
-def local_kinetic(Psi, interp):
-    psi = psi_t(Psi.zmat, interp)
-    der1 = np.zeros((len(Psi.coords), bonds))
-    der2 = np.zeros((len(Psi.coords), bonds))
-    for i in range(bonds):
-        der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i]*(2./Psi.zmat[:, i, 1]))
-        der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2)/psi[:, i])
-        # der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)*(2./Psi.zmat[:, i, 1]))
-        # der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2))
-    # kin = der2+der1
-    kin = -1./(2.*m_CH)*np.sum(der2+der1, axis=1)
-    return kin
-
-
 def E_loc(Psi, interp):
-    Psi.El = local_kinetic(Psi, interp) + Psi.V
+    Psi.El = dpsidx2(Psi.zmat, Psi.coords, interp) + Psi.V
     return Psi
 
 
@@ -253,8 +276,8 @@ def run(N_0, time_steps, propagation, test_number, bro):
              descendants=d_values, time=time, Eref=Eref_array, sum_weights=weights, accept=accept)
     return Eref_array
 
-# pool = mp.Pool(mp.cpu_count()-1)
-# # N_0 = 100
+pool = mp.Pool(mp.cpu_count()-1)
+# N_0 = 100
 # # run(250, 0, 0)
 # run(100, 100, 25, 1, 2.0)
 # tests = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
@@ -272,51 +295,66 @@ def run(N_0, time_steps, propagation, test_number, bro):
 #     run(250, j+1, 1.1)
 #     print(f'{tests[i]} Walker Test {j+1} is done!')
 
-N_0 = 5000
-# alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
-# for j in range(9):
+N_0 = 10000
+# # alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
+# # for j in range(9):
 bro = 1.0
-Psi_t = np.load(f'min_wvfns/GSW_min_CH_1.npy')
+Psi_t = np.load(f'min_wvfns/GSW_min_CH_2.npy')
 x = np.linspace(0.4, 6., 5000)
-print(x[np.argmin(Psi_t)])
+# Psi_t = np.ones(5000)
 interp = interpolate.splrep(x, Psi_t, s=0)
+Psi = Walkers(N_0)
+Psi.zmat[:, 2, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
+Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+f = drift(Psi.zmat, Psi.coords, interp)
+import Timing_p3 as tm
+testytest, testy_time = tm.time_me(dpsidx2, Psi.zmat, Psi.coords, interp)
+tm.print_time_list(dpsidx2, testy_time)
+Psi = Potential(Psi)
+Psi = E_loc(Psi, interp)
+psi, E_time = tm.time_me(E_loc, Psi, interp)
+tm.print_time_list(E_loc, E_time)
+import matplotlib.pyplot as plt
+plt.plot(Psi.El*har2wave)
+plt.plot(Psi.V*har2wave)
+plt.show()
 # psi_t2 = np.load(f'Switch_min_wvfn_speed_1.0.npy')
 # interp2 = interpolate.splrep(psi_t2[0, :], psi_t2[1, :], s=0)
-fig, axes = plt.subplots(1, 5, figsize=(20, 8))
-for i in range(5):
-    Psi = Walkers(N_0)
-    Psi.zmat[:, i, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
-    Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-    Psi = Potential(Psi)
-    Psi = E_loc(Psi, interp)
-    # psi = psi_t(Psi.zmat, interp)
-    axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
-    # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
-    axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
-    axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
-    if i is 0:
-        asdf = np.load('asdfasdfasdf.npy')
-        blah = asdf/(Psi.El-Psi.V)
-        one = 1
-    # axes[i].plot(Psi.coords[:, ])
-    # loc_1 = np.array(Psi.El)
-    # Psi = E_loc(Psi, interp2)
-    # diff = Psi.El - loc_1
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, diff*har2wave)
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy no fit')
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave - Psi.V*har2wave, label='Kinetic no fit')
-    # psi = psi_t(Psi.zmat, interp)
-    # # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, psi[:, ch-1], label='Gaussians')
-    # psi1 = psi_t(Psi.zmat, interp2)
-    # diff = psi1-psi
-    # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El, label='difference')
-    axes[i].set_xlabel('rCH (Angstrom)')
-    # axes[i].set_xlim(0.8, 1.6)
-    # axes[i].set_ylim(-5, 5)
-    axes[i].set_ylabel('Energy (cm^-1)')
-    axes[i].set_ylim(-20000, 20000)
-    axes[i].legend(loc='lower left')
-plt.tight_layout()
-fig.savefig(f'local_energy_plots/Average_min_broadening_{bro}x.png')
-plt.show()
-plt.close()
+# fig, axes = plt.subplots(1, 5, figsize=(20, 8))
+# for i in range(5):
+#     Psi = Walkers(N_0)
+#     Psi.zmat[:, i, 1] = np.linspace(0.6, 1.8, N_0)*ang2bohr
+#     Psi.coords = CoordinateSet(Psi.zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+#     Psi = Potential(Psi)
+#     Psi = E_loc(Psi, interp)
+#     # psi = psi_t(Psi.zmat, interp)
+#     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.V*har2wave, label='Potential')
+#     # axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, psi[:, i], label='Psi t')
+#     axes[i].plot(Psi.zmat[:, i, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy')
+#     axes[i].plot(Psi.zmat[:, i, 1] / ang2bohr, Psi.El * har2wave - Psi.V*har2wave, label=f'Kinetic')
+#     if i is 0:
+#         asdf = np.load('asdfasdfasdf.npy')
+#         blah = asdf/(Psi.El-Psi.V)
+#         one = 1
+#     # axes[i].plot(Psi.coords[:, ])
+#     # loc_1 = np.array(Psi.El)
+#     # Psi = E_loc(Psi, interp2)
+#     # diff = Psi.El - loc_1
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, diff*har2wave)
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave, label=f'Local Energy no fit')
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El*har2wave - Psi.V*har2wave, label='Kinetic no fit')
+#     # psi = psi_t(Psi.zmat, interp)
+#     # # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, psi[:, ch-1], label='Gaussians')
+#     # psi1 = psi_t(Psi.zmat, interp2)
+#     # diff = psi1-psi
+#     # axes[i].plot(Psi.zmat[:, ch-1, 1]/ang2bohr, Psi.El, label='difference')
+#     axes[i].set_xlabel('rCH (Angstrom)')
+#     # axes[i].set_xlim(0.8, 1.6)
+#     # axes[i].set_ylim(-5, 5)
+#     axes[i].set_ylabel('Energy (cm^-1)')
+#     axes[i].set_ylim(-20000, 20000)
+#     axes[i].legend(loc='lower left')
+# plt.tight_layout()
+# fig.savefig(f'local_energy_plots/Average_min_broadening_{bro}x.png')
+# plt.show()
+# plt.close()
