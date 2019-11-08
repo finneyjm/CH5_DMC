@@ -16,8 +16,8 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             energies_non[i, j] += np.mean(Energy[1000:])
     for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/average_wvfn/' +
-                             f'average_wvfn_old_way_{imp_samp_walkers[i]}_' +
+            Energy = np.load(f'Trial_wvfn_testing/Switch_wvfn/' +
+                             f'Switch_wvfn_speed_1_{imp_samp_walkers[i]}_' +
                              f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
             energies_imp[i, j] += np.mean(Energy[1000:])
 
@@ -43,7 +43,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_min_avg_wvfn_old.png')
+    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_Switch_wvfn_speed_1.png')
     plt.close(fig)
 
 
