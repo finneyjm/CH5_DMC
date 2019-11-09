@@ -25,7 +25,7 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
 bonds = 5
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
 
-Psi_t = np.load('params/min_wvfns/GSW_min_CH_2.npy')
+Psi_t = np.load('params/Switch_wvfns/Switch_min_wvfn_speed_1.0.npy')
 x = np.linspace(0.4, 6., 5000)
 if np.max(Psi_t) < 0.02:
     shift = x[np.argmin(Psi_t)]
@@ -37,9 +37,9 @@ else:
 print(shift)
 shift = 0.
 x = x - shift
-exp = np.load('params/sigma_hh_to_rch_cub_relationship.npy')
-interp_exp = interpolate.splrep(exp[0, :], exp[1, :], s=0)
-interp = interpolate.splrep(x, Psi_t, s=0)
+# exp = np.load('params/sigma_hh_to_rch_cub_relationship.npy')
+# interp_exp = interpolate.splrep(exp[0, :], exp[1, :], s=0)
+interp = interpolate.splrep(x, Psi_t[1, :], s=0)
 dx = 1.e-4
 
 

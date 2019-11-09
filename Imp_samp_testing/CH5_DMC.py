@@ -29,24 +29,28 @@ order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [
 class Walkers(object):
     walkers = 0
 
-    def __init__(self, walkers):
+    def __init__(self, walkers, rand_samp=False):
         self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_initial]*walkers)
-        rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
-        b = self.coords[np.arange(walkers)[:, None], rand_idx]
-        self.coords[:, 1:6, :] = b
+        if rand_samp is True:
+            rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
+            b = self.coords[np.arange(walkers)[:, None], rand_idx]
+            self.coords[:, 1:6, :] = b
+        else:
+            self.coords *= 1.01
         self.zmat = CoordinateSet(self.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
         self.weights = np.ones(walkers)
         self.V = np.zeros(walkers)
         self.El = np.zeros(walkers)
         self.drdx = np.zeros((walkers, 6, 6, 3))
+        self.interp = []
 
 
 # Evaluate PsiT for each bond CH bond length in the walker set
 def psi_t(zmatrix, interp):
     psi = np.zeros((len(zmatrix), bonds))
     for i in range(bonds):
-        psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp, der=0)
+        psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp[i], der=0)
     return psi
 
 
@@ -66,7 +70,7 @@ def drift(zmatrix, coords, interp):
     dr1 = drdx(zmatrix, coords)  # dr/dx values
     der = np.zeros((len(coords), bonds))  # dPsi/dr evaluation using that nice spline interpolation
     for i in range(bonds):
-        der[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp, der=1)/psi[:, i])
+        der[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp[i], der=1)/psi[:, i])
     a = dr1.reshape((len(coords), 5, 18))
     b = der.reshape((len(coords), 1, 5))
     drift = np.matmul(b, a)
@@ -134,13 +138,15 @@ def local_kinetic(Psi, interp):
     psi = psi_t(Psi.zmat, interp)
     der1 = np.zeros((len(Psi.coords), bonds))
     der2 = np.zeros((len(Psi.coords), bonds))
+    dpsidx = np.zeros((len(Psi.coords), bonds))
     for i in range(bonds):
-        der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i]*(2./Psi.zmat[:, i, 1]))
-        der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2)/psi[:, i])
-    kin = -1./(2.*m_CH)*np.sum(der2+der1, axis=1)
+        der1[:, i] = (interpolate.splev(Psi.zmat[:, i, 1], interp[i], der=1)/psi[:, i])
+        dpsidx[:, i] = der1[:, i]*(2./Psi.zmat[:, i, 1])
+        der2[:, i] = (interpolate.splev(Psi.zmat[:, i, 1], interp[i], der=2)/psi[:, i])
+    kin = -1./(2.*m_CH)*np.sum(der2+dpsidx, axis=1)
     a = Psi.drdx[:, :, 0]*np.broadcast_to(der1[:, :, None], (len(Psi.coords), 5, 3))
     carb_correct = np.sum(np.sum(a, axis=1)**2-np.sum(a**2, axis=1), axis=1)
-    kin += -1./m_C*carb_correct
+    kin += -1./(2.*m_C)*carb_correct
     return kin
 
 
@@ -202,21 +208,36 @@ class JacobIsDumb(ValueError):
 
 # Function to go through the DMC algorithm
 def run(N_0, time_steps, dtau, equilibration, wait_time, output,
-        imp_samp=False, trial_wvfn=None, DW=False, dw_num=None, dwfunc=None):
+        imp_samp=False, trial_wvfn=None, DW=False, dw_num=None, dwfunc=None, rand_samp=True):
+
+    psi = Walkers(N_0, rand_samp)
+
     if imp_samp is True:
         if trial_wvfn is None:
             raise JacobHasNoFile('Please supply a trial wavefunction if you wanna do importance sampling')
-        Psi_t = trial_wvfn
-        interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
+        if len(trial_wvfn) is 2:
+            Psi_t = trial_wvfn
+            for CH in range(bonds):
+                psi.interp.append(interpolate.splrep(Psi_t[CH, 0, :], Psi_t[CH, 1, :], s=0))
+        elif len(trial_wvfn) is 1:
+            x = np.linspace(0.4, 6., 5000)
+            for CH in range(bonds):
+                psi.interp.append(interpolate.splrep(x, trial_wvfn, s=0))
+        else:
+            for CH in range(bonds):
+                psi.interp.append(interpolate.splrep(trial_wvfn[CH, 0], trial_wvfn[CH, 1], s=0))
+
     else:
         x = np.linspace(0, 10, num=50000)
         y = np.ones(50000)
-        interp = interpolate.splrep(x, y, s=0)
+        for CH in range(bonds):
+            psi.interp.append(interpolate.splrep(x, y, s=0))
+
     alpha = 1. / (2. * dtau)
     sigmaH = np.sqrt(dtau / m_H)
     sigmaC = np.sqrt(dtau / m_C)
     sigmaCH = np.array([[sigmaC] * 3, [sigmaH] * 3, [sigmaH] * 3, [sigmaH] * 3, [sigmaH] * 3, [sigmaH] * 3])
-    psi = Walkers(N_0)
+
     if DW is True:
         if dw_num is None:
             raise JacobIsDumb('Indicate the walkers that you want to use with an integer value')
@@ -225,7 +246,8 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
         wvfn = np.load(dwfunc)
         psi.coords = wvfn['coords'][dw_num-1]
         psi.weights = wvfn['weights'][dw_num-1]
-    Fqx, psi.drdx = drift(psi.zmat, psi.coords, interp)
+
+    Fqx, psi.drdx = drift(psi.zmat, psi.coords, psi.interp)
 
     num_o_collections = int((time_steps-equilibration)/wait_time) + 1
     time = np.zeros(time_steps)
@@ -239,11 +261,10 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
     wait = float(wait_time)
     for i in range(int(time_steps)):
         wait -= 1.
-        if (i)%1000 is 0:
-            print(i)
-        psi, Fqx, acceptance = Kinetic(psi, Fqx, interp, sigmaCH, sigmaH, sigmaC)
+
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, psi.interp, sigmaCH, sigmaH, sigmaC)
         psi = Potential(psi)
-        psi = E_loc(psi, interp)
+        psi = E_loc(psi, psi.interp)
 
         if i == 0:
             Eref = E_ref_calc(psi, alpha)
@@ -271,3 +292,5 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
 
 
 pool = mp.Pool(mp.cpu_count()-1)
+
+
