@@ -3,6 +3,7 @@ import CH5pot
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
 import multiprocessing as mp
+from itertools import repeat
 # import Timing_p3 as tm
 
 # constants and conversion factors
@@ -23,6 +24,7 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
                           [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
 bonds = 5
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
+dx = 1.e-4
 
 
 # Creates the walkers with all of their attributes
@@ -38,83 +40,166 @@ class Walkers(object):
             self.coords[:, 1:6, :] = b
         else:
             self.coords *= 1.01
-        self.zmat = CoordinateSet(self.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
+        self.zmat = ch_dist(self.coords)
         self.weights = np.ones(walkers)
         self.V = np.zeros(walkers)
         self.El = np.zeros(walkers)
         self.drdx = np.zeros((walkers, 6, 6, 3))
         self.interp = []
+        self.psit = np.zeros((walkers, 3, 6, 3))
 
 
 # Evaluate PsiT for each bond CH bond length in the walker set
-def psi_t(zmatrix, interp):
-    psi = np.zeros((len(zmatrix), bonds))
-    for i in range(bonds):
-        psi[:, i] += interpolate.splev(zmatrix[:, i, 1], interp[i], der=0)
+def psi_t(rch, interp, type, coords=None, interp_exp=None):
+    if type == 'dev_indep':
+        psi = np.zeros((len(rch), bonds))
+        for i in range(bonds):
+            psi[:, i] += interpolate.splev(rch[:, i], interp[i], der=0)
+    elif type == 'dev_dep':
+        psi = all_da_psi(coords, rch, interp, type, interp_exp)
+    elif type == 'fd':
+        psi = all_da_psi(coords, rch, interp, type)
     return psi
 
 
+def all_da_psi(coords, rch, interp, type, interp_exp=None):
+    coords = np.array_split(coords, mp.cpu_count() - 1)
+    rch = np.array_split(rch, mp.cpu_count() - 1)
+    psi = pool.starmap(get_da_psi, zip(coords, rch, repeat(interp), repeat(type), repeat(interp_exp)))
+    psi = np.concatenate(psi)
+    return psi
+
+
+def get_da_psi(coords, rch, interp, type, interp_exp=None):
+    much_psi = np.zeros((len(coords), 3, 6, 3))
+    psi = psi_t_extra(coords, interp, type, interp_exp, rch=rch)
+    asdf = np.broadcast_to(np.prod(psi, axis=1)[:, None, None], (len(coords), 6, 3))
+    much_psi[:, 1] += asdf
+    for atoms in range(6):
+        for xyz in range(3):
+            coords[:, atoms, xyz] -= dx
+            much_psi[:, 0, atoms, xyz] = np.prod(psi_t_extra(coords, interp, type, interp_exp), axis=1)
+            coords[:, atoms, xyz] += 2.*dx
+            much_psi[:, 2, atoms, xyz] = np.prod(psi_t_extra(coords, interp, type, interp_exp), axis=1)
+            coords[:, atoms, xyz] -= dx
+    return much_psi
+
+
+def psi_t_extra(coords, interp, type, interp_exp=None, rch=None):
+    if rch is None:
+        rch = ch_dist(coords)
+    if type == 'dev_dep':
+        hh = hh_dist(coords, rch)
+    shift = np.zeros((len(coords), bonds))
+    psi = np.zeros((len(coords), bonds))
+    for i in range(bonds):
+        if type == 'dev_dep':
+            shift[:, i] = interpolate.splev(hh[:, i], interp_exp, der=0)
+        psi[:, i] = interpolate.splev(rch[:, i] - shift[:, i], interp[i], der=0)
+    return psi
+
+
+def ch_dist(coords):
+    N = len(coords)
+    rch = np.zeros((N, bonds))
+    for i in range(bonds):
+        rch[:, i] = np.sqrt((coords[:, i + 1, 0] - coords[:, 0, 0]) ** 2 +
+                            (coords[:, i + 1, 1] - coords[:, 0, 1]) ** 2 +
+                            (coords[:, i + 1, 2] - coords[:, 0, 2]) ** 2)
+    return rch
+
+
+def hh_dist(carts, rch):
+    N = len(carts)
+    coords = np.array(carts)
+    coords -= np.broadcast_to(coords[:, None, 0], (N, bonds + 1, 3))
+    coords[:, 1:] /= np.broadcast_to(rch[:, :, None], (N, bonds, 3))
+    hh = np.zeros((N, 5, 5))
+    a = np.full((5, 5), True)
+    np.fill_diagonal(a, False)
+    mask = np.broadcast_to(a, (N, 5, 5))
+    for i in range(4):
+        for j in np.arange(i + 1, 5):
+            hh[:, i, j] = np.sqrt((coords[:, j + 1, 0] - coords[:, i + 1, 0]) ** 2 +
+                                  (coords[:, j + 1, 1] - coords[:, i + 1, 1]) ** 2 +
+                                  (coords[:, j + 1, 2] - coords[:, i + 1, 2]) ** 2)
+    hh += np.transpose(hh, (0, 2, 1))
+    blah = hh[mask].reshape(N, 5, 4)
+    hh_std = np.std(blah, axis=2)
+    return hh_std
+
+
 # Build the dr/dx matrix that is used for calculating dPsi/dx
-def drdx(zmatrix, coords):
+def drdx(rch, coords):
     chain = np.zeros((len(coords), 5, 6, 3))
     for xyz in range(3):
         for CH in range(bonds):
-            chain[:, CH, 0, xyz] += ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/zmatrix[:, CH, 1])  # dr/dx for the carbon for each bond length
-            chain[:, CH, CH+1, xyz] += ((coords[:, CH+1, xyz]-coords[:, 0, xyz])/zmatrix[:, CH, 1])  # dr/dx for the hydrogens for each bond length
+            chain[:, CH, 0, xyz] += ((coords[:, 0, xyz]-coords[:, CH+1, xyz])/rch[:, CH])  # dr/dx for the carbon for each bond length
+            chain[:, CH, CH+1, xyz] += ((coords[:, CH+1, xyz]-coords[:, 0, xyz])/rch[:, CH])  # dr/dx for the hydrogens for each bond length
     return chain
 
 
 # Calculate the drift term using dPsi/dx and some nice matrix manipulation
-def drift(zmatrix, coords, interp):
-    psi = psi_t(zmatrix, interp)
-    dr1 = drdx(zmatrix, coords)  # dr/dx values
-    der = np.zeros((len(coords), bonds))  # dPsi/dr evaluation using that nice spline interpolation
-    for i in range(bonds):
-        der[:, i] += (interpolate.splev(zmatrix[:, i, 1], interp[i], der=1)/psi[:, i])
-    a = dr1.reshape((len(coords), 5, 18))
-    b = der.reshape((len(coords), 1, 5))
-    drift = np.matmul(b, a)
-    return 2.*drift.reshape((len(coords), 6, 3)), dr1
+def drift(rch, coords, interp, type, interp_exp=None):
+    psi = psi_t(rch, interp, type, coords=coords, interp_exp=interp_exp)
+    if type == 'dev_indep':
+        dr1 = drdx(rch, coords)  # dr/dx values
+        der = np.zeros((len(coords), bonds))  # dPsi/dr evaluation using that nice spline interpolation
+        for i in range(bonds):
+            der[:, i] += (interpolate.splev(rch[:, i], interp[i], der=1)/psi[:, i])
+        a = dr1.reshape((len(coords), 5, 18))
+        b = der.reshape((len(coords), 1, 5))
+        drift = 2.*np.matmul(b, a).reshape((len(coords), 6, 3))
+        return drift, dr1
+    else:
+        return (psi[:, 2] - psi[:, 0])/dx/psi[:, 1], psi
 
 
 # The metropolis step based on those crazy Green's functions
-def metropolis(r1, r2, Fqx, Fqy, x, y, interp, sigmaC, sigmaH):
-    psi_1 = psi_t(r1, interp)  # evaluate psi for before the move
-    psi_2 = psi_t(r2, interp)  # evaluate psi for after the move
-    psi_ratio = 1.
-    for i in range(bonds):
-        psi_ratio *= (psi_2[:, i]/psi_1[:, i])**2  # evaluate the ratio of psi before and after the move
-    a = psi_ratio
-    for atom in range(6):
-        for xyz in range(3):
-            if atom == 0:
-                sigma = sigmaC
-            else:
-                sigma = sigmaH
-            # Use dat Green's function
-            a *= np.exp(1./2.*(Fqx[:, atom, xyz] + Fqy[:, atom, xyz])*(sigma**2/4.*(Fqx[:, atom, xyz]-Fqy[:, atom, xyz])
-                                                                       - (y[:, atom, xyz]-x[:, atom, xyz])))
+def metropolis(r1, r2, Fqx, Fqy, x, y, interp, sigmaCH, type, psi1=None, psi2=None):
+    if type == 'dev_indep':
+        psi_1 = psi_t(r1, interp, type)  # evaluate psi for before the move
+        psi_2 = psi_t(r2, interp, type)  # evaluate psi for after the move
+        psi_ratio = np.prod(psi_2/psi_1, axis=1)**2
+        a = np.exp(1. / 2. * (Fqx + Fqy) * (sigmaCH ** 2 / 4. * (Fqx - Fqy) - (y - x)))
+        a = psi_ratio * np.prod(np.prod(a, axis=1), axis=1)
+    else:
+        psi_1 = psi1[:, 1, 0, 0]
+        psi_2 = psi2[:, 1, 0, 0]
+        psi_ratio = (psi_2 / psi_1) ** 2
+        a = np.exp(1. / 2. * (Fqx + Fqy) * (sigmaCH ** 2 / 4. * (Fqx - Fqy) - (y - x)))
+        a = np.prod(np.prod(a, axis=1), axis=1) * psi_ratio
     return a
 
 
 # Random walk of all the walkers
-def Kinetic(Psi, Fqx, interp, sigmaCH, sigmaH, sigmaC):
+def Kinetic(Psi, Fqx, sigmaCH, type, interp_exp):
     Drift = sigmaCH**2/2.*Fqx   # evaluate the drift term from the F that was calculated in the previous step
     randomwalk = np.zeros((len(Psi.coords), 6, 3))  # normal randomwalk from DMC
-    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaH, size=(len(Psi.coords), 5, 3))
-    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaC, size=(len(Psi.coords), 3))
+    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaCH[1, 0], size=(len(Psi.coords), 5, 3))
+    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaCH[0, 0], size=(len(Psi.coords), 3))
     y = randomwalk + Drift + np.array(Psi.coords)  # the proposed move for the walkers
-    zmatriy = CoordinateSet(y, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-    Fqy, dr1 = drift(zmatriy, y, interp)  # evaluate new F
-    a = metropolis(Psi.zmat, zmatriy, Fqx, Fqy, Psi.coords, y, interp, sigmaC, sigmaH)  # Is it a good move?
+    rchy = ch_dist(y)
+    if type == 'dev_indep':
+        Fqy, dr1 = drift(rchy, y, Psi.interp, type)  # evaluate new F
+        a = metropolis(Psi.zmat, rchy, Fqx, Fqy, Psi.coords, y, Psi.interp, sigmaCH, type)  # Is it a good move?
+    elif type == 'dev_dep':
+        Fqy, psi = drift(rchy, y, Psi.interp, type, interp_exp)
+        a = metropolis(Psi.zmat, rchy, Fqx, Fqy, Psi.coords, y, Psi.interp, sigmaCH, type, psi1=Psi.psit, psi2=psi)
+    else:
+        Fqy, psi = drift(rchy, y, Psi.interp, type)
+        a = metropolis(Psi.zmat, rchy, Fqx, Fqy, Psi.coords, y, Psi.interp, sigmaCH, type, psi1=Psi.psit, psi2=psi)
     check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
     # Update everything that is good
     Psi.coords[accept] = y[accept]
     nah = np.argwhere(a <= check)
     Fqy[nah] = Fqx[nah]
-    Psi.zmat[accept] = zmatriy[accept]
-    Psi.drdx[accept] = dr1[accept]
+    Psi.zmat[accept] = rchy[accept]
+    if type == 'dev_indep':
+        Psi.drdx[accept] = dr1[accept]
+    else:
+        Psi.psit[accept] = psi[accept]
     acceptance = float(len(accept)/len(Psi.coords))*100.
     return Psi, Fqy, acceptance
 
@@ -134,25 +219,32 @@ def Potential(Psi):
     return Psi
 
 
-def local_kinetic(Psi, interp):
-    psi = psi_t(Psi.zmat, interp)
-    der1 = np.zeros((len(Psi.coords), bonds))
-    der2 = np.zeros((len(Psi.coords), bonds))
-    dpsidx = np.zeros((len(Psi.coords), bonds))
-    for i in range(bonds):
-        der1[:, i] = (interpolate.splev(Psi.zmat[:, i, 1], interp[i], der=1)/psi[:, i])
-        dpsidx[:, i] = der1[:, i]*(2./Psi.zmat[:, i, 1])
-        der2[:, i] = (interpolate.splev(Psi.zmat[:, i, 1], interp[i], der=2)/psi[:, i])
-    kin = -1./(2.*m_CH)*np.sum(der2+dpsidx, axis=1)
-    a = Psi.drdx[:, :, 0]*np.broadcast_to(der1[:, :, None], (len(Psi.coords), 5, 3))
-    carb_correct = np.sum(np.sum(a, axis=1)**2-np.sum(a**2, axis=1), axis=1)
-    kin += -1./(2.*m_C)*carb_correct
+def local_kinetic(Psi, type, sigmaCH=None, dtau=None):
+    if type == 'dev_indep':
+        psi = psi_t(Psi.zmat, Psi.interp, type)
+        der1 = np.zeros((len(Psi.coords), bonds))
+        der2 = np.zeros((len(Psi.coords), bonds))
+        dpsidx = np.zeros((len(Psi.coords), bonds))
+        for i in range(bonds):
+            der1[:, i] = (interpolate.splev(Psi.zmat[:, i], Psi.interp[i], der=1)/psi[:, i])
+            dpsidx[:, i] = der1[:, i]*(2./Psi.zmat[:, i])
+            der2[:, i] = (interpolate.splev(Psi.zmat[:, i], Psi.interp[i], der=2)/psi[:, i])
+        kin = -1./(2.*m_CH)*np.sum(der2+dpsidx, axis=1)
+        a = Psi.drdx[:, :, 0]*np.broadcast_to(der1[:, :, None], (len(Psi.coords), 5, 3))
+        carb_correct = np.sum(np.sum(a, axis=1)**2-np.sum(a**2, axis=1), axis=1)
+        kin += -1./(2.*m_C)*carb_correct
+    else:
+        d2psidx2 = ((Psi.psit[:, 0] - 2. * Psi.psit[:, 1] + Psi.psit[:, 2]) / dx ** 2) / Psi.psit[:, 1]
+        kin = -1. / 2. * np.sum(np.sum(sigmaCH ** 2 / dtau * d2psidx2, axis=1), axis=1)
     return kin
 
 
 # Bring together the kinetic and potential energy
-def E_loc(Psi, interp):
-    Psi.El = local_kinetic(Psi, interp) + Psi.V
+def E_loc(Psi, type, sigmaCH=None, dtau=None):
+    if type == 'dev_indep':
+        Psi.El = local_kinetic(Psi, type) + Psi.V
+    else:
+        Psi.El = local_kinetic(Psi, type, sigmaCH, dtau)
     return Psi
 
 
@@ -164,7 +256,7 @@ def E_ref_calc(Psi, alpha):
 
 
 # Calculate the weights of the walkers and figure out the birth/death if needed
-def Weighting(Eref, Psi, Fqx, dtau, DW):
+def Weighting(Eref, Psi, Fqx, dtau, DW, type):
     Psi.weights = Psi.weights * np.exp(-(Psi.El - Eref) * dtau)
     threshold = 1./float(len(Psi.coords))
     death = np.argwhere(Psi.weights < threshold)  # should I kill a walker?
@@ -180,6 +272,12 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
         Biggo_el = float(Psi.El[ind])
         Biggo_zmat = np.array(Psi.zmat[ind])
         Biggo_force = np.array(Fqx[ind])
+        if type == 'dev_indep':
+            Biggo_drdx = np.array(Psi.drdx[ind])
+            Psi.drdx[i[0]] = Biggo_drdx
+        else:
+            Biggo_psit = np.array(Psi.psit[ind])
+            Psi.psit[i[0]] = Biggo_psit
         Psi.weights[i[0]] = Biggo_weight/2.
         Psi.weights[ind] = Biggo_weight/2.
         Psi.coords[i[0]] = Biggo_pos
@@ -208,25 +306,54 @@ class JacobIsDumb(ValueError):
 
 # Function to go through the DMC algorithm
 def run(N_0, time_steps, dtau, equilibration, wait_time, output,
-        imp_samp=False, trial_wvfn=None, DW=False, dw_num=None, dwfunc=None, rand_samp=True):
-
+        imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, trial_wvfn=None, DW=False, dw_num=None, dwfunc=None, rand_samp=True):
+    interp_exp = 0
     psi = Walkers(N_0, rand_samp)
-
     if imp_samp is True:
         if trial_wvfn is None:
             raise JacobHasNoFile('Please supply a trial wavefunction if you wanna do importance sampling')
-        if len(trial_wvfn) is 2:
-            Psi_t = trial_wvfn
-            for CH in range(bonds):
-                psi.interp.append(interpolate.splrep(Psi_t[CH, 0, :], Psi_t[CH, 1, :], s=0))
-        elif len(trial_wvfn) is 1:
-            x = np.linspace(0.4, 6., 5000)
-            for CH in range(bonds):
-                psi.interp.append(interpolate.splrep(x, trial_wvfn, s=0))
+        if imp_samp_type == 'dev_indep':
+            if len(trial_wvfn) == 2:
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(trial_wvfn[0, :], trial_wvfn[1, :], s=0))
+            elif len(trial_wvfn) == 5000:
+                x = np.linspace(0.4, 6., 5000)
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(x, trial_wvfn, s=0))
+            else:
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(trial_wvfn[CH, 0], trial_wvfn[CH, 1], s=0))
+        elif imp_samp_type == 'dev_dep':
+            if hh_relate is None:
+                raise JacobIsDumb('Give me dat hh-rch function')
+            interp_exp = interpolate.splrep(hh_relate[0, :], hh_relate[1, :], s=0)
+            if len(trial_wvfn) == 2:
+                if np.max(trial_wvfn[1, :]) < 0.02:
+                    shift = trial_wvfn[0, np.argmin(trial_wvfn[1, :])]
+                else:
+                    shift = trial_wvfn[0, np.argmax(trial_wvfn[1, :])]
+                trial_wvfn[0, :] -= shift
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(trial_wvfn[0, :], trial_wvfn[1, :], s=0))
+            elif len(trial_wvfn) == 5000:
+                x = np.linspace(0.4, 6., 5000)
+                if np.max(trial_wvfn) < 0.02:
+                    shift = x[np.argmin(trial_wvfn)]
+                else:
+                    shift = x[np.argmax(trial_wvfn)]
+                x -= shift
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(x, trial_wvfn, s=0))
+        elif imp_samp_type == 'fd':
+            if len(trial_wvfn) == 2:
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(trial_wvfn[0, :], trial_wvfn[1, :], s=0))
+            elif len(trial_wvfn) == 5000:
+                x = np.linspace(0.4, 6., 5000)
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(x, trial_wvfn, s=0))
         else:
-            for CH in range(bonds):
-                psi.interp.append(interpolate.splrep(trial_wvfn[CH, 0], trial_wvfn[CH, 1], s=0))
-
+            raise JacobIsDumb('Not a valid type of importance sampling yet')
     else:
         x = np.linspace(0, 10, num=50000)
         y = np.ones(50000)
@@ -247,7 +374,12 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
         psi.coords = wvfn['coords'][dw_num-1]
         psi.weights = wvfn['weights'][dw_num-1]
 
-    Fqx, psi.drdx = drift(psi.zmat, psi.coords, psi.interp)
+    if imp_samp_type == 'dev_indep':
+        Fqx, psi.drdx = drift(psi.zmat, psi.coords, psi.interp, imp_samp_type)
+    elif imp_samp_type == 'dev_dep':
+        Fqx, psi.psit = drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, interp_exp=interp_exp)
+    else:
+        Fqx, psi.psit = drift(psi.zmat, psi.coords, psi.interp, imp_samp_type)
 
     num_o_collections = int((time_steps-equilibration)/wait_time) + 1
     time = np.zeros(time_steps)
@@ -262,14 +394,17 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
     for i in range(int(time_steps)):
         wait -= 1.
 
-        psi, Fqx, acceptance = Kinetic(psi, Fqx, psi.interp, sigmaCH, sigmaH, sigmaC)
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH, imp_samp_type, interp_exp)
         psi = Potential(psi)
-        psi = E_loc(psi, psi.interp)
+        if imp_samp_type == 'dev_indep':
+            psi = E_loc(psi, imp_samp_type)
 
+        else:
+            psi = E_loc(psi, imp_samp_type, sigmaCH, dtau)
         if i == 0:
             Eref = E_ref_calc(psi, alpha)
 
-        psi = Weighting(Eref, psi, Fqx, dtau, DW)
+        psi = Weighting(Eref, psi, Fqx, dtau, DW, imp_samp_type)
 
         Eref = E_ref_calc(psi, alpha)
         Eref_array[i] += Eref
@@ -289,8 +424,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
         weights = wvfn['weights'][dw_num-1]
     np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, des=des)
+    return time
 
 
 pool = mp.Pool(mp.cpu_count()-1)
-
-

@@ -33,6 +33,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/local_energy_plots" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/min_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/params" />
+      <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/params/switch_wvfns" />
       <excludeFolder url="file://$MODULE_DIR$/Imp_samp_testing/water_tests" />
       <excludeFolder url="file://$MODULE_DIR$/Multiweight_concrete/Energy_after_flattening" />
       <excludeFolder url="file://$MODULE_DIR$/Multiweight_concrete/Old_npy_files" />
@@ -46,6 +47,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Switch_test_sp" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/wavefunction_graphs" />
     </content>
+    <content url="file://$MODULE_DIR$/Imp_samp_testing/params/switch_wvfns" />
     <orderEntry type="jdk" jdkName="Python 3.7 (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

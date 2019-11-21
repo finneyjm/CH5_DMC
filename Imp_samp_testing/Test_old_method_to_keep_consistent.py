@@ -25,7 +25,7 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
 bonds = 5
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
 
-Psi_t = np.load('params/Switch_wvfns/Switch_min_wvfn_speed_1.0.npy')
+Psi_t = np.load('params/switch_wvfns/Switch_min_wvfn_speed_1.0.npy')
 x = np.linspace(0.4, 6., 5000)
 if np.max(Psi_t) < 0.02:
     shift = x[np.argmin(Psi_t)]
@@ -39,7 +39,7 @@ shift = 0.
 x = x - shift
 # exp = np.load('params/sigma_hh_to_rch_cub_relationship.npy')
 # interp_exp = interpolate.splrep(exp[0, :], exp[1, :], s=0)
-interp = interpolate.splrep(x, Psi_t[1, :], s=0)
+interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 dx = 1.e-4
 
 
@@ -101,7 +101,7 @@ def psi_t(coords):
     return psi
 
 
-def get_da_psi(coords):
+def get_da_psi(coords, interp_exp=0):
     much_psi = np.zeros((len(coords), 3, 6, 3))
     psi = psi_t(coords)
     asdf = np.broadcast_to(np.prod(psi, axis=1)[:, None, None], (len(coords), 6, 3))
@@ -113,24 +113,14 @@ def get_da_psi(coords):
             coords[:, atoms, xyz] += 2.*dx
             much_psi[:, 2, atoms, xyz] = np.prod(psi_t(coords), axis=1)
             coords[:, atoms, xyz] -= dx
-
-
-
-            # coords[:, atoms, xyz] -= 2.*dx
-            # much_psi[:, 0, atoms, xyz] = np.prod(psi_t(coords), axis=1)
-            # coords[:, atoms, xyz] += dx
-            # much_psi[:, 1, atoms, xyz] = np.prod(psi_t(coords), axis=1)
-            # coords[:, atoms, xyz] += 2. * dx
-            # much_psi[:, 3, atoms, xyz] = np.prod(psi_t(coords), axis=1)
-            # coords[:, atoms, xyz] += dx
-            # much_psi[:, 4, atoms, xyz] = np.prod(psi_t(coords), axis=1)
-            # coords[:, atoms, xyz] -= 2. * dx
     return much_psi
 
 
 def all_da_psi(coords):
     coords = np.array_split(coords, mp.cpu_count() - 1)
-    psi = pool.map(get_da_psi, coords)
+    interp_exp = 'asdf'
+    from itertools import repeat
+    psi = pool.starmap(get_da_psi, zip(coords, repeat(interp_exp)))
     psi = np.concatenate(psi)
     return psi
 
@@ -173,10 +163,11 @@ rch, rch_time = tm.time_me(ch_dist, psi.coords)
 tm.print_time_list(ch_dist, rch_time)
 hh, hh_time = tm.time_me(hh_dist, psi.coords, rch)
 tm.print_time_list(hh_dist, hh_time)
-# psi_trial, trial_time = tm.time_me(psi_t, psi.coords)
-# tm.print_time_list(psi_t, trial_time)
+psi_trial, trial_time = tm.time_me(psi_t, psi.coords)
+tm.print_time_list(psi_t, trial_time)
 psi.psit, psit_time = tm.time_me(get_da_psi, psi.coords)
 tm.print_time_list(get_da_psi, psit_time)
+blah = all_da_psi(psi.coords)
 print(drift(psi.psit))
 psi.V, v_time = tm.time_me(get_pot, psi.coords)
 tm.print_time_list(get_pot, v_time)
