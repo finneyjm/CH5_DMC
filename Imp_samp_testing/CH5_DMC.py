@@ -1,7 +1,8 @@
 import copy
 import CH5pot
 from scipy import interpolate
-from Coordinerds.CoordinateSystems import *
+import numpy as np
+# from Coordinerds.CoordinateSystems import *
 import multiprocessing as mp
 from itertools import repeat
 # import Timing_p3 as tm
@@ -24,7 +25,7 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
                           [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
 bonds = 5
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
-dx = 1.e-4
+dx = 1.e-3
 
 
 # Creates the walkers with all of their attributes
@@ -152,7 +153,8 @@ def drift(rch, coords, interp, type, interp_exp=None):
         drift = 2.*np.matmul(b, a).reshape((len(coords), 6, 3))
         return drift, dr1
     else:
-        return (psi[:, 2] - psi[:, 0])/dx/psi[:, 1], psi
+        blah = (psi[:, 2] - psi[:, 0])/dx/psi[:, 1]
+        return blah, psi
 
 
 # The metropolis step based on those crazy Green's functions
@@ -193,15 +195,14 @@ def Kinetic(Psi, Fqx, sigmaCH, type, interp_exp):
     accept = np.argwhere(a > check)
     # Update everything that is good
     Psi.coords[accept] = y[accept]
-    nah = np.argwhere(a <= check)
-    Fqy[nah] = Fqx[nah]
+    Fqx[accept] = Fqy[accept]
     Psi.zmat[accept] = rchy[accept]
     if type == 'dev_indep':
         Psi.drdx[accept] = dr1[accept]
     else:
         Psi.psit[accept] = psi[accept]
     acceptance = float(len(accept)/len(Psi.coords))*100.
-    return Psi, Fqy, acceptance
+    return Psi, Fqx, acceptance
 
 
 # Function for the potential for the mp to use
@@ -244,7 +245,7 @@ def E_loc(Psi, type, sigmaCH=None, dtau=None):
     if type == 'dev_indep':
         Psi.El = local_kinetic(Psi, type) + Psi.V
     else:
-        Psi.El = local_kinetic(Psi, type, sigmaCH, dtau)
+        Psi.El = local_kinetic(Psi, type, sigmaCH, dtau) + Psi.V
     return Psi
 
 
@@ -428,3 +429,5 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
 
 
 pool = mp.Pool(mp.cpu_count()-1)
+
+

@@ -118,7 +118,8 @@ def drift(zmatrix, coords, interp):
     a = dr1.reshape((len(coords), 5, 18))
     b = der.reshape((len(coords), 1, 5))
     drift = np.matmul(b, a)
-    return 2.*drift.reshape((len(coords), 6, 3)), dr1
+    blah = 2.*drift.reshape((len(coords), 6, 3))
+    return blah, dr1
 
 
 def metropolis(r1, r2, Fqx, Fqy, x, y, interp):
@@ -178,10 +179,12 @@ def local_kinetic(Psi, interp, dr1):
     psi = psi_t(Psi.zmat, interp)
     der1 = np.zeros((len(Psi.coords), bonds))
     der2 = np.zeros((len(Psi.coords), bonds))
+    dpsidx = np.zeros((len(Psi.coords), bonds))
     for i in range(bonds):
-        der1[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i]*(2./Psi.zmat[:, i, 1]))
+        der1[:, i] = (interpolate.splev(Psi.zmat[:, i, 1], interp, der=1)/psi[:, i])
+        dpsidx[:, i] = der1[:, i] * (2. / Psi.zmat[:, i, 1])
         der2[:, i] += (interpolate.splev(Psi.zmat[:, i, 1], interp, der=2)/psi[:, i])
-    kin = -1./(2.*m_CH)*np.sum(der2+der1, axis=1)
+    kin = -1./(2.*m_CH)*np.sum(der2+dpsidx, axis=1)
     a = dr1[:, :, 0]*np.broadcast_to(der1[:, :, None], (len(Psi.coords), 5, 3))
     carb_correct = np.sum(np.sum(a, axis=1)**2-np.sum(a**2, axis=1), axis=1)
     kin += -1./(2.*m_C)*carb_correct
@@ -318,13 +321,13 @@ N_0 = 10000
 # # alpha_test = [1, 2, 3, 4, 5, 11, 21, 31, 41, 51, 61, 71, 81, 91, 101]
 # # for j in range(9):
 # bro = 1.0
-Psi_t = np.load(f'params/Switch_wvfns/Switch_min_wvfn_speed_1.0.npy')
+Psi_t = np.load(f'params/min_wvfns/Average_min_broadening_1.0x.npy')
 x = np.linspace(0.4, 6., 5000)
 # Psi_t = np.ones(5000)
 interp = interpolate.splrep(x, Psi_t[1, :], s=0)
 Psi = Walkers(N_0)
-Psi.coords = np.load('Non_imp_sampled/DMC_CH5_coords_10000_walkers_5.npy')
-Psi.zmat = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
+# Psi.coords = np.load('Non_imp_sampled/DMC_CH5_coords_10000_walkers_5.npy')
+# Psi.zmat = CoordinateSet(Psi.coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
 f, dr1 = drift(Psi.zmat, Psi.coords, interp)
 import Timing_p3 as tm
 testytest, testy_time = tm.time_me(dpsidx2, Psi.zmat, Psi.coords, interp)
