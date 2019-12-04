@@ -20,16 +20,10 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             energies_non[i, j] += np.mean(Energy[1000:])
     for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/Average_fd/' +
-                             f'Average_fd_{imp_samp_walkers[i]}_' +
-                             f'Walkers_Test_{j+1}.npz')#['Eref']*har2wave
-            zmat = CoordinateSet(Energy['coords'][-1], system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
-            x = np.linspace(0.6, 4, 5000)/ang2bohr
-            density = scipy.stats.gaussian_kde(zmat[:, 0, 1]/ang2bohr, weights=Energy['weights'][-1])
-            amp = density(x)
-            plt.plot(x, amp)
-            plt.show()
-            # energies_imp[i, j] += np.mean(Energy[1000:])
+            Energy = np.load(f'Trial_wvfn_testing/HH_to_rCH_min_wvfn/' +
+                             f'HH_to_rCH_min_wvfn_{imp_samp_walkers[i]}_' +
+                             f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
+            energies_imp[i, j] += np.mean(Energy[1000:])
 
     avg_imp = np.mean(energies_imp, axis=1)
     print(avg_imp)
@@ -41,20 +35,20 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     print(std_non)
     fig, axes = plt.subplots(2, 1)
     axes[0].errorbar(non_imp_samp_walkers, avg_non, yerr=std_non, color='red', label='Non Imp Sampling')
-    axes[0].plot(non_imp_samp_walkers, [10916]*len(non_imp_samp_walkers), color='purple')
+    axes[0].plot(non_imp_samp_walkers, [10917]*len(non_imp_samp_walkers), color='purple')
     axes[1].errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='blue', label='Imp Sampling')
-    axes[1].plot(imp_samp_walkers, [10916] * len(imp_samp_walkers), color='purple')
+    axes[1].plot(imp_samp_walkers, [10917] * len(imp_samp_walkers), color='purple')
     axes[0].set_xlabel('Number of Walkers')
     axes[1].set_xlabel('Number of Walkers')
     axes[0].set_ylabel('Energy (cm^-1)')
     axes[1].set_ylabel('Energy (cm^-1)')
-    axes[0].set_ylim(10875, 11000)
-    axes[1].set_ylim(10875, 11000)
+    axes[0].set_ylim(10900, 10950)
+    axes[1].set_ylim(10900, 10950)
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_Average_fd.png')
-    plt.close(fig)
+    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_HH_to_rCH_min_wvfn.png')
+    # plt.close(fig)
 
 
 walkers1 = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
@@ -64,4 +58,5 @@ walkers4 = [10000, 20000]
 braod = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 bro = [1.01, 1.05, 1.10, 1.50]
 # for i in bro:
-lets_get_some_energies(walkers1, walkers4, 5, 5, 4)
+lets_get_some_energies(walkers1, walkers1, 5, 5, 4)
+plt.show()

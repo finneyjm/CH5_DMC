@@ -3,6 +3,7 @@ import copy
 import CH5pot
 # import Timing_p3 as tm
 import matplotlib.pyplot as plt
+import multiprocessing as mp
 
 # DMC parameters
 dtau = 1.
@@ -53,10 +54,18 @@ def Kinetic(Psi):
     return Psi
 
 
-# Using the potential call to calculate the potential of all the walkers
+# Function for the potential for the mp to use
+def get_pot(coords):
+    V = CH5pot.mycalcpot(coords, len(coords))
+    return V
+
+
+# Split up those coords to speed up dat potential
 def Potential(Psi):
-    V = CH5pot.mycalcpot(Psi.coords, N_0)
-    Psi.V = np.array(V)
+    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    V = pool.map(get_pot, coords)
+    Psi.V = np.concatenate(V)
+    # Psi.V = np.array(CH5pot.mycalcpot(Psi.coords, len(Psi.coords)))
     return Psi
 
 
@@ -139,19 +148,19 @@ def run(propagation, test_number):
     # E0 = np.mean(Eref[50:])
     np.save(f'DMC_CH5_randomly_sampled_coords_{N_0}_walkers_{test_number}', Psi_tau.coords)
     np.save(f'DMC_CH5_randomly_sampled_weights_{N_0}_walkers_{test_number}', np.vstack((Psi_tau.weights, d_values)))
-    np.save(f"DMC_CH5_randomly_sampled_Energy_{N_0}_walkers_{test_number}", np.vstack((time, Eref, weights)))
+    np.save(f"Non_imp_sampled/DMC_CH5_Energy_{N_0}_walkers_{test_number}", np.vstack((time, Eref, weights)))
     return Eref
 
 
 # N_0 = 10000
 # run(200, 1)
-
+pool = mp.Pool(mp.cpu_count()-1)
 # run(100, 'get_dat_wvfn')
-test = [100, 200, 500, 1000, 2000, 5000, 10000]
+test = [2500, 3000, 3500, 4000, 4500, 5500]
 for j in range(5):
-    for i in range(7):
+    for i in range(6):
         N_0 = test[i]
-        run(250, j+1)
+        run(500, j+1)
         print(f'{test[i]} walker test {j+1} is done!')
 # Eref, time = tm.time_me(run, 0)
 # tm.print_time_list(run, time)

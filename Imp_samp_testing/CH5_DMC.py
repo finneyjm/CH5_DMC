@@ -113,20 +113,24 @@ def ch_dist(coords):
 def hh_dist(carts, rch):
     N = len(carts)
     coords = np.array(carts)
+    # shift the carbon to the origin and everything else along with it
     coords -= np.broadcast_to(coords[:, None, 0], (N, bonds + 1, 3))
+    # Normalize each of the bond lengths to 1
     coords[:, 1:] /= np.broadcast_to(rch[:, :, None], (N, bonds, 3))
     hh = np.zeros((N, 5, 5))
-    a = np.full((5, 5), True)
-    np.fill_diagonal(a, False)
-    mask = np.broadcast_to(a, (N, 5, 5))
+    # create a mask because I don't want the diagonals of this guy
+    little_mask = np.full((5, 5), True)
+    np.fill_diagonal(little_mask, False)
+    mask = np.broadcast_to(little_mask, (N, 5, 5))
+    # filling in the upper right triangle of hh distances for each walker
     for i in range(4):
         for j in np.arange(i + 1, 5):
             hh[:, i, j] = np.sqrt((coords[:, j + 1, 0] - coords[:, i + 1, 0]) ** 2 +
                                   (coords[:, j + 1, 1] - coords[:, i + 1, 1]) ** 2 +
                                   (coords[:, j + 1, 2] - coords[:, i + 1, 2]) ** 2)
     hh += np.transpose(hh, (0, 2, 1))
-    blah = hh[mask].reshape(N, 5, 4)
-    hh_std = np.std(blah, axis=2)
+    # getting the actual standard deviations that I care about
+    hh_std = np.std(hh[mask].reshape(N, 5, 4), axis=2)
     return hh_std
 
 
@@ -356,8 +360,8 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
         else:
             raise JacobIsDumb('Not a valid type of importance sampling yet')
     else:
-        x = np.linspace(0, 10, num=50000)
-        y = np.ones(50000)
+        x = np.linspace(0, 10, num=5000)
+        y = np.ones(5000)
         for CH in range(bonds):
             psi.interp.append(interpolate.splrep(x, y, s=0))
 
@@ -399,7 +403,6 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output,
         psi = Potential(psi)
         if imp_samp_type == 'dev_indep':
             psi = E_loc(psi, imp_samp_type)
-
         else:
             psi = E_loc(psi, imp_samp_type, sigmaCH, dtau)
         if i == 0:
