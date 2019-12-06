@@ -22,9 +22,11 @@ coords_initial_c2v = np.array([[0.000000000000000, 0.000000000000000, 0.38699236
                        [0.000000000000000, 1.895858229423645, -0.6415748897955779]])
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.0106 / (Avo_num*me*1000)
+m_C = 12.0000000000 / (Avo_num*me*1000)
 m_H = 1.00782503223 / (Avo_num*me*1000)
+m_D = 2.01410177812 / (Avo_num*me*1000)
 m_red = (m_C*m_H)/(m_C+m_H)
+m_red_D = (m_C*m_D)/(m_C+m_D)
 har2wave = 219474.6
 ang2bohr = (1.e-10)/(5.291772106712e-11)
 
@@ -55,7 +57,7 @@ def Potential(grid, CH):
     return V_final
 
 
-def Kinetic_Calc(grid):
+def Kinetic_Calc(grid, m_red):
     a = grid[0, 1, 0]
     b = grid[-1, 1, 0]
     N = len(grid[:, 0, 0])
@@ -81,28 +83,28 @@ def Energy(T, V):
     return En, Eigv
 
 
-def run(CH, type, coords):
-    g = grid(0.4, 6., 500, CH, coords)
+def run(CH, type, coords, mass):
+    g = grid(0.4, 6., 5000, CH, coords)
     V = Potential(g, CH)
-    T = Kinetic_Calc(g)
+    T = Kinetic_Calc(g, mass)
     En, Eig = Energy(T, V)
     print(En[0]*har2wave)
     if np.max(Eig[:, 0]) < 0.005:
         Eig[:, 0] *= -1.
-    plt.plot(g[:, 1, 0], np.diag(V)*har2wave)
-    plt.plot(g[:, 1, 0], (Eig[:, 0])*50000 + En[0]*har2wave)
-    plt.xlim(0.6*ang2bohr, 1.8*ang2bohr)
-    plt.ylim(0, 20000)
-    plt.show()
-    plt.close()
-    # np.save(f'GSW_{type}_CH_{CH}', Eig[:, 0])
+    # plt.plot(g[:, 1, 0], np.diag(V)*har2wave)
+    # plt.plot(g[:, 1, 0], (Eig[:, 0])*50000 + En[0]*har2wave)
+    # plt.xlim(0.6*ang2bohr, 1.8*ang2bohr)
+    # plt.ylim(0, 20000)
+    # plt.show()
+    # plt.close()
+    np.save(f'GSW_{type}_CD_{CH}', Eig[:, 0])
     return g, Eig[:, 0]
 
 
 # wvfn = np.zeros((5, 1000))
 for i in np.arange(1, 6):
-    run(i, 'min', coords_initial_min)
-    run(i, 'cs', coords_initial_cs)
-    run(i, 'c2v', coords_initial_c2v)
+    run(i, 'min', coords_initial_min, m_red_D)
+    run(i, 'cs', coords_initial_cs, m_red_D)
+    run(i, 'c2v', coords_initial_c2v, m_red_D)
 
 

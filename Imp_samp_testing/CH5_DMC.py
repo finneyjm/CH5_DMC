@@ -10,8 +10,10 @@ from itertools import repeat
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.0107 / (Avo_num*me*1000)
-m_H = 1.007825 / (Avo_num*me*1000)
+m_C = 12.000000000 / (Avo_num*me*1000)
+m_H = 1.00782503223 / (Avo_num*me*1000)
+m_D = 2.01410177812 / (Avo_num*me*1000)
+m_CD = (m_C*m_D)/(m_D+m_C)
 m_CH = (m_C*m_H)/(m_H+m_C)
 har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11

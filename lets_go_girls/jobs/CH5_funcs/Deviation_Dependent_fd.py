@@ -7,11 +7,9 @@ import multiprocessing as mp
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.000000000 / (Avo_num*me*1000)
-m_H = 1.00782503223 / (Avo_num*me*1000)
-m_D = 2.01410177812 / (Avo_num*me*1000)
+m_C = 12.0107 / (Avo_num*me*1000)
+m_H = 1.007825 / (Avo_num*me*1000)
 m_CH = (m_C*m_H)/(m_H+m_C)
-m_CD = (m_C*m_D)/(m_D+m_C)
 har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11
 
@@ -30,7 +28,7 @@ dx = 1.e-3
 class Walkers(object):
     walkers = 0
 
-    def __init__(self, walkers, atoms=None, rand_samp=False):
+    def __init__(self, walkers, rand_samp=False):
         self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_initial]*walkers)
         if rand_samp is True:
@@ -43,19 +41,16 @@ class Walkers(object):
         self.weights = np.ones(walkers)
         self.V = np.zeros(walkers)
         self.El = np.zeros(walkers)
-        self.interp = []
+        self.drdx = np.zeros((walkers, 6, 6, 3))
         self.psit = np.zeros((walkers, 3, 6, 3))
-        if atoms is None:
-            atoms = ['C', 'H', 'H', 'H', 'H', 'H']
-        self.atoms = atoms
 
 
 # Evaluate PsiT for each bond CH bond length in the walker set
 def psi_t(rch, interp, imp_samp_type, coords, interp_exp=None):
     if imp_samp_type == 'dev_dep':
-        psi = all_da_psi(coords, rch, interp, imp_samp_type, interp_exp)
+        psi = all_da_psi(coords, rch, interp, type, interp_exp)
     elif imp_samp_type == 'fd':
-        psi = all_da_psi(coords, rch, interp, imp_samp_type)
+        psi = all_da_psi(coords, rch, interp, type)
     return psi
 
 
@@ -90,7 +85,7 @@ def psi_t_extra(coords, interp, imp_samp_type, interp_exp=None, rch=None):
     shift = np.zeros((len(coords), bonds))
     psi = np.zeros((len(coords), bonds))
     for i in range(bonds):
-        if imp_samp_type == 'dev_dep':
+        if type == 'dev_dep':
             shift[:, i] = interpolate.splev(hh[:, i], interp_exp, der=0)
         psi[:, i] = interpolate.splev(rch[:, i] - shift[:, i], interp[i], der=0)
     return psi

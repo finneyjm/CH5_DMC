@@ -33,7 +33,7 @@ for a, b in zip(size, s):
         myfile.write('#SBATCH -o check1.dat\n\n')
         myfile.write('module load contrib/python/3.6.3\n')
         myfile.write('START=$(date +%s.%N)\n\n')
-        myfile.write(f'python HH_to_rCH_min_wvfn_subproc_extras_{a}.py\n\n')
+        myfile.write(f'python HH_to_rCH_min_wvfn_subproc_more_extras_{a}.py\n\n')
         myfile.write('wait\n')
         myfile.write('END=$(date +%s.%N)\n')
         myfile.write('DIFF=$(echo "$END - $START" | bc)\n')

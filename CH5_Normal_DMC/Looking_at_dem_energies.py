@@ -47,16 +47,17 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_HH_to_rCH_min_wvfn.png')
+    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_HH_to_rCH_min_wvfn_extra.png')
     # plt.close(fig)
 
 
 walkers1 = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 walkers3 = [100, 200, 500, 1000, 2000, 5000, 10000]
 walkers2 = [500, 1000, 2000, 5000, 10000]
-walkers4 = [10000, 20000]
+walkers4 = [100, 200, 500, 1000, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
+            5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 20000]
 braod = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 bro = [1.01, 1.05, 1.10, 1.50]
 # for i in bro:
-lets_get_some_energies(walkers1, walkers1, 5, 5, 4)
+lets_get_some_energies(walkers1, walkers4, 5, 5, 4)
 plt.show()

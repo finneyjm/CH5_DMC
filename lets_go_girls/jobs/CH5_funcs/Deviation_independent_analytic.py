@@ -4,11 +4,9 @@ import numpy as np
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.000000000 / (Avo_num*me*1000)
-m_H = 1.00782503223 / (Avo_num*me*1000)
-m_D = 2.01410177812 / (Avo_num*me*1000)
+m_C = 12.0107 / (Avo_num*me*1000)
+m_H = 1.007825 / (Avo_num*me*1000)
 m_CH = (m_C*m_H)/(m_H+m_C)
-m_CD = (m_C*m_D)/(m_D+m_C)
 har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11
 
@@ -22,15 +20,11 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
 bonds = 5
 
 
-class JacobIsDumb(ValueError):
-    pass
-
-
 # Creates the walkers with all of their attributes
 class Walkers(object):
     walkers = 0
 
-    def __init__(self, walkers, atoms=None, rand_samp=False):
+    def __init__(self, walkers, rand_samp=False):
         self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_initial]*walkers)
         if rand_samp is True:
@@ -45,17 +39,6 @@ class Walkers(object):
         self.El = np.zeros(walkers)
         self.drdx = np.zeros((walkers, 6, 6, 3))
         self.interp = []
-        if atoms is None:
-            atoms = ['C', 'H', 'H', 'H', 'H', 'H']
-        self.atoms = atoms
-        self.m_red = np.zeros(5)
-        for i in range(5):
-            if self.atoms[i + 1] == 'H' or self.atoms[i + 1] == 'h':
-                self.m_red[i] = m_CH
-            elif self.atoms[i + 1] == 'D' or self.atoms[i + 1] == 'd':
-                self.m_red[i] = m_CD
-            else:
-                raise JacobIsDumb('That atoms is not currently supported you dingus')
 
 
 def ch_dist(coords):
@@ -138,7 +121,7 @@ def local_kinetic(Psi):
         der1[:, i] = (interpolate.splev(Psi.zmat[:, i], Psi.interp[i], der=1) / psi[:, i])
         dpsidx[:, i] = der1[:, i] * (2. / Psi.zmat[:, i])
         der2[:, i] = (interpolate.splev(Psi.zmat[:, i], Psi.interp[i], der=2) / psi[:, i])
-    kin = -1. / 2. * np.sum((der2 + dpsidx)/Psi.m_red, axis=1)
+    kin = -1. / (2. * m_CH) * np.sum(der2 + dpsidx, axis=1)
     a = Psi.drdx[:, :, 0] * np.broadcast_to(der1[:, :, None], (len(Psi.coords), 5, 3))
     carb_correct = np.sum(np.sum(a, axis=1) ** 2 - np.sum(a ** 2, axis=1), axis=1)
     kin += -1. / (2. * m_C) * carb_correct
