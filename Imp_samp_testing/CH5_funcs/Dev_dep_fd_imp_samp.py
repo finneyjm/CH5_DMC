@@ -1,5 +1,7 @@
 from scipy import interpolate
-import numpy as np
+from .Potential import *
+from .Non_imp_sampled import descendants
+import copy
 from itertools import repeat
 from .Dev_indep_analytic_imp_samp import ch_dist, E_ref_calc
 import multiprocessing as mp
@@ -51,11 +53,17 @@ class Walkers(object):
 
 
 # Evaluate PsiT for each bond CH bond length in the walker set
-def psi_t(rch, interp, imp_samp_type, coords, interp_exp=None):
-    if imp_samp_type == 'dev_dep':
-        psi = all_da_psi(coords, rch, interp, imp_samp_type, interp_exp)
-    elif imp_samp_type == 'fd':
-        psi = all_da_psi(coords, rch, interp, imp_samp_type)
+def psi_t(rch, interp, imp_samp_type, coords, interp_exp=None, multicore=True):
+    if multicore is True:
+        if imp_samp_type == 'dev_dep':
+            psi = all_da_psi(coords, rch, interp, imp_samp_type, interp_exp)
+        elif imp_samp_type == 'fd':
+            psi = all_da_psi(coords, rch, interp, imp_samp_type)
+    else:
+        if imp_samp_type == 'dev_dep':
+            psi = get_da_psi(coords, rch, interp, imp_samp_type, interp_exp)
+        elif imp_samp_type == 'fd':
+            psi = get_da_psi(coords, rch, interp, imp_samp_type)
     return psi
 
 
@@ -120,8 +128,8 @@ def hh_dist(carts, rch):
     return hh_std
 
 
-def drift(rch, coords, interp, imp_samp_type, interp_exp=None):
-    psi = psi_t(rch, interp, imp_samp_type, coords, interp_exp=interp_exp)
+def drift(rch, coords, interp, imp_samp_type, interp_exp=None, multicore=True):
+    psi = psi_t(rch, interp, imp_samp_type, coords, multicore, interp_exp=interp_exp)
     blah = (psi[:, 2] - psi[:, 0]) / dx / psi[:, 1]
     return blah, psi
 
@@ -137,14 +145,14 @@ def metropolis(Fqx, Fqy, x, y, sigmaCH, psi1, psi2):
 
 
 # Random walk of all the walkers
-def Kinetic(Psi, Fqx, sigmaCH, imp_samp_type, interp_exp=None):
+def Kinetic(Psi, Fqx, sigmaCH, imp_samp_type, interp_exp=None, multicore=True):
     Drift = sigmaCH**2/2.*Fqx   # evaluate the drift term from the F that was calculated in the previous step
     randomwalk = np.zeros((len(Psi.coords), 6, 3))  # normal randomwalk from DMC
     randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaCH[1, 0], size=(len(Psi.coords), 5, 3))
     randomwalk[:, 0, :] = np.random.normal(0.0, sigmaCH[0, 0], size=(len(Psi.coords), 3))
     y = randomwalk + Drift + np.array(Psi.coords)  # the proposed move for the walkers
     rchy = ch_dist(y)
-    Fqy, psi = drift(rchy, y, Psi.interp, imp_samp_type, interp_exp)
+    Fqy, psi = drift(rchy, y, Psi.interp, imp_samp_type, multicore, interp_exp)
     a = metropolis(Fqx, Fqy, Psi.coords, y, sigmaCH, imp_samp_type, Psi.psit, psi)
     check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
@@ -198,18 +206,53 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
     return Psi
 
 
+def simulation_time(psi, alpha, sigmaCH, Fqx, imp_samp_type, time_steps, dtau,
+                    equilibration, wait_time, multicore=True, DW=False, interp_exp=None):
+    num_o_collections = int((time_steps - equilibration) / wait_time) + 1
+    time = np.zeros(time_steps)
+    sum_weights = np.zeros(time_steps)
+    coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
+    weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    accept = np.zeros(time_steps)
+    des = 0
+    num = 0
+    wait = float(wait_time)
+    Eref_array = np.zeros(time_steps)
+
+    for i in range(int(time_steps)):
+        wait -= 1.
+
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH, imp_samp_type, multicore, interp_exp)
+
+        if multicore is True:
+            psi = Parr_Potential(psi)
+        else:
+            psi.V = get_pot(psi.coords)
+
+        psi = E_loc(psi, sigmaCH, dtau)
+
+        if i == 0:
+            Eref = E_ref_calc(psi, alpha)
+
+        psi = Weighting(Eref, psi, Fqx, dtau, DW)
+        Eref = E_ref_calc(psi, alpha)
+
+        Eref_array[i] = Eref
+        time[i] = i + 1
+        sum_weights[i] = np.sum(psi.weights)
+        accept[i] = acceptance
+
+        if i >= int(equilibration) - 1 and wait <= 0.:
+            wait = float(wait_time)
+            Psi_tau = copy.deepcopy(psi)
+            coords[num] += Psi_tau.coords
+            weights[num] += Psi_tau.weights
+            num += 1
+
+    if DW is True:
+        des = descendants(psi)
+
+    return coords, weights, time, Eref_array, sum_weights, accept, des
+
+
 pool = mp.Pool(mp.cpu_count()-1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-

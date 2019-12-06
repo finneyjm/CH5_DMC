@@ -1,5 +1,7 @@
 from scipy import interpolate
-import numpy as np
+from .Potential import *
+from .Non_imp_sampled import descendants
+import copy
 
 # constants and conversion factors
 me = 9.10938356e-31
@@ -55,7 +57,7 @@ class Walkers(object):
             elif self.atoms[i + 1] == 'D' or self.atoms[i + 1] == 'd':
                 self.m_red[i] = m_CD
             else:
-                raise JacobIsDumb('That atoms is not currently supported you dingus')
+                raise JacobIsDumb('That atom is not currently supported you dingus')
 
 
 def ch_dist(coords):
@@ -185,3 +187,50 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
         Fqx[i[0]] = Biggo_force
     return Psi
 
+
+def simulation_time(psi, alpha, sigmaCH, Fqx, time_steps, dtau, equilibration, wait_time, multicore=True, DW=False):
+    num_o_collections = int((time_steps - equilibration) / wait_time) + 1
+    time = np.zeros(time_steps)
+    sum_weights = np.zeros(time_steps)
+    coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
+    weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    accept = np.zeros(time_steps)
+    des = 0
+    num = 0
+    wait = float(wait_time)
+    Eref_array = np.zeros(time_steps)
+
+    for i in range(int(time_steps)):
+        wait -= 1.
+
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH)
+
+        if multicore is True:
+            psi = Parr_Potential(psi)
+        else:
+            psi.V = get_pot(psi.coords)
+
+        psi = E_loc(psi)
+
+        if i == 0:
+            Eref = E_ref_calc(psi, alpha)
+
+        psi = Weighting(Eref, psi, Fqx, dtau, DW)
+        Eref = E_ref_calc(psi, alpha)
+
+        Eref_array[i] = Eref
+        time[i] = i+1
+        sum_weights[i] = np.sum(psi.weights)
+        accept[i] = acceptance
+
+        if i >= int(equilibration)-1 and wait <= 0.:
+            wait = float(wait_time)
+            Psi_tau = copy.deepcopy(psi)
+            coords[num] += Psi_tau.coords
+            weights[num] += Psi_tau.weights
+            num += 1
+
+    if DW is True:
+        des = descendants(psi)
+
+    return coords, weights, time, Eref_array, sum_weights, accept, des

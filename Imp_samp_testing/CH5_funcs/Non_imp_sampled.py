@@ -1,4 +1,5 @@
-import numpy as np
+import copy
+from .Potential import *
 
 # constants and conversion factors
 me = 9.10938356e-31
@@ -91,5 +92,45 @@ def descendants(Psi):
     return d
 
 
+def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, multicore=True, DW=False):
+    num_o_collections = int((time_steps - equilibration) / wait_time) + 1
+    time = np.zeros(time_steps)
+    sum_weights = np.zeros(time_steps)
+    coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
+    weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    des = 0
+    num = 0
+    wait = float(wait_time)
+    Vref_array = np.zeros(time_steps)
 
+    for i in range(int(time_steps)):
+        wait -= 1.
 
+        psi = Kinetic(psi, sigmaCH)
+
+        if multicore is True:
+            psi = Parr_Potential(psi)
+        else:
+            psi.V = get_pot(psi.coords)
+
+        if i == 0:
+            V_ref = V_ref_calc(psi, dtau)
+
+        psi = Weighting(V_ref, psi, DW, dtau)
+        Vref = V_ref_calc(psi, dtau)
+
+        Vref_array[i] = Vref
+        time[i] = i + 1
+        sum_weights[i] = np.sum(psi.weights)
+
+        if i >= int(equilibration)-1 and wait <= 0.:
+            wait = float(wait_time)
+            Psi_tau = copy.deepcopy(psi)
+            coords[num] += Psi_tau.coords
+            weights[num] += Psi_tau.weights
+            num += 1
+
+    if DW is True:
+        des = descendants(psi)
+
+    return coords, weights, time, Vref_array, sum_weights, des

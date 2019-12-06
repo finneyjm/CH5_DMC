@@ -1,5 +1,3 @@
-import copy
-import CH5pot
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
 import multiprocessing as mp
@@ -56,8 +54,90 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
                 for CH in range(bonds):
                     psi.interp.append(interpolate.splrep(trial_wvfn[CH, 0], trial_wvfn[CH, 1], s=0))
         elif imp_samp_type == 'dev_dep':
+            psi = dd.Walkers(N_0, atoms, rand_samp)
+            if hh_relate is None:
+                raise JacobIsDumb('Give me dat hh-rch function')
+            interp_exp = interpolate.splrep(hh_relate[0, :], hh_relate[1, :], s=0)
+            if len(trial_wvfn) == 2:
+                if np.max(trial_wvfn[1, :]) < 0.02:
+                    shift = trial_wvfn[0, np.argmin(trial_wvfn[1, :])]
+                else:
+                    shift = trial_wvfn[0, np.argmax(trial_wvfn[1, :])]
+                trial_wvfn[0, :] -= shift
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(trial_wvfn[0, :], trial_wvfn[1, :], s=0))
+            elif len(trial_wvfn) == 5000:
+                x = np.linspace(0.4, 6., 5000)
+                if np.max(trial_wvfn) < 0.02:
+                    shift = x[np.argmin(trial_wvfn)]
+                else:
+                    shift = x[np.argmax(trial_wvfn)]
+                x -= shift
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(x, trial_wvfn, s=0))
+        elif imp_samp_type == 'fd':
+            psi = dd.Walkers(N_0, atoms, rand_samp)
+            if len(trial_wvfn) == 2:
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(trial_wvfn[0, :], trial_wvfn[1, :], s=0))
+            elif len(trial_wvfn) == 5000:
+                x = np.linspace(0.4, 6., 5000)
+                for CH in range(bonds):
+                    psi.interp.append(interpolate.splrep(x, trial_wvfn, s=0))
+        else:
+            raise JacobIsDumb('Not a valid type of importance sampling yet')
+    else:
+        psi = ni.Walkers(N_0, atoms, rand_samp)
 
+    alpha = 1./(2.*dtau)
+    sigmaH = np.sqrt(dtau/m_H)
+    sigmaC = np.sqrt(dtau/m_C)
+    sigmaD = np.sqrt(dtau/m_D)
+    sigmaCH = np.zeros((6, 3))
+    sigmaCH[0] = np.array([[sigmaC] * 3])
+    for i in np.arange(1, 6):
+        if psi.atoms[i].upper() == 'H':
+            sigmaCH[i] = np.array([[sigmaH] * 3])
+        elif psi.atoms[i].upper() == 'D':
+            sigmaCH[i] = np.array([[sigmaD] * 3])
+        else:
+            raise JacobIsDumb("We don't serve that kind of atom in these here parts")
 
+    if DW is True:
+        if dw_num is None:
+            raise JacobIsDumb('Indicate the walkers that you want to use with an integer value')
+        if dwfunc is None:
+            raise JacobHasNoFile('Indicate the walkers to use for des weighting')
+        wvfn = np.load(dwfunc)
+        psi.coords = wvfn['coords'][dw_num-1]
+        psi.weights = wvfn['weights'][dw_num-1]
+
+    if imp_samp_type == 'dev_indep':
+        Fqx, psi.drdx = di.drift(psi.zmat, psi.coords, psi.interp)
+    elif imp_samp_type == 'dev_dep':
+        Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore, interp_exp=interp_exp)
+    elif imp_samp_type == 'fd':
+        Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore)
+
+    if imp_samp is True:
+        if imp_samp_type == 'dev_indep':
+            coords, weights, time, Eref_array, sum_weights, accept, des = di.simulation_time(psi, alpha, sigmaCH,
+                                                                                             Fqx, time_steps, dtau,
+                                                                                             equilibration, wait_time,
+                                                                                             multicore, DW)
+        else:
+            coords, weights, time, Eref_array, sum_weights, accept, des = dd.simulation_time(psi, alpha, sigmaCH, Fqx,
+                                                                                             imp_samp_type, time_steps,
+                                                                                             dtau, equilibration, wait_time,
+                                                                                             multicore, DW, interp_exp)
+        np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
+                 sum_weights=sum_weights, accept=accept, des=des)
+    else:
+        coords, weights, time, Eref_array, sum_weights, des = ni.simulation_time(psi, sigmaCH, time_steps, dtau,
+                                                                                 equilibration, wait_time, multicore, DW)
+        np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
+                 sum_weights=sum_weights, des=des)
+    return time
 
 
 pool = mp.Pool(mp.cpu_count()-1)
