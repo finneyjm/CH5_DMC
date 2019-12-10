@@ -21,12 +21,12 @@ main_dir
 
 import argparse, sys, os
 # load/define run_function
-from .CH5_DMC import *
+from CH5_DMC import *
 
 parser = argparse.ArgumentParser(prog='runDMC')
 parser.add_argument('job_name',
                     type=str,
-                    dest='job_name',
+                    # dest='job_name',
                     help='the name of the file with parameters')
 args = parser.parse_args()
 job_name = args.job_name
@@ -36,12 +36,12 @@ main_dir = os.path.dirname(job_dir)
 
 # alternate loading method from modules
 sys.path.insert(0, os.path.join(job_dir, "params"))
-exec(f"from {job_name} import pars")
+exec(f"from {job_name} import pars, output_dir")
 
 
 # make sure all results get exported into correct directory
 res_dir = os.path.join(main_dir, "results")
-my_res_dir = os.path.join(res_dir, job_name)
+my_res_dir = os.path.join(res_dir, output_dir)
 try:
   os.mkdir(my_res_dir)
 except OSError:

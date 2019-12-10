@@ -1,9 +1,9 @@
 from scipy import interpolate
-from .Potential import *
-from .Non_imp_sampled import descendants
+from CH5_funcs.Potential import *
+from CH5_funcs.Non_imp_sampled import descendants
 import copy
 from itertools import repeat
-from .Dev_indep_analytic_imp_samp import ch_dist, E_ref_calc
+from CH5_funcs.Dev_indep_analytic_imp_samp import ch_dist, E_ref_calc
 import multiprocessing as mp
 
 # constants and conversion factors
@@ -129,7 +129,7 @@ def hh_dist(carts, rch):
 
 
 def drift(rch, coords, interp, imp_samp_type, interp_exp=None, multicore=True):
-    psi = psi_t(rch, interp, imp_samp_type, coords, multicore, interp_exp=interp_exp)
+    psi = psi_t(rch, interp, imp_samp_type, coords, multicore=multicore, interp_exp=interp_exp)
     blah = (psi[:, 2] - psi[:, 0]) / dx / psi[:, 1]
     return blah, psi
 
@@ -148,12 +148,12 @@ def metropolis(Fqx, Fqy, x, y, sigmaCH, psi1, psi2):
 def Kinetic(Psi, Fqx, sigmaCH, imp_samp_type, interp_exp=None, multicore=True):
     Drift = sigmaCH**2/2.*Fqx   # evaluate the drift term from the F that was calculated in the previous step
     randomwalk = np.zeros((len(Psi.coords), 6, 3))  # normal randomwalk from DMC
-    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaCH[1, 0], size=(len(Psi.coords), 5, 3))
-    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaCH[0, 0], size=(len(Psi.coords), 3))
+    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaCH[1:6], size=(len(Psi.coords), 5, 3))
+    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaCH[0], size=(len(Psi.coords), 3))
     y = randomwalk + Drift + np.array(Psi.coords)  # the proposed move for the walkers
     rchy = ch_dist(y)
     Fqy, psi = drift(rchy, y, Psi.interp, imp_samp_type, multicore, interp_exp)
-    a = metropolis(Fqx, Fqy, Psi.coords, y, sigmaCH, imp_samp_type, Psi.psit, psi)
+    a = metropolis(Fqx, Fqy, Psi.coords, y, sigmaCH, Psi.psit, psi)
     check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
     # Update everything that is good
@@ -221,6 +221,13 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, imp_samp_type, time_steps, dtau,
 
     for i in range(int(time_steps)):
         wait -= 1.
+        if i == 0:
+            if multicore is True:
+                psi = Parr_Potential(psi)
+            else:
+                psi.V = get_pot(psi.coords)
+            psi = E_loc(psi, sigmaCH, dtau)
+            Eref = E_ref_calc(psi, alpha)
 
         psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH, imp_samp_type, multicore, interp_exp)
 
@@ -230,9 +237,6 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, imp_samp_type, time_steps, dtau,
             psi.V = get_pot(psi.coords)
 
         psi = E_loc(psi, sigmaCH, dtau)
-
-        if i == 0:
-            Eref = E_ref_calc(psi, alpha)
 
         psi = Weighting(Eref, psi, Fqx, dtau, DW)
         Eref = E_ref_calc(psi, alpha)

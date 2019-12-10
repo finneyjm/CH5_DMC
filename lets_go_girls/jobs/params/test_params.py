@@ -9,5 +9,4 @@ pars = {
     'output': 'test_params_output'
 }
 
-
-
+output_dir = 'testthenewgeneralstuffasdf'

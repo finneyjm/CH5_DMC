@@ -1,7 +1,7 @@
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
 import multiprocessing as mp
-from .CH5_funcs import *
+from CH5_funcs import *
 
 # constants and conversion factors
 me = 9.10938356e-31
@@ -58,6 +58,15 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
             if hh_relate is None:
                 raise JacobIsDumb('Give me dat hh-rch function')
             interp_exp = interpolate.splrep(hh_relate[0, :], hh_relate[1, :], s=0)
+            if len(trial_wvfn) == 5:
+                for CH in range(bonds):
+                    if np.max(trial_wvfn[CH, 1, :]) < 0.02:
+                        shift = trial_wvfn[CH, 0, np.argmin(trial_wvfn[CH, 1, :])]
+                    else:
+                        shift = trial_wvfn[CH, 0, np.argmax(trial_wvfn[CH, 1, :])]
+                    trial_wvfn[CH, 0, :] -= shift
+                    for CH in range(bonds):
+                        psi.interp.append(interpolate.splrep(trial_wvfn[CH, 0, :], trial_wvfn[CH, 1, :], s=0))
             if len(trial_wvfn) == 2:
                 if np.max(trial_wvfn[1, :]) < 0.02:
                     shift = trial_wvfn[0, np.argmin(trial_wvfn[1, :])]
@@ -112,12 +121,13 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
         psi.coords = wvfn['coords'][dw_num-1]
         psi.weights = wvfn['weights'][dw_num-1]
 
-    if imp_samp_type == 'dev_indep':
-        Fqx, psi.drdx = di.drift(psi.zmat, psi.coords, psi.interp)
-    elif imp_samp_type == 'dev_dep':
-        Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore, interp_exp=interp_exp)
-    elif imp_samp_type == 'fd':
-        Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore)
+    if imp_samp is True:
+        if imp_samp_type == 'dev_indep':
+            Fqx, psi.drdx = di.drift(psi.zmat, psi.coords, psi.interp)
+        elif imp_samp_type == 'dev_dep':
+            Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore=multicore, interp_exp=interp_exp)
+        elif imp_samp_type == 'fd':
+            Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore=multicore)
 
     if imp_samp is True:
         if imp_samp_type == 'dev_indep':
@@ -141,3 +151,6 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
 
 
 pool = mp.Pool(mp.cpu_count()-1)
+
+
+run(100, 200, 1, 200, 123, 'file')

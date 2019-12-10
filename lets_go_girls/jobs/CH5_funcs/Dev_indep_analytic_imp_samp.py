@@ -114,8 +114,8 @@ def metropolis(r1, r2, Fqx, Fqy, x, y, interp, sigmaCH):
 def Kinetic(Psi, Fqx, sigmaCH):
     Drift = sigmaCH ** 2 / 2. * Fqx  # evaluate the drift term from the F that was calculated in the previous step
     randomwalk = np.zeros((len(Psi.coords), 6, 3))  # normal randomwalk from DMC
-    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaCH[1, 0], size=(len(Psi.coords), 5, 3))
-    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaCH[0, 0], size=(len(Psi.coords), 3))
+    randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaCH[1:6], size=(len(Psi.coords), 5, 3))
+    randomwalk[:, 0, :] = np.random.normal(0.0, sigmaCH[0], size=(len(Psi.coords), 3))
     y = randomwalk + Drift + np.array(Psi.coords)  # the proposed move for the walkers
     rchy = ch_dist(y)
     Fqy, dr1 = drift(rchy, y, Psi.interp)  # evaluate new F
@@ -202,6 +202,13 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, time_steps, dtau, equilibration, w
 
     for i in range(int(time_steps)):
         wait -= 1.
+        if i == 0:
+            if multicore is True:
+                psi = Parr_Potential(psi)
+            else:
+                psi.V = get_pot(psi.coords)
+            psi = E_loc(psi)
+            Eref = E_ref_calc(psi, alpha)
 
         psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH)
 
@@ -211,9 +218,6 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, time_steps, dtau, equilibration, w
             psi.V = get_pot(psi.coords)
 
         psi = E_loc(psi)
-
-        if i == 0:
-            Eref = E_ref_calc(psi, alpha)
 
         psi = Weighting(Eref, psi, Fqx, dtau, DW)
         Eref = E_ref_calc(psi, alpha)

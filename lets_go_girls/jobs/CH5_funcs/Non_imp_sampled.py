@@ -1,16 +1,13 @@
 import copy
-from .Potential import *
+from CH5_funcs.Potential import *
 
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.000000000 / (Avo_num*me*1000)
+m_C = 12.0000000000 / (Avo_num*me*1000)
 m_H = 1.00782503223 / (Avo_num*me*1000)
 m_D = 2.01410177812 / (Avo_num*me*1000)
-m_CH = (m_C*m_H)/(m_H+m_C)
-m_CD = (m_C*m_D)/(m_D+m_C)
 har2wave = 219474.6
-ang2bohr = 1.e-10/5.291772106712e-11
 
 # Starting orientation of walkers
 coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
@@ -45,8 +42,8 @@ class Walkers(object):
 # Random walk of all the walkers
 def Kinetic(Psi, sigmaCH):
     N_0 = len(Psi.coords)
-    randomwalkC = np.random.normal(0.0, sigmaCH[0, 0], size=(N_0, 3))
-    randomwalkH = np.random.normal(0.0, sigmaCH[1, 0], size=(N_0, 5, 3))
+    randomwalkC = np.random.normal(0.0, sigmaCH[0], size=(N_0, 3))
+    randomwalkH = np.random.normal(0.0, sigmaCH[1:6], size=(N_0, 5, 3))
     Psi.coords[:, 0, :] += randomwalkC
     Psi.coords[:, 1:6, :] += randomwalkH
     return Psi
@@ -57,7 +54,7 @@ def V_ref_calc(Psi, dtau):
     alpha = 1./(2.*dtau)
     P0 = sum(Psi.weights_i)
     P = sum(Psi.weights)
-    V_ref = sum(Psi.weights*Psi.V)/P - alpha*(sum((Psi.weights-Psi.weights_i))/P0)
+    V_ref = sum(Psi.weights * Psi.V) / P - alpha * (sum((Psi.weights - Psi.weights_i)) / P0)
     return V_ref
 
 
@@ -92,7 +89,7 @@ def descendants(Psi):
     return d
 
 
-def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, multicore=True, DW=False):
+def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, multicore, DW):
     num_o_collections = int((time_steps - equilibration) / wait_time) + 1
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
@@ -105,6 +102,13 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, mu
 
     for i in range(int(time_steps)):
         wait -= 1.
+        if i == 0:
+            if multicore is True:
+                psi = Parr_Potential(psi)
+            else:
+                psi.V = get_pot(psi.coords)
+
+            V_ref = V_ref_calc(psi, dtau)
 
         psi = Kinetic(psi, sigmaCH)
 
@@ -113,13 +117,10 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, mu
         else:
             psi.V = get_pot(psi.coords)
 
-        if i == 0:
-            V_ref = V_ref_calc(psi, dtau)
-
         psi = Weighting(V_ref, psi, DW, dtau)
-        Vref = V_ref_calc(psi, dtau)
+        V_ref = V_ref_calc(psi, dtau)
 
-        Vref_array[i] = Vref
+        Vref_array[i] = V_ref
         time[i] = i + 1
         sum_weights[i] = np.sum(psi.weights)
 

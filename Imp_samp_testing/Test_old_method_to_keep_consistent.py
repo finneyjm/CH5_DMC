@@ -3,6 +3,7 @@ import CH5pot
 from scipy import interpolate
 from Coordinerds.CoordinateSystems import *
 import multiprocessing as mp
+from numba import jit
 
 # import Timing_p3 as tm
 
@@ -58,7 +59,7 @@ class Walkers(object):
         self.El = np.zeros(walkers)
         self.psit = np.zeros((walkers, 3, 6, 3))
 
-
+@jit(nopython=True)
 def hh_dist(carts, rch):
     N = len(carts)
     coords = np.array(carts)
@@ -157,18 +158,30 @@ def E_loc(Psi, sigmaCH, dtau):
 #
 pool = mp.Pool(mp.cpu_count()-1)
 import Timing_p3 as tm
+import time
 psi = Walkers(10000)
 psi.coords = np.load('Non_imp_sampled/DMC_CH5_coords_10000_walkers_5.npy')
 rch, rch_time = tm.time_me(ch_dist, psi.coords)
 tm.print_time_list(ch_dist, rch_time)
-hh, hh_time = tm.time_me(hh_dist, psi.coords, rch)
-tm.print_time_list(hh_dist, hh_time)
-psi_trial, trial_time = tm.time_me(psi_t, psi.coords)
-tm.print_time_list(psi_t, trial_time)
-psi.psit, psit_time = tm.time_me(get_da_psi, psi.coords)
-tm.print_time_list(get_da_psi, psit_time)
+# hh, hh_time = tm.time_me(hh_dist, psi.coords, rch)
+# tm.print_time_list(hh_dist, hh_time)
+start = time.time()
+hh = hh_dist(psi.coords, rch)
+end = time.time()
+print(f'hh_dist took: {end-start}')
+start = time.time()
+psi_trial = psi_t(psi.coords)
+end = time.time()
+print(f'psi_t took: {end-start}')
+# psi_trial, trial_time = tm.time_me(psi_t, psi.coords)
+# tm.print_time_list(psi_t, trial_time)
+# psi.psit, psit_time = tm.time_me(get_da_psi, psi.coords)
+# tm.print_time_list(get_da_psi, psit_time)
+start = time.time()
+psi.psit = get_da_psi(psi.coords)
+end = time.time()
+print(f'get_da_psi took: {end-start}')
 blah = all_da_psi(psi.coords)
-print(drift(psi.psit))
 psi.V, v_time = tm.time_me(get_pot, psi.coords)
 tm.print_time_list(get_pot, v_time)
 dtau = 1
