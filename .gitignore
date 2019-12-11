@@ -9,6 +9,10 @@ __pycache__/
 *.com
 *.dat
 *.csv
+*.xyz
+*.inc
+*.f
+*.o
 Coordinerds
 CH5pot
 

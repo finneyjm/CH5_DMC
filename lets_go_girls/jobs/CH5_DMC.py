@@ -152,5 +152,3 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
 
 pool = mp.Pool(mp.cpu_count()-1)
 
-
-run(100, 200, 1, 200, 123, 'file')
