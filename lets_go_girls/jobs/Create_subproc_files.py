@@ -4,14 +4,15 @@ size = ['small', 'med', 'large']
 bro_str = ['5', '10']
 bro = [5, 10]
 
-for j in range(len(bro)):
-    for i in range(5):
-        for a, b in zip(walkers, size):
-            with open(f'DD_to_rCD_subproc_{b}_{i+1}.py', 'w') as myfile:
-                myfile.write('import subprocess as proc\n')
-                myfile.write(f'walkers = {a}\n\n')
-                myfile.write('for j in walkers:\n')
-                # myfile.write('    for i in range(5):\n')
-                myfile.write(f'    proc.call(["python", "runDMC.py", f"params_DD_to_rCD_{{j}}_walkers_test_{i+1}"])\n')
-                myfile.close()
+for k in range(4):
+    for j in range(len(bro)):
+        for i in range(5):
+            for a, b in zip(walkers, size):
+                with open(f'Non_imp_sampled_{k+1}H_subproc_{b}_{i+1}.py', 'w') as myfile:
+                    myfile.write('import subprocess as proc\n')
+                    myfile.write(f'walkers = {a}\n\n')
+                    myfile.write('for j in walkers:\n')
+                    # myfile.write('    for i in range(5):\n')
+                    myfile.write(f'    proc.call(["python", "runDMC.py", f"params_Non_imp_sampled_{k+1}H_{{j}}_walkers_test_{i+1}"])\n')
+                    myfile.close()
 

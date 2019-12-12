@@ -34,9 +34,9 @@ class JacobIsDumb(ValueError):
 
 
 # Function to go through the DMC algorithm
-def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
+def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250, atoms=None,
         imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, multicore=True,
-        trial_wvfn=None, DW=False, dw_num=None, dwfunc=None, rand_samp=True):
+        trial_wvfn=None, rand_samp=True):
     interp_exp = None
     if imp_samp is True:
         if trial_wvfn is None:
@@ -112,15 +112,6 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
         else:
             raise JacobIsDumb("We don't serve that kind of atom in these here parts")
 
-    if DW is True:
-        if dw_num is None:
-            raise JacobIsDumb('Indicate the walkers that you want to use with an integer value')
-        if dwfunc is None:
-            raise JacobHasNoFile('Indicate the walkers to use for des weighting')
-        wvfn = np.load(dwfunc)
-        psi.coords = wvfn['coords'][dw_num-1]
-        psi.weights = wvfn['weights'][dw_num-1]
-
     if imp_samp is True:
         if imp_samp_type == 'dev_indep':
             Fqx, psi.drdx = di.drift(psi.zmat, psi.coords, psi.interp)
@@ -134,17 +125,18 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, atoms=None,
             coords, weights, time, Eref_array, sum_weights, accept, des = di.simulation_time(psi, alpha, sigmaCH,
                                                                                              Fqx, time_steps, dtau,
                                                                                              equilibration, wait_time,
-                                                                                             multicore, DW)
+                                                                                             propagation, multicore)
         else:
             coords, weights, time, Eref_array, sum_weights, accept, des = dd.simulation_time(psi, alpha, sigmaCH, Fqx,
                                                                                              imp_samp_type, time_steps,
                                                                                              dtau, equilibration, wait_time,
-                                                                                             multicore, DW, interp_exp)
+                                                                                             propagation, multicore, interp_exp)
         np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                  sum_weights=sum_weights, accept=accept, des=des)
     else:
         coords, weights, time, Eref_array, sum_weights, des = ni.simulation_time(psi, sigmaCH, time_steps, dtau,
-                                                                                 equilibration, wait_time, multicore, DW)
+                                                                                 equilibration, wait_time, propagation,
+                                                                                 multicore)
         np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                  sum_weights=sum_weights, des=des)
     return time

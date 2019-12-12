@@ -188,20 +188,27 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
     return Psi
 
 
-def simulation_time(psi, alpha, sigmaCH, Fqx, time_steps, dtau, equilibration, wait_time, multicore=True, DW=False):
+def simulation_time(psi, alpha, sigmaCH, Fqx, time_steps, dtau, equilibration, wait_time, propagation, multicore=True):
+    DW = True
     num_o_collections = int((time_steps - equilibration) / wait_time) + 1
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
     coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
     weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
     accept = np.zeros(time_steps)
-    des = 0
+    des = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    prop = float(propagation)
     num = 0
     wait = float(wait_time)
     Eref_array = np.zeros(time_steps)
 
     for i in range(int(time_steps)):
-        wait -= 1.
+        if DW is False:
+            prop = float(propagation)
+            wait -= 1.
+        else:
+            prop -= 1.
+
         if i == 0:
             if multicore is True:
                 psi = Parr_Potential(psi)
@@ -227,14 +234,15 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, time_steps, dtau, equilibration, w
         sum_weights[i] = np.sum(psi.weights)
         accept[i] = acceptance
 
-        if i >= int(equilibration)-1 and wait <= 0.:
+        if i >= int(equilibration) - 1 and wait <= 0. < prop:
+            DW = True
             wait = float(wait_time)
             Psi_tau = copy.deepcopy(psi)
-            coords[num] += Psi_tau.coords
-            weights[num] += Psi_tau.weights
+            coords[num] = Psi_tau.coords
+            weights[num] = Psi_tau.weights
+        elif prop == 0:
+            DW = False
+            des[num] = descendants(psi)
             num += 1
-
-    if DW is True:
-        des = descendants(psi)
 
     return coords, weights, time, Eref_array, sum_weights, accept, des

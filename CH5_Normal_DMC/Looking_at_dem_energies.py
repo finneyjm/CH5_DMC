@@ -15,12 +15,12 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     energies_non = np.zeros((N_n, trials_ni))
     for j in range(trials_ni):
         for i in range(N_n):
-            Energy = np.load(f'Non_imp_sampled/DMC_CH5_Energy_{non_imp_samp_walkers[i]}_' +
-                             f'walkers_{j+1}.npy')[1, :]*har2wave
+            Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled_CD/Non_imp_sampled_CD_{non_imp_samp_walkers[i]}_' +
+                             f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
             energies_non[i, j] += np.mean(Energy[1000:])
     for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/HH_to_rCH_min_wvfn/' +
+            Energy = np.load(f'Trial_wvfn_testing/results/HH_to_rCH_min_wvfn/' +
                              f'HH_to_rCH_min_wvfn_{imp_samp_walkers[i]}_' +
                              f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
             energies_imp[i, j] += np.mean(Energy[1000:])
@@ -47,7 +47,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_HH_to_rCH_min_wvfn_extra.png')
+    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_HH_to_rCH_min_wvfn_correct_mass.png')
     # plt.close(fig)
 
 
@@ -59,5 +59,5 @@ walkers4 = [100, 200, 500, 1000, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
 braod = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 bro = [1.01, 1.05, 1.10, 1.50]
 # for i in bro:
-lets_get_some_energies(walkers1, walkers4, 5, 5, 4)
+lets_get_some_energies(walkers1, walkers1, 5, 5, 4)
 plt.show()
