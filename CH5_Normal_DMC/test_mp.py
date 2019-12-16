@@ -90,7 +90,7 @@ def exp_fit(x, *args):
 
 def quad_fit(x, *args):
     a, b, c, d = args
-    return d*x**3 + a*x**2 + b*x + c
+    return a*x**3 + b*x**2 + c*x + d
 
 
 params = [0.02388915, 6.29098812, 2.0149631]
@@ -100,8 +100,8 @@ params2 = [1, 1, 1, 1]
 fitted_params2, _ = scipy.optimize.curve_fit(quad_fit, new_hh, new_rch, p0=params2)
 print(fitted_params2)
 g = np.linspace(0, 1., num=5000)
-np.save('sigma_hh_to_rch_exp_relationship', np.vstack((g, exp_fit(g, *fitted_params))))
-np.save('sigma_hh_to_rch_cub_relationship', np.vstack((g, quad_fit(g, *fitted_params2))))
+# np.save('sigma_hh_to_rch_exp_relationship', np.vstack((g, exp_fit(g, *fitted_params))))
+# np.save('sigma_hh_to_rch_cub_relationship', np.vstack((g, quad_fit(g, *fitted_params2))))
 plt.scatter(np.std(hh[0], axis=1), zmat[0, :, 1], label='min geo')
 plt.scatter(np.std(hh_cs[0], axis=1), zmat_cs[0, :, 1], label='cs saddle')
 plt.scatter(np.std(hh_c2v[0], axis=1), zmat_c2v[0, :, 1], label='c2v saddle')
@@ -113,3 +113,27 @@ plt.xlabel(r'$\sigma_{HH}$')
 plt.ylabel('rCH (Bohr)')
 plt.show()
 plt.close()
+from scipy import interpolate
+interp = interpolate.splrep(g, quad_fit(g, *fitted_params2), s=0)
+import time
+blah = np.random.uniform(0, 0.5, 10000)
+print(blah)
+start = time.time()
+y = interpolate.splev(blah, interp, der=0)
+print(y)
+end = time.time()
+print(f'interpolate took : {end-start}')
+
+start = time.time()
+y = quad_fit(blah, *fitted_params2)
+print(y)
+end = time.time()
+print(f'function took : {end-start}')
+
+start = time.time()
+y = exp_fit(blah, *fitted_params)
+print(y)
+end = time.time()
+print(f'exp function took : {end-start}')
+
+

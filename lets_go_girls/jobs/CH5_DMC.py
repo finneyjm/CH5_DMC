@@ -65,8 +65,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
                     else:
                         shift = trial_wvfn[CH, 0, np.argmax(trial_wvfn[CH, 1, :])]
                     trial_wvfn[CH, 0, :] -= shift
-                    for CH in range(bonds):
-                        psi.interp.append(interpolate.splrep(trial_wvfn[CH, 0, :], trial_wvfn[CH, 1, :], s=0))
+                    psi.interp.append(interpolate.splrep(trial_wvfn[CH, 0, :], trial_wvfn[CH, 1, :], s=0))
             if len(trial_wvfn) == 2:
                 if np.max(trial_wvfn[1, :]) < 0.02:
                     shift = trial_wvfn[0, np.argmin(trial_wvfn[1, :])]

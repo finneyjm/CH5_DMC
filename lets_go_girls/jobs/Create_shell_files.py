@@ -1,15 +1,15 @@
-size = ['small', 'med', 'large']
-s = ['s', 'm', 'l']
+size = ['small', 'little_bigger', 'med', 'large']
+s = ['s', 'lb', 'm', 'l']
 bro_str = ['5', '10']
 bro = [5, 10]
 
 for k in range(4):
     for i in range(5):
         for a, b in zip(size, s):
-            with open(f'DMC_Non_imp_sampled_{k+1}H_{a}_{i+1}.sh', 'w') as myfile:
+            with open(f'DMC_DD_to_rCD_{k+1}H_{a}_{i+1}.sh', 'w') as myfile:
                 myfile.write('#!/bin/bash\n\n')
                 myfile.write('## Job Name\n\n')
-                myfile.write(f'#SBATCH --job-name=Non_imp_sampled_{k+1}H_{b}_{i}\n\n')
+                myfile.write(f'#SBATCH --job-name=DD_to_rCD_{k+1}H_{b}_{i}\n\n')
                 myfile.write('## Allocation Definition\n\n')
                 myfile.write('## Which queue should we use?\n\n')
                 # if b == 's':
@@ -35,7 +35,7 @@ for k in range(4):
                 myfile.write('#SBATCH -o check1.dat\n\n')
                 myfile.write('module load contrib/python/3.6.3\n')
                 myfile.write('START=$(date +%s.%N)\n\n')
-                myfile.write(f'python Non_imp_sampled_{k+1}H_subproc_{a}_{i+1}.py\n\n')
+                myfile.write(f'python DD_to_rCD_{k+1}H_subproc_{a}_{i+1}.py\n\n')
                 myfile.write('wait\n')
                 myfile.write('END=$(date +%s.%N)\n')
                 myfile.write('DIFF=$(echo "$END - $START" | bc)\n')
