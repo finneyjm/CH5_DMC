@@ -57,7 +57,10 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
             psi = dd.Walkers(N_0, atoms, rand_samp)
             if hh_relate is None:
                 raise JacobIsDumb('Give me dat hh-rch function')
-            interp_exp = interpolate.splrep(hh_relate[0, :], hh_relate[1, :], s=0)
+            if len(hh_relate) == 4 or len(hh_relate) == 3:
+                interp_exp = hh_relate
+            else:
+                interp_exp = interpolate.splrep(hh_relate[0, :], hh_relate[1, :], s=0)
             if len(trial_wvfn) == 5:
                 for CH in range(bonds):
                     if np.max(trial_wvfn[CH, 1, :]) < 0.02:

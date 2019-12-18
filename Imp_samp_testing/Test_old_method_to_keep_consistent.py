@@ -38,8 +38,9 @@ else:
 print(shift)
 shift = 0.
 x = x - shift
-# exp = np.load('params/sigma_hh_to_rch_cub_relationship.npy')
-# interp_exp = interpolate.splrep(exp[0, :], exp[1, :], s=0)
+exp = np.load('params/sigma_hh_to_rch_cub_relationship.npy')
+interp_exp = interpolate.splrep(exp[0, :], exp[1, :], s=0)
+interp_exp = [0.02388918, 6.29098506, 2.01496305]
 interp = interpolate.splrep(Psi_t[0, :], Psi_t[1, :], s=0)
 dx = 1.e-4
 
@@ -59,24 +60,20 @@ class Walkers(object):
         self.El = np.zeros(walkers)
         self.psit = np.zeros((walkers, 3, 6, 3))
 
-@jit(nopython=True)
+
 def hh_dist(carts, rch):
     N = len(carts)
     coords = np.array(carts)
     coords -= np.broadcast_to(coords[:, None, 0], (N, bonds + 1, 3))
     coords[:, 1:] /= np.broadcast_to(rch[:, :, None], (N, bonds, 3))
-    hh = np.zeros((N, 5, 5))
-    a = np.full((5, 5), True)
-    np.fill_diagonal(a, False)
-    mask = np.broadcast_to(a, (N, 5, 5))
+    hh = np.zeros((N, 5, 4))
     for i in range(4):
-        for j in np.arange(i + 1, 5):
-            hh[:, i, j] = np.sqrt((coords[:, j + 1, 0] - coords[:, i + 1, 0]) ** 2 +
-                                  (coords[:, j + 1, 1] - coords[:, i + 1, 1]) ** 2 +
-                                  (coords[:, j + 1, 2] - coords[:, i + 1, 2]) ** 2)
-    hh += np.transpose(hh, (0, 2, 1))
-    blah = hh[mask].reshape(N, 5, 4)
-    hh_std = np.std(blah, axis=2)
+        for j in np.arange(i, 4):
+            hh[:, i, j] = np.sqrt((coords[:, j + 2, 0] - coords[:, i + 1, 0]) ** 2 +
+                                  (coords[:, j + 2, 1] - coords[:, i + 1, 1]) ** 2 +
+                                  (coords[:, j + 2, 2] - coords[:, i + 1, 2]) ** 2)
+            hh[:, j+1, i] = hh[:, i, j]
+    hh_std = np.std(hh, axis=2)
     return hh_std
 
 
@@ -92,14 +89,20 @@ def ch_dist(coords):
 
 def psi_t(coords):
     rch = ch_dist(coords)
-    # hh = hh_dist(coords, rch)
+    hh = hh_dist(coords, rch)
     psi = np.zeros((len(coords), bonds))
     shift = np.zeros((len(coords), bonds))
     for i in range(bonds):
         # shift[:, i] = interpolate.splev(hh[:, i], interp_exp, der=0)
+        shift[:, i] = hh_relate_fit(hh[:, i], *interp_exp)
         # shift[:, i] += 2.2842168433686734
         psi[:, i] = interpolate.splev(rch[:, i] - shift[:, i], interp, der=0)
     return psi
+
+
+def hh_relate_fit(x, *args):
+    a, b, c = args
+    return a * np.exp(b * x) + c
 
 
 def get_da_psi(coords, interp_exp=0):

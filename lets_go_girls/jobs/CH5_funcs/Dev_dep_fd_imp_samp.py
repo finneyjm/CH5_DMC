@@ -99,32 +99,39 @@ def psi_t_extra(coords, interp, imp_samp_type, interp_exp=None, rch=None):
     psi = np.zeros((len(coords), bonds))
     for i in range(bonds):
         if imp_samp_type == 'dev_dep':
-            shift[:, i] = interpolate.splev(hh[:, i], interp_exp, der=0)
+            if isinstance(interp_exp, tuple):
+                shift[:, i] = interpolate.splev(hh[:, i], interp_exp, der=0)
+            elif len(interp_exp) == 4:
+                shift[:, i] = hh_relate_cub(hh[:, i], *interp_exp)
+            elif len(interp_exp) == 3:
+                shift[:, i] = hh_relate_fit(hh[:, i], *interp_exp)
         psi[:, i] = interpolate.splev(rch[:, i] - shift[:, i], interp[i], der=0)
     return psi
+
+
+def hh_relate_fit(x, *args):
+    a, b, c = args
+    return a * np.exp(b * x) + c
+
+
+def hh_relate_cub(x, *args):
+    a, b, c, d = args
+    return a*x**3 + b*x**2 + c*x + d
 
 
 def hh_dist(carts, rch):
     N = len(carts)
     coords = np.array(carts)
-    # shift the carbon to the origin and everything else along with it
     coords -= np.broadcast_to(coords[:, None, 0], (N, bonds + 1, 3))
-    # Normalize each of the bond lengths to 1
     coords[:, 1:] /= np.broadcast_to(rch[:, :, None], (N, bonds, 3))
-    hh = np.zeros((N, 5, 5))
-    # create a mask because I don't want the diagonals of this guy
-    little_mask = np.full((5, 5), True)
-    np.fill_diagonal(little_mask, False)
-    mask = np.broadcast_to(little_mask, (N, 5, 5))
-    # filling in the upper right triangle of hh distances for each walker
+    hh = np.zeros((N, 5, 4))
     for i in range(4):
-        for j in np.arange(i + 1, 5):
-            hh[:, i, j] = np.sqrt((coords[:, j + 1, 0] - coords[:, i + 1, 0]) ** 2 +
-                                  (coords[:, j + 1, 1] - coords[:, i + 1, 1]) ** 2 +
-                                  (coords[:, j + 1, 2] - coords[:, i + 1, 2]) ** 2)
-    hh += np.transpose(hh, (0, 2, 1))
-    # getting the actual standard deviations that I care about
-    hh_std = np.std(hh[mask].reshape(N, 5, 4), axis=2)
+        for j in np.arange(i, 4):
+            hh[:, i, j] = np.sqrt((coords[:, j + 2, 0] - coords[:, i + 1, 0]) ** 2 +
+                                  (coords[:, j + 2, 1] - coords[:, i + 1, 1]) ** 2 +
+                                  (coords[:, j + 2, 2] - coords[:, i + 1, 2]) ** 2)
+            hh[:, j+1, i] = hh[:, i, j]
+    hh_std = np.std(hh, axis=2)
     return hh_std
 
 
