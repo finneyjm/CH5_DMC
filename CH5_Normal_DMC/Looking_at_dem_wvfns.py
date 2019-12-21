@@ -64,7 +64,7 @@ def regular_wvfns(walkers, alpha):
     fig.savefig(f'Comparing_f_different_DMC_alpha_{alpha}.png')
 
 
-def imp_samp__wvfns(walkers):
+def imp_samp_wvfns(walkers):
     coords = np.load(f'Imp_samp_DMC_CH5_coords_{walkers}_walkers_{1}.npy')
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
     weights = np.load(f'Imp_samp_DMC_CH5_weights_{walkers}_walkers_{1}.npy')
@@ -101,9 +101,9 @@ def biased_samp__wvfns(walkers):
     fig.savefig('Biased_DMC_wvfns.png')
 
 
-alphas = [1, 11, 21, 31, 41, 51]
-for i in range(len(alphas)):
-    regular_wvfns(5000, alphas[i])
+# alphas = [1, 11, 21, 31, 41, 51]
+# for i in range(len(alphas)):
+#     regular_wvfns(5000, alphas[i])
 
 
 

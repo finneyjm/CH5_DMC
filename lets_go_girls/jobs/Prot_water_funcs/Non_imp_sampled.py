@@ -1,41 +1,27 @@
 import copy
-from CH5_funcs.Potential import *
+import numpy as np
 
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
-m_C = 12.0000000000 / (Avo_num*me*1000)
 m_H = 1.00782503223 / (Avo_num*me*1000)
 m_D = 2.01410177812 / (Avo_num*me*1000)
+m_O = 15.99491461957 / (Avo_num*me*1000)
+m_OD = (m_O*m_D)/(m_D+m_O)
+m_OH = (m_O*m_H)/(m_H+m_O)
 har2wave = 219474.6
-
-# Starting orientation of walkers
-coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
-                          [0.1318851447521099, 2.088940054609643, 0.000000000000000],
-                          [1.786540362044548, -1.386051328559878, 0.000000000000000],
-                          [2.233806981137821, 0.3567096955165336, 0.000000000000000],
-                          [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
-                          [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
 
 
 # Creates the walkers with all of their attributes
 class Walkers(object):
     walkers = 0
 
-    def __init__(self, walkers, atoms=None, rand_samp=False):
+    def __init__(self, walkers, atoms, coords_initial):
         self.walkers = np.arange(0, walkers)
         self.coords = np.array([coords_initial]*walkers)*1.01
-        if rand_samp is True:
-            rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
-            b = self.coords[np.arange(walkers)[:, None], rand_idx]
-            self.coords[:, 1:6, :] = b
-        # else:
-        #     self.coords *= 1.01
         self.weights = np.zeros(walkers) + 1.
         self.weights_i = np.zeros(walkers) + 1.
         self.V = np.zeros(walkers)
-        if atoms is None:
-            atoms = ['C', 'H', 'H', 'H', 'H', 'H']
         self.atoms = atoms
 
 
@@ -139,3 +125,10 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, pr
             num += 1
 
     return coords, weights, time, Vref_array, sum_weights, des
+
+
+
+
+
+
+

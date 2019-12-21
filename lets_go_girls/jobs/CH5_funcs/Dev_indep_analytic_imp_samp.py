@@ -34,13 +34,13 @@ class Walkers(object):
 
     def __init__(self, walkers, atoms=None, rand_samp=False):
         self.walkers = np.arange(0, walkers)
-        self.coords = np.array([coords_initial]*walkers)
+        self.coords = np.array([coords_initial]*walkers)*1.01
         if rand_samp is True:
             rand_idx = np.random.rand(walkers, 5).argsort(axis=1) + 1
             b = self.coords[np.arange(walkers)[:, None], rand_idx]
             self.coords[:, 1:6, :] = b
-        else:
-            self.coords *= 1.01
+        # else:
+        #     self.coords *= 1.01
         self.zmat = ch_dist(self.coords)
         self.weights = np.ones(walkers)
         self.V = np.zeros(walkers)
