@@ -156,3 +156,35 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
 
 pool = mp.Pool(mp.cpu_count()-1)
 
+pars1 = {
+    "N_0": 20000,
+    "time_steps": 2000,
+    "dtau": 1,
+    "equilibration": 2000,
+    "wait_time": 500,
+    "output": 'testing_dat_timing'
+}
+wvfn = np.load('params/min_wvfns/GSW_min_CH_2.npy')
+hh = np.load('params/sigma_hh_to_rch_exp_relationship_params.npy')
+pars2 = {
+    "N_0": 5000,
+    "time_steps": 2000,
+    "dtau": 1,
+    "equilibration": 2000,
+    "wait_time": 500,
+    "output": 'testing_dat_timing',
+    "imp_samp": True,
+    "trial_wvfn": wvfn,
+    "imp_samp_type": 'dev_dep',
+    "hh_relate": hh
+}
+import time
+start = time.time()
+run(**pars1)
+end = time.time()
+print(end-start)
+
+start = time.time()
+run(**pars2)
+end = time.time()
+print(end-start)

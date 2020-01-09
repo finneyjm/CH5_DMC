@@ -1,7 +1,7 @@
 size = ['small', 'med', 'large']
 s = ['s', 'm', 'l']
-# size = ['med', 'large']
-# s = ['m', 'l']
+size = ['med', 'large']
+s = ['m', 'l']
 # size = ['biggo']
 # s = ['b']
 bro_str = ['5', '10']
@@ -49,6 +49,6 @@ for j in range(6):
                 myfile.write('wait\n')
                 myfile.write('END=$(date +%s.%N)\n')
                 myfile.write('DIFF=$(echo "$END - $START" | bc)\n')
-                myfile.write(f'echo "HH_to_rCHrCD_{j}H_GSW2 took: $DIFF"')
+                myfile.write(f'echo "HH_to_rCHrCD_{j}H_GSW2_{b}_{i+1} took: $DIFF"')
 
 
