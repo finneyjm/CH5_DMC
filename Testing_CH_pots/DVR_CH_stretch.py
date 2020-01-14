@@ -84,27 +84,42 @@ def Energy(T, V):
 
 
 def run(CH, type, coords, mass):
-    g = grid(0.4, 6., 5000, CH, coords)
+    g = grid(0.4, 6., 1000, CH, coords)
     V = Potential(g, CH)
     T = Kinetic_Calc(g, mass)
     En, Eig = Energy(T, V)
     print(En[0]*har2wave)
     if np.max(Eig[:, 0]) < 0.005:
         Eig[:, 0] *= -1.
+    if CH == 2:
     # plt.plot(g[:, 1, 0], np.diag(V)*har2wave)
     # plt.plot(g[:, 1, 0], (Eig[:, 0])*50000 + En[0]*har2wave)
-    # plt.xlim(0.6*ang2bohr, 1.8*ang2bohr)
+        plt.plot(g[:, 1, 0]/ang2bohr, Eig[:, 0])
+        plt.xlim(0.6, 1.8)
     # plt.ylim(0, 20000)
+        plt.xlabel(r'r$_{CH}$ ($\AA$)', fontsize=16)
+        plt.ylabel('P(r)', fontsize=16)
     # plt.show()
     # plt.close()
-    np.save(f'GSW_{type}_CD_{CH}', Eig[:, 0])
-    return g, Eig[:, 0]
+        plt.savefig('GSW_2_min_wvfn_for_ppt.png')
+    # np.save(f'GSW_{type}_CD_{CH}', Eig[:, 0])
+    return g[:, 1, 0], Eig[:, 0]
 
 
-# wvfn = np.zeros((5, 1000))
+# wvfns = [1, 2, 3, 4, 5]
+wvfn = np.zeros((5, 1000))
 for i in np.arange(1, 6):
-    run(i, 'min', coords_initial_min, m_red_D)
-    run(i, 'cs', coords_initial_cs, m_red_D)
-    run(i, 'c2v', coords_initial_c2v, m_red_D)
+# for i in wvfns:
+    g, wvfn[i-1] = run(i, 'min', coords_initial_min, m_red)
+for i in range(5):
+    plt.plot(g/ang2bohr, wvfn[i], label=f'Ground State Wavefunction {i+1}')
+plt.xlim(0.6, 1.8)
+plt.xlabel(r'r$_{CH}$ ($\AA$)', fontsize=16)
+plt.ylabel('P(r)', fontsize=16)
+plt.legend(bbox_to_anchor=(1.04, 1.), fontsize=14)
+# plt.tight_layout(rect=[0, 0, 0.75, 1])
+plt.savefig('GSWs_min_for_ppt.png', bbox_inches='tight')
+# run(i, 'cs', coords_initial_cs, m_red_D)
+# run(i, 'c2v', coords_initial_c2v, m_red_D)
 
 

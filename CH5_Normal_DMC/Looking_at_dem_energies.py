@@ -25,8 +25,12 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             energies_non[i, j] += np.mean(Energy[5000:])
     for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/' +
-                             f'HH_to_rCHrCD_{isotop}H_GSW2_{imp_samp_walkers[i]}_' +
+            # Energy = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/' +
+            #                  f'HH_to_rCHrCD_{isotop}H_GSW2_{imp_samp_walkers[i]}_' +
+            #                  f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
+
+            Energy = np.load(f'Trial_wvfn_testing/results/average_wvfn/' +
+                             f'Min_wvfn_{imp_samp_walkers[i]}_' +
                              f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
             energies_imp[i, j] += np.mean(Energy[5000:])
 
@@ -64,7 +68,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
-    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_HH_to_rCHrCD_{isotop}H_GSW2_shifted.png')
+    fig.savefig(f'Convergence_plots/Energy_convergence_CH5_min_wvfn_test.png')
     # plt.close(fig)
 
 
@@ -79,5 +83,5 @@ braod = [1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.1]
 bro = [1.01, 1.05, 1.10, 1.50]
 # for i in bro:
 # for i in range(6):
-lets_get_some_energies(walkers3, walkers3, 5, 5, 3)
+lets_get_some_energies(walkers1, walkers1, 5, 5, 5)
 plt.show()

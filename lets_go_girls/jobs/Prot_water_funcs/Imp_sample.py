@@ -23,7 +23,7 @@ class Walkers(object):
 
     def __init__(self, walkers, atoms, coords_initial, bond_order):
         self.walkers = np.arange(0, walkers)
-        self.coords = np.array([coords_initial]*walkers)*1.01
+        self.coords = np.array([coords_initial]*walkers)*1.05
         self.weights = np.zeros(walkers) + 1.
         self.weights_i = np.zeros(walkers) + 1.
         self.V = np.zeros(walkers)
@@ -34,26 +34,107 @@ class Walkers(object):
         self.bond_order = bond_order
 
 
-def get_da_psi(coords, bond_order):
-    much_psi = np.zeros((coords.shape[0], 3, coords.shape[1], coords.shape[2]))
-    psi = psi_t(coords, bond_order)
-    much_psi[:, 1] = np.broadcast_to(np.prod(psi, axis=1)[:, None, None], coords.shape)
-    for atoms in range(coords.shape[1]):
-        for xyz in range(coords.shape[2]):
+def psi_t(coords, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang):
+    reg_oh = dists(coords, num_waters, 'OH')
+    hbond_oh = dists(coords, num_waters, 'hbond_OH')
+    hbond_oo = dists(coords, num_waters, 'hbond_OO')
+    angs = angles(coords, reg_oh, num_waters)
+    much_psi = np.zeros((len(coords), 3, num_waters*3+1, 3))
+    psi = psi_t_extra(coords, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale,
+                      interp_ang, reg_oh, hbond_oh, hbond_oo, angs)
+    much_psi[:, 1] += np.broadcast_to(np.prod(psi, axis=1)[:, None, None], (len(coords), num_waters*3+1, 3))
+    for atoms in range(num_waters*3+1):
+        for xyz in range(3):
             coords[:, atoms, xyz] -= dx
-            much_psi[:, 0, atoms, xyz] = np.prod(psi_t(coords, bond_order), axis=1)
+            much_psi[:, 0, atoms, xyz] = np.prod(psi_t_extra(coords, num_waters, interp_reg_oh, interp_hbond,
+                                                             interp_OO_shift, interp_OO_scale, interp_ang))
             coords[:, atoms, xyz] += 2.*dx
-            much_psi[:, 2, atoms, xyz] = np.prod(psi_t(coords, bond_order), axis=1)
+            much_psi[:, 2, atoms, xyz] = np.prod(psi_t_extra(coords, num_waters, interp_reg_oh, interp_hbond,
+                                                             interp_OO_shift, interp_OO_scale, interp_ang))
             coords[:, atoms, xyz] -= dx
     return much_psi
 
 
-def psi_t(coords, num_waters):
-    reg_oh = dists(coords, num_waters, 'OH')
-    hbond_oh = dists(coords, num_waters, 'hbond_OH')
-    hbond_oo = dists(coords, num_waters, 'hbond_OO')
+def psi_t_extra(coords, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang, reg_oh=None,
+                hbond_oh=None, hbond_oo=None, angs=None):
+    if reg_oh is None:
+        reg_oh = dists(coords, num_waters, 'OH')
+        hbond_oh = dists(coords, num_waters, 'hbond_OH')
+        hbond_oo = dists(coords, num_waters, 'hbond_OO')
+        angs = angles(coords, reg_oh, num_waters)
+    shift = np.zeros((len(coords), num_waters-1))
+    scale = np.zeros((len(coords), num_waters-1))
+    psi = np.zeros((len(coords), num_waters*3))
+    if num_waters == 3:
+        for i in range(5):
+            psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
+        for j in range(2):
+            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
+            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
+            psi[:, j+5] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
+        for k in range(2):
+            psi[:, k+5+2] = angle_function(angs[:, k], interp_ang)
+    elif num_waters == 4:
+        for i in range(6):
+            psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
+        for j in range(3):
+            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
+            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
+            psi[:, j+6] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
+        for k in range(3):
+            psi[:, k+6+3] = angle_function(angs[:, k], interp_ang)
+    return psi
 
-    return np.zeros((len(coords), 2))
+
+def shift_calc(oo_dists, interp):
+    return np.zeros(oo_dists.shape)
+
+
+def scale_calc(oo_dists, interp):
+    return np.zeros(oo_dists.shape)
+
+
+def angle_function(angs, interp):
+    return np.zeros(angs.shape)
+
+
+def angles(coords, dists, num_waters):
+    if num_waters == 3:
+        v1 = (coords[:, 4] - coords[:, 6])/dists[:, 1]
+        v2 = (coords[:, 5] - coords[:, 6])/dists[:, 2]
+        v3 = (coords[:, 7] - coords[:, 9])/dists[:, 3]
+        v4 = (coords[:, 8] - coords[:, 9])/dists[:, 4]
+
+        v1_new = np.reshape(v1, (v1.shape[0], 1, v1.shape[1]))
+        v2_new = np.reshape(v2, (v2.shape[0], v2.shape[1], 1))
+        v3_new = np.reshape(v3, (v3.shape[0], 1, v3.shape[1]))
+        v4_new = np.reshape(v4, (v4.shape[0], v4.shape[1], 1))
+
+        ang1 = np.arccos(np.matmul(v1_new, v2_new).squeeze())
+        ang2 = np.arccos(np.matmul(v3_new, v4_new).squeeze())
+
+        return np.vstack((ang1, ang2)).T
+
+    elif num_waters == 4:
+        v1 = (coords[:, 4] - coords[:, 6]) / dists[:, 0]
+        v2 = (coords[:, 5] - coords[:, 6]) / dists[:, 1]
+        v3 = (coords[:, 7] - coords[:, 9]) / dists[:, 2]
+        v4 = (coords[:, 8] - coords[:, 9]) / dists[:, 3]
+        v5 = (coords[:, 10] - coords[:, 12]) / dists[:, 4]
+        v6 = (coords[:, 11] - coords[:, 12]) / dists[:, 5]
+
+        v1_new = np.reshape(v1, (v1.shape[0], 1, v1.shape[1]))
+        v2_new = np.reshape(v2, (v2.shape[0], v2.shape[1], 1))
+        v3_new = np.reshape(v3, (v3.shape[0], 1, v3.shape[1]))
+        v4_new = np.reshape(v4, (v4.shape[0], v4.shape[1], 1))
+        v5_new = np.reshape(v5, (v5.shape[0], 1, v5.shape[1]))
+        v6_new = np.reshape(v6, (v6.shape[0], v6.shape[1], 1))
+
+        ang1 = np.arccos(np.matmul(v1_new, v2_new).squeeze())
+        ang2 = np.arccos(np.matmul(v3_new, v4_new).squeeze())
+        ang3 = np.arccos(np.matmul(v5_new, v6_new).squeeze())
+
+        return np.vstack((ang1, ang2, ang3)).T
 
 
 def dists(coords, num_waters, dist_type):
@@ -76,14 +157,14 @@ def dists(coords, num_waters, dist_type):
         elif dist_type == 'OO':
             bonds = [[7, 10], [7, 13], [10, 13]]
 
-    cd1 = coords[:, tuple(x[0] for x in bonds)]
-    cd2 = coords[:, tuple(x[1] for x in bonds)]
-    dis = np.linalg.norm(cd2-cd1, axis=2).T
+    cd1 = coords[:, tuple(x[0] for x in np.array(bonds)-1)]
+    cd2 = coords[:, tuple(x[1] for x in np.array(bonds)-1)]
+    dis = np.linalg.norm(cd2-cd1, axis=2)
     return dis
 
 
-def drift(coords, bond_order):
-    psi = get_da_psi(coords, bond_order)
+def drift(coords, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang):
+    psi = psi_t(coords, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang)
     der = (psi[:, 2] - psi[:, 0]) / dx / psi[:, 1]
     return der, psi
 
@@ -102,9 +183,10 @@ def metropolis(Fqx, Fqy, x, y, sigma, psi1, psi2):
 def Kinetic(Psi, Fqx, sigma):
     Drift = sigma**2/2.*Fqx   # evaluate the drift term from the F that was calculated in the previous step
     N = len(Psi.coords)
+    num_waters = (Psi.coords.shape[1]-1)/3
     randomwalk = np.random.normal(0.0, sigma, size=(N, sigma.shape[0], sigma.shape[1]))
     y = randomwalk + Drift + np.array(Psi.coords)  # the proposed move for the walkers
-    Fqy, psi = drift(y, Psi.bond_order)
+    Fqy, psi = drift(y, num_waters, Psi.interp_reg_oh, Psi.interp_hbond, Psi.interp_OO_shift, Psi.interp_OO_scale, Psi.interp_ang)
     a = metropolis(Fqx, Fqy, Psi.coords, y, sigma, Psi.psit, psi)
     check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
@@ -164,8 +246,8 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
     return Psi
 
 
-def simulation_time(psi, alpha, sigma, Fqx, imp_samp_type, time_steps, dtau,
-                    equilibration, wait_time, propagation, multicore=True, interp_exp=None):
+def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
+                    equilibration, wait_time, propagation, multicore=True):
     DW = False
     num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
     time = np.zeros(time_steps)
