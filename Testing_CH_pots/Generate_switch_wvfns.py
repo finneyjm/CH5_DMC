@@ -28,10 +28,11 @@ def lets_get_these_wvfns(type, switch_speed):
         plt.plot(grid, GSW[0, 1, :], color='green', label='Low Frequency CH stretch')
         plt.plot(grid, GSW[0, 0, :], color='red', label='High Frequency CH stretch')
         # plt.plot(grid, GSW[0, 4, :], label='Higher Frequency CH stretch')
-        plt.xlabel('rCH (Angstrom)')
+        plt.xlabel(r'r$_{CH}$ (Angstrom)')
         plt.ylabel('Probability Density')
         plt.legend(loc='upper right', bbox_to_anchor=(1.13, 1))
         plt.xlim(0.6, 2.0)
+        plt.show()
         plt.savefig(f'Switch_min_wvfn_speed_powerpoint_{switch_speed}.png')
         plt.close()
 

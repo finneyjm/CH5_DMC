@@ -1,5 +1,11 @@
 import copy
 import numpy as np
+import os, sys
+import multiprocessing as mp
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+from ProtWaterPES import Potential
+
+from itertools import repeat
 
 # constants and conversion factors
 me = 9.10938356e-31
@@ -73,6 +79,25 @@ def descendants(Psi):
     return d
 
 
+class PotHolder:
+    pot = None
+    @classmethod
+    def get_pot(cls, coords):
+        if cls.pot is None:
+            cls.pot = Potential(coords.shape[1])
+        return cls.pot.get_potential(coords)
+
+
+get_pot = PotHolder.get_pot
+
+
+def Parr_Potential(Psi):
+    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    V = pool.map(get_pot, coords)
+    Psi.V = np.concatenate(V)
+    return Psi
+
+
 def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, propagation, multicore):
     DW = False
     num_o_collections = int((time_steps - equilibration) / wait_time) + 1
@@ -87,6 +112,7 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, pr
     Vref_array = np.zeros(time_steps)
 
     for i in range(int(time_steps)):
+
         if DW is False:
             prop = float(propagation)
             wait -= 1.
@@ -127,8 +153,4 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, pr
     return coords, weights, time, Vref_array, sum_weights, des
 
 
-
-
-
-
-
+pool = mp.Pool(mp.cpu_count()-1)

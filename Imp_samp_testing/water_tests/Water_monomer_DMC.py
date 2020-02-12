@@ -23,7 +23,9 @@ sigmaO = np.sqrt(dtau/m_O)
 
 coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
                            [0.957840000000000, 0.000000000000000, 0.000000000000000],
-                           [-0.23995350000000, 0.927297000000000, 0.000000000000000]])*ang2bohr*1.05
+                           [-0.23995350000000, 0.927297000000000, 0.000000000000000]])*ang2bohr
+
+np.save('monomer_coords', coords_initial)
 
 
 # Creates the walkers with all of their attributes
@@ -141,10 +143,10 @@ def run(propagation, test_number):
 #         N_0 = tests[i]
 #         run(250, j + 6)
 #         print(f'{tests[i]} Walker Test {j + 1} is done!')
-for i in range(10):
-    N_0 = 20000
-    run(250, i+1)
-    print(f'{N_0} Walker Test {i+1} is done!')
+#for i in range(10):
+#    N_0 = 20000
+#    run(250, i+1)
+#    print(f'{N_0} Walker Test {i+1} is done!')
 
 
 

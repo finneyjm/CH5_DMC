@@ -40,6 +40,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Multiweight_concrete/Old_npy_files" />
       <excludeFolder url="file://$MODULE_DIR$/Multiweight_concrete/Wavefunctions" />
       <excludeFolder url="file://$MODULE_DIR$/Overlaps/Overlap_testing" />
+      <excludeFolder url="file://$MODULE_DIR$/Prot_water_pot/coef" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Big_energy_plots" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Coordinerds" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Old_npy_files" />
@@ -47,6 +48,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Switch_test_alpha" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/Switch_test_sp" />
       <excludeFolder url="file://$MODULE_DIR$/Testing_CH_pots/wavefunction_graphs" />
+      <excludeFolder url="file://$MODULE_DIR$/protonatedtrimer-tetramer potential" />
     </content>
     <content url="file://$MODULE_DIR$/Imp_samp_testing/params/switch_wvfns" />
     <orderEntry type="jdk" jdkName="Python 3.7 (2)" jdkType="Python SDK" />

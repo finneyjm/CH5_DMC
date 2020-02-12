@@ -18,7 +18,6 @@ m_H = 1.007825 / (Avo_num*me*1000)
 m_CH = (m_C*m_H)/(m_H+m_C)
 har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11
-print(ang2bohr)
 
 # Values for Simulation
 sigmaH = np.sqrt(dtau/m_H)
@@ -61,34 +60,34 @@ def E_loc(Psi, int):
 def let_do_some_plotting():
     Psi = Walkers(N_0)
     Psi.coords = np.linspace(0.8, 1.6, N_0)*ang2bohr
-    grid = np.linspace(1, 4, 500)
-    psi = np.zeros((4, 500))
+    grid = np.linspace(0.4, 6, 5000)
+    psi = np.zeros((4, 5000))
     psi[0, :] = np.load('GSW_min_CH_5.npy')
     psi[1, :] = np.load('GSW_min_CH_2.npy')
     psi[2, :] = np.mean([psi[0, :], psi[1, :]], axis=0)/np.linalg.norm(np.mean([psi[0, :], psi[1, :]], axis=0))
     psi[3, :] = np.load('Switch_min_wvfn_speed_1.0.npy')[1, :]
     pot = interpolate.splrep(grid, np.load('Potential_CH_stretch5.npy'), s=0)
     Psi.V = Potential(Psi, pot)
-    np.savetxt('Potential_CH_stretch_5.csv', Psi.V*har2wave, delimiter=',')
-    # fig, axes = plt.subplots()
-    # axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label='Potential')
-    # axes.set_ylim(-10000, 10000)
-    # axes.set_xlabel('rCH (Angstrom)')
-    # axes.set_ylabel('Energy (cm^-1)')
-    # axes.legend(loc='lower right')
-    # fig.savefig('Local_energy_powerpoint_potential_1.png')
+    # np.savetxt('Potential_CH_stretch_5.csv', Psi.V*har2wave, delimiter=',')
+    fig, axes = plt.subplots()
+    axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label='Potential')
+    axes.set_ylim(-10000, 10000)
+    axes.set_xlabel(r'r$_{CH}$ (Angstrom)')
+    axes.set_ylabel('Energy (cm^-1)')
+    axes.legend(loc='lower right')
+    fig.savefig('Local_energy_powerpoint_potential_1.png')
     colors = ['red', 'green', 'orange', 'blue']
     labels = ['High Freq CH stretch', 'Low Freq CH stretch', 'Average', 'Switch']
     for i in range(4):
         interp = interpolate.splrep(grid, psi[i, :], s=0)
         Psi.El, wvfn = E_loc(Psi, interp)
-        np.savetxt(f'Local_Energy_CH_stretch_5_{colors[i]}.csv', Psi.El*har2wave, delimiter=',')
-        np.savetxt(f'Wavefunction_CH_stretch_5_{colors[i]}.csv', wvfn, delimiter=',')
-    #     axes.plot(Psi.coords/ang2bohr, Psi.El*har2wave, color=colors[i], label=labels[i])
-    #     axes.set_ylim(-10000, 10000)
-    #     axes.legend(loc='lower right')
-    #     fig.savefig(f'Local_energy_powerpoint_CH_stretch_1{i}.png')
-    # plt.close(fig)
+        # np.savetxt(f'Local_Energy_CH_stretch_5_{colors[i]}.csv', Psi.El*har2wave, delimiter=',')
+        # np.savetxt(f'Wavefunction_CH_stretch_5_{colors[i]}.csv', wvfn, delimiter=',')
+        axes.plot(Psi.coords/ang2bohr, Psi.El*har2wave, color=colors[i], label=labels[i])
+        axes.set_ylim(-10000, 10000)
+        axes.legend(loc='lower right')
+        fig.savefig(f'Local_energy_powerpoint_CH_stretch_1{i}.png')
+    plt.close(fig)
 
 
 let_do_some_plotting()
