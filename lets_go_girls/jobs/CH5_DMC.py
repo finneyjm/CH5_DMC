@@ -156,9 +156,9 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
                      sum_weights=sum_weights, des=des)
     elif system == 'ptrimer' or system == 'ptetramer':
         if system == 'ptrimer':
-            coords = np.load('Prot_water_params/trimer_coords.npy')
+            coords = np.load('../../jobs/Prot_water_params/trimer_coords.npy')
         else:
-            coords = np.load('Prot_water_params/tetramer_coords.npy')
+            coords = np.load('../../jobs/Prot_water_params/tetramer_coords.npy')
         if imp_samp is True:
             if trial_wvfn is None:
                 raise JacobHasNoFile('Please supply a trial wavefunction if you wanna do importance sampling')
@@ -176,7 +176,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
         sigmaO = np.sqrt(dtau / m_O)
         sigmaD = np.sqrt(dtau / m_D)
         sigmaOH = np.zeros((len(atoms), 3))
-        for i in np.arange(1, len(atoms)):
+        for i in range(len(atoms)):
             if psi.atoms[i].upper() == 'H':
                 sigmaOH[i] = np.array([[sigmaH] * 3])
             elif psi.atoms[i].upper() == 'D':
@@ -188,7 +188,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
 
         if imp_samp is True:
             Fqx, psi.psit = pi.drift(psi.coords, psi.atoms, (len(atoms)-1)/3, psi.interp_reg_oh, psi.interp_hbond,
-                                     psi.interp_OO_shift, psi.interp_OO_scale, psi.interp_ang)
+                                     psi.interp_OO_shift, psi.interp_OO_scale, psi.interp_ang, multicore)
 
             coords, weights, time, Eref_array, sum_weights, accept, des = pi.simulation_time(psi, alpha, sigmaOH, Fqx,
                                                                                              time_steps, dtau, equilibration,
@@ -213,8 +213,6 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
                 psi = pi.Walkers(N_0, atoms, coords)
                 psi.interp_reg_oh = trial_wvfn['reg_oh']
                 psi.interp_hbond = trial_wvfn['hbond']
-                # psi.interp_OO_shift = trial_wvfn['OO_shift']
-                # psi.interp_OO_scale = trial_wvfn['OO_scale']
                 psi.interp_ang = trial_wvfn['ang']
             else:
                 psi = pni.Walkers(N_0, atoms, coords)
@@ -227,10 +225,6 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
                     raise JacobHasNoFile('Please supply a trial wavefunction if you wanna do importance sampling')
                 psi = pi.Walkers(N_0, atoms, coords)
                 psi.interp_reg_oh = trial_wvfn['reg_oh']
-                # psi.interp_hbond = trial_wvfn['hbond']
-                # psi.interp_OO_shift = trial_wvfn['OO_shift']
-                # psi.interp_OO_scale = trial_wvfn['OO_scale']
-                # psi.interp_ang = trial_wvfn['ang']
             else:
                 psi = pni.Walkers(N_0, atoms, coords)
 
@@ -239,7 +233,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
         sigmaO = np.sqrt(dtau / m_O)
         sigmaD = np.sqrt(dtau / m_D)
         sigmaOH = np.zeros((len(atoms), 3))
-        for i in np.arange(1, len(atoms)):
+        for i in range(len(atoms)):
             if psi.atoms[i].upper() == 'H':
                 sigmaOH[i] = np.array([[sigmaH] * 3])
             elif psi.atoms[i].upper() == 'D':
@@ -251,8 +245,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
 
         if imp_samp is True:
             Fqx, psi.psit = pi.drift(psi.coords, psi.atoms, (len(atoms) - 1) / 3, psi.interp_reg_oh, psi.interp_hbond,
-                                     psi.interp_OO_shift, psi.interp_OO_scale, psi.interp_ang)
-
+                                     psi.interp_OO_shift, psi.interp_OO_scale, psi.interp_ang, multicore)
             coords, weights, time, Eref_array, sum_weights, accept, des = pi.simulation_time(psi, alpha, sigmaOH, Fqx,
                                                                                              time_steps, dtau,
                                                                                              equilibration,

@@ -1,2 +1,1 @@
-
 from .ProtonatedWaterPot import Potential

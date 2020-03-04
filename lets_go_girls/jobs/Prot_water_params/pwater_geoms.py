@@ -38,18 +38,35 @@ dimer = [[0.000210, -0.040199, 0.000028],
 monomer = [[0.93273984, -0.03166913, -0.23931206],
            [-0.43894472, 0.82361013, -0.23931163],
            [-0.49379696, -0.79194164, -0.23931138],
-           [0.00000012, 0.00000004, 0.04523643],
-           [0.957840000000000+22, 0.000000000000000, 0.000000000000000],
-           [-0.23995350000000+22, 0.927297000000000, 0.000000000000000],
-           [0.000000000000000+22, 0.000000000000000, 0.000000000000000]]
+           [0.00000012, 0.00000004, 0.04523643]]
+
+# monomer2 = [[-0.00032173,  -1.66883417,  -0.56979199],
+#             [0.86680697,  -0.36416991,  -0.02964338],
+#             [-0.86669085,  -0.36370215,  -0.02981743],
+#             [-0.00008682,  -0.91448211,   0.02996010],
+#             [22.55870573,   0.78106280,  -0.75977325],
+#             [22.71587410,   0.37986377,   0.72158263],
+#             [22.07903488,   0.45956205,   0.00727991]]
 
 monomer2 = [[-0.00032173,  -1.66883417,  -0.56979199],
             [0.86680697,  -0.36416991,  -0.02964338],
             [-0.86669085,  -0.36370215,  -0.02981743],
-            [-0.00008682,  -0.91448211,   0.02996010],
-            [22.55870573,   0.78106280,  -0.75977325],
-            [22.71587410,   0.37986377,   0.72158263],
-            [22.07903488,   0.45956205,   0.00727991]]
+            [-0.00008682,  -0.91448211,   0.02996010]]
+import numpy as np
+r = 1.84099353909
+beta = np.deg2rad(73.16737677908)
+monomer = np.flip([[0, 0, 0],
+            [r*np.sin(beta), 0, r*np.cos(beta)],
+            [-1/2*r*np.sin(beta), np.sqrt(3)/2*r*np.sin(beta), r*np.cos(beta)],
+            [-1/2*r*np.sin(beta), -np.sqrt(3)/2*r*np.sin(beta), r*np.cos(beta)]], 0)/ang2bohr
+# print(monomer)
+r = 1.827793856
+beta = np.deg2rad(90)
+monomer4 = [[r*np.sin(beta), 0, r*np.cos(beta)],
+            [-1/2*r*np.sin(beta), np.sqrt(3)/2*r*np.sin(beta), r*np.cos(beta)],
+            [-1/2*r*np.sin(beta), -np.sqrt(3)/2*r*np.sin(beta), r*np.cos(beta)],
+            [0, 0, 0]]
+
 
 import numpy as np
 np.save('trimer_coords', np.array(trimer)*ang2bohr)
@@ -61,7 +78,32 @@ np.save('monomer_coords_from_Anne', np.array(monomer2)*ang2bohr)
 a = np.loadtxt('roh_morse.dat', usecols=(0, 3))
 
 np.save('wvfns/free_oh_wvfn', a)
-asdf
 
 
+def dist(coords_initial, bonds):
+    cd1 = coords_initial[:, tuple(x[0] for x in np.array(bonds)-1)]
+    cd2 = coords_initial[:, tuple(x[1] for x in np.array(bonds)-1)]
+    dists = np.linalg.norm(cd2-cd1, axis=2)
+    return dists
 
+
+trimer = [[-0.00032173,  -1.66883417,  -0.56979199],
+          [0.86680697,  -0.36416991,  -0.02964338],
+          [-0.86669085,  -0.36370215,  -0.02981743],
+          [-0.00008682,  -0.91448211,   0.02996010],
+          [2.55870573,   0.78106280,  -0.75977325],
+          [2.71587410,   0.37986377,   0.72158263],
+          [2.07903488,   0.45956205,   0.00727991],
+          [-2.55611419,   0.78549017,  -0.75941312],
+          [-2.71764621,   0.37748843,   0.71971598],
+          [-2.07898673,   0.45950719,   0.00731627]]
+from ProtWaterPES import Potential
+a = np.array([monomer]*3)*ang2bohr
+# b = np.array([monomer2]*3)*ang2bohr
+# c = np.array([monomer3]*3)
+# d = np.array([monomer4]*3)
+pot = Potential(4)
+print(pot.get_potential(a))
+# print(pot.get_potential(b))
+# print(pot.get_potential(np.flip(c, 1)))
+# print(pot.get_potential(d))

@@ -43,7 +43,25 @@ class Walkers(object):
         self.psit = np.zeros((walkers, 3, len(atoms), 3))
 
 
-def psi_t(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang):
+# Evaluate PsiT for each bond CH bond length in the walker set
+def psi_t(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang, multicore=True):
+    if multicore is True:
+        psi = all_da_psi(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang)
+    else:
+        psi = get_da_psi(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang)
+    return psi
+
+
+def all_da_psi(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang):
+    coords = np.array_split(coords, mp.cpu_count() - 1)
+    psi = pool.starmap(get_da_psi, zip(coords, repeat(atoms), repeat(num_waters), repeat(interp_reg_oh),
+                                       repeat(interp_hbond), repeat(interp_OO_shift), repeat(interp_OO_scale),
+                                       repeat(interp_ang)))
+    psi = np.concatenate(psi)
+    return psi
+
+
+def get_da_psi(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang):
     reg_oh = dists(coords, num_waters, 'OH')
     if num_waters > 1:
         hbond_oh = dists(coords, num_waters, 'hbond_OH')
@@ -58,15 +76,15 @@ def psi_t(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shif
     psi = psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale,
                       interp_ang, reg_oh, hbond_oh, hbond_oo, angs)
     much_psi[:, 1] += np.broadcast_to(np.prod(psi, axis=1)[:, None, None], (len(coords), len(atoms), 3))
-    for atom in range(len(atoms)):
+    for atom_label in range(len(atoms)):
         for xyz in range(3):
-            coords[:, atom, xyz] -= dx
-            much_psi[:, 0, atom, xyz] = np.prod(psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond,
-                                                             interp_OO_shift, interp_OO_scale, interp_ang))
-            coords[:, atom, xyz] += 2.*dx
-            much_psi[:, 2, atom, xyz] = np.prod(psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond,
-                                                             interp_OO_shift, interp_OO_scale, interp_ang))
-            coords[:, atom, xyz] -= dx
+            coords[:, atom_label, xyz] -= dx
+            much_psi[:, 0, atom_label, xyz] = np.prod(psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond,
+                                                             interp_OO_shift, interp_OO_scale, interp_ang), axis=1)
+            coords[:, atom_label, xyz] += 2.*dx
+            much_psi[:, 2, atom_label, xyz] = np.prod(psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond,
+                                                             interp_OO_shift, interp_OO_scale, interp_ang), axis=1)
+            coords[:, atom_label, xyz] -= dx
     return much_psi
 
 
@@ -85,19 +103,19 @@ def psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond=None, int
     if num_waters == 2:
         psi = np.zeros((len(coords), 7))
     else:
-        psi = np.zeros((len(coords), num_waters*3))
+        psi = np.zeros((len(coords), int(num_waters*3)))
 
     if num_waters == 1:
         for i in range(3):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
-    elif num_waters == 2:
+    elif num_waters == 2: 
         for i in range(4):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
         if interp_hbond is None:
             psi[:, 4] = np.ones((len(coords)))
         else:
-            shift = shift_calc(hbond_oo, interp_OO_shift, num_waters)
-            scale = scale_calc(hbond_oo, interp_OO_scale, num_waters)
+            shift = shift_calc(hbond_oo, interp_OO_shift)
+            scale = scale_calc(hbond_oo, interp_OO_scale)
             psi[:, 4] = interpolate.splev(scale*(hbond_oh-shift), interp_hbond, der=0)
         for k in range(2):
             a = k*2 + k + 1
@@ -106,8 +124,8 @@ def psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond=None, int
         for i in range(5):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
         for j in range(2):
-            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift, num_waters)
-            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale, num_waters)
+            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
+            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
             psi[:, j+5] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
         for k in range(2):
             p = k+1
@@ -117,8 +135,8 @@ def psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond=None, int
         for i in range(6):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
         for j in range(3):
-            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift, num_waters)
-            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale, num_waters)
+            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
+            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
             psi[:, j+6] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
         for k in range(3):
             p = k + 1
@@ -127,21 +145,29 @@ def psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond=None, int
     return psi
 
 
-def shift_calc(oo_dists, interp, num_waters):
+def shift_calc(oo_dists, interp):
     if interp is None:
         return np.zeros(oo_dists.shape)
+    else:
+        f = np.poly1d(interp)
+        oh_max = f(oo_dists)
+        return oh_max
 
 
-def scale_calc(oo_dists, interp, num_waters):
+def scale_calc(oo_dists, interp):
     if interp is None:
         return np.ones(oo_dists.shape)
+    else:
+        f = np.poly1d(interp)
+        oh_std = f(oo_dists)
+        return oh_std
 
 
 def angle_function(angs, interp, atoms):
     if interp is None:
         r1 = 0.95784*ang2bohr
         r2 = 0.95783997*ang2bohr
-        theta = np.rad2deg(104.5080029)
+        theta = np.deg2rad(104.5080029)
     else:
         r1 = interp['r1']
         r2 = interp['r2']
@@ -166,7 +192,7 @@ def angle_function(angs, interp, atoms):
 
     freq /= har2wave
     alpha = freq/G
-    return (alpha/np.pi)**4*np.exp(-alpha*angs**2/2)
+    return (alpha/np.pi)**(1/4)*np.exp(-alpha*(angs-theta)**2/2)
 
 
 def gmat(mu1, mu2, mu3, r1, r2, ang):
@@ -263,8 +289,8 @@ def dists(coords, num_waters, dist_type):
     return dis
 
 
-def drift(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang):
-    psi = psi_t(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang)
+def drift(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang, multicore=True):
+    psi = psi_t(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO_shift, interp_OO_scale, interp_ang, multicore)
     der = (psi[:, 2] - psi[:, 0]) / dx / psi[:, 1]
     return der, psi
 
@@ -280,17 +306,14 @@ def metropolis(Fqx, Fqy, x, y, sigma, psi1, psi2):
 
 
 # Random walk of all the walkers
-def Kinetic(Psi, Fqx, sigma):
+def Kinetic(Psi, Fqx, sigma, multicore=True):
     Drift = sigma**2/2.*Fqx   # evaluate the drift term from the F that was calculated in the previous step
     N = len(Psi.coords)
     num_waters = int((len(Psi.atoms)-1)/3)
     randomwalk = np.random.normal(0.0, sigma, size=(N, sigma.shape[0], sigma.shape[1]))
-    if num_waters == 1:
-        b = Psi.coords[:, 4:]
-        Psi.coords = Psi.coords[:, 0:4]
     y = randomwalk + Drift + np.array(Psi.coords)  # the proposed move for the walkers
     Fqy, psi = drift(y, Psi.atoms, num_waters, Psi.interp_reg_oh, Psi.interp_hbond, Psi.interp_OO_shift,
-                     Psi.interp_OO_scale, Psi.interp_ang)
+                     Psi.interp_OO_scale, Psi.interp_ang, multicore)
     a = metropolis(Fqx, Fqy, Psi.coords, y, sigma, Psi.psit, psi)
     check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
@@ -298,8 +321,6 @@ def Kinetic(Psi, Fqx, sigma):
     Psi.coords[accept] = y[accept]
     Fqx[accept] = Fqy[accept]
     Psi.psit[accept] = psi[accept]
-    if num_waters == 1:
-        Psi.coords = np.hstack((Psi.coords, b))
     acceptance = float(len(accept) / len(Psi.coords)) * 100.
     return Psi, Fqx, acceptance
 
@@ -307,12 +328,9 @@ def Kinetic(Psi, Fqx, sigma):
 class PotHolder:
     pot = None
     @classmethod
-    def get_pot(cls, coords, num_waters=None):
+    def get_pot(cls, coords):
         if cls.pot is None:
-            if num_waters is None:
-                cls.pot = Potential(coords.shape[1])
-            else:
-                cls.pot = Potential(num_waters)
+            cls.pot = Potential(coords.shape[1])
         return cls.pot.get_potential(coords)
 
 
@@ -321,10 +339,7 @@ get_pot = PotHolder.get_pot
 
 def Parr_Potential(Psi):
     coords = np.array_split(Psi.coords, mp.cpu_count()-1)
-    if len(Psi.atoms) == 4:
-        V = pool.starmap(get_pot, zip(coords, repeat(7)))
-    else:
-        V = pool.map(get_pot, coords)
+    V = pool.map(get_pot, coords)
     Psi.V = np.concatenate(V)
     return Psi
 
@@ -401,22 +416,16 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
             if multicore is True:
                 psi = Parr_Potential(psi)
             else:
-                if len(psi.atoms) == 4:
-                    psi.V = get_pot(psi.coords, 7)
-                else:
-                    psi.V = get_pot(psi.coords)
+                psi.V = get_pot(psi.coords)
             psi = E_loc(psi, sigma, dtau)
             Eref = E_ref_calc(psi, alpha)
 
-        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigma)
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigma, multicore)
 
         if multicore is True:
             psi = Parr_Potential(psi)
         else:
-            if len(psi.atoms) == 4:
-                psi.V = get_pot(psi.coords, 7)
-            else:
-                psi.V = get_pot(psi.coords)
+            psi.V = get_pot(psi.coords)
 
         psi = E_loc(psi, sigma, dtau)
 
