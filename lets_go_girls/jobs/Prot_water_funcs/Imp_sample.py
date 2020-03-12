@@ -124,9 +124,12 @@ def psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond=None, int
         for i in range(5):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
         for j in range(2):
-            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
-            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
-            psi[:, j+5] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
+            if interp_hbond is None:
+                psi[:, j+5] = np.ones((len(coords)))
+            else:
+                shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
+                scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
+                psi[:, j+5] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
         for k in range(2):
             p = k+1
             a = p*2 + p + 1
@@ -135,9 +138,12 @@ def psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond=None, int
         for i in range(6):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
         for j in range(3):
-            shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
-            scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
-            psi[:, j+6] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
+            if interp_hbond is None:
+                psi[:, j+6] = np.ones((len(coords)))
+            else:
+                shift[:, j] = shift_calc(hbond_oo[:, j], interp_OO_shift)
+                scale[:, j] = scale_calc(hbond_oo[:, j], interp_OO_scale)
+                psi[:, j+6] = interpolate.splev(scale[:, j]*(hbond_oh[:, j]-shift[:, j]), interp_hbond, der=0)
         for k in range(3):
             p = k + 1
             a = p * 2 + p + 1
@@ -365,7 +371,7 @@ def E_ref_calc(Psi, alpha):
 
 # Calculate the weights of the walkers and figure out the birth/death if needed
 def Weighting(Eref, Psi, Fqx, dtau, DW):
-    Psi.weights = Psi.weights * np.exp(-(Psi.El - Eref) * dtau)
+    Psi.weights = Psi.weights * np.nan_to_num(np.exp(-(Psi.El - Eref) * dtau))
     threshold = 1./float(len(Psi.coords))
     death = np.argwhere(Psi.weights < threshold)  # should I kill a walker?
     for i in death:

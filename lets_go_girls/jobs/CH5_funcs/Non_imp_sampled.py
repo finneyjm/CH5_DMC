@@ -84,6 +84,7 @@ def descendants(Psi):
     d = np.bincount(Psi.walkers, weights=Psi.weights)
     while len(d) < N_0:
         d = np.append(d, 0.)
+    Psi.walkers = np.arange(0, len(Psi.walkers))
     return d
 
 

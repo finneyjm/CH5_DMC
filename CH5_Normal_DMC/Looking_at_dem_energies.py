@@ -24,32 +24,33 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             #                  f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
             # energies_non[i, j] += np.mean(Energy[5000:])
             #
-            Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled_pdimer/' +
-                              f'Non_imp_sampled_pdimer_{non_imp_samp_walkers[i]}_' +
-                              f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
-            energies_non[i, j] += np.mean(Energy[5000:]) + 11792.2255946
-            # energies_non[i,j] += np.mean(Energy[5000:]) +(9.12996e-2*har2wave)
+            # Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled_pdimer/' +
+            #                   f'Non_imp_sampled_pdimer_{non_imp_samp_walkers[i]}_' +
+            #                   f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
+            # energies_non[i, j] += np.mean(Energy[5000:]) + 11792.2255946
+            # energies_non[i,j] += np.mean(Energy[5000:]) + (9.129961343400107E-002*har2wave)
 
             # Energy = np.load(f'Trial_wvfn_testing/results/ptrimer_non_imp_samp/' +
-            #                  f'ptrimer_non_imp_samp_{imp_samp_walkers[i]}_' +
+            #                  f'ptrimer_non_imp_samp_{non_imp_samp_walkers[i]}_' +
             #                  f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
             # a = -9.129961343400107E-002 * har2wave
             # energies_non[i, j] = np.mean(Energy[5000:]) - a
 
 
-            #Energy = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp/' +
-            #                 f'ptetramer_non_imp_samp_{imp_samp_walkers[i]}_' +
-            #                 f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
-            #a = -0.122146858971399 * har2wave
-            #energies_non[i, j] = np.mean(Energy[5000:]) - a
+            Energy = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp/' +
+                            f'ptetramer_non_imp_samp_{non_imp_samp_walkers[i]}_' +
+                            f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
+            a = -0.122146858971399 * har2wave
+            energies_non[i, j] = np.mean(Energy[5000:]) - a
 
             # Energy = np.load(f'Trial_wvfn_testing/results/pmonomer_non_imp_samp/' +
-            #                  f'pmonomer_non_imp_samp_{imp_samp_walkers[i]}_' +
+            #                  f'pmonomer_non_imp_samp_{non_imp_samp_walkers[i]}_' +
             #                  f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
             # a = 3.404489490321794E-006 * har2wave
             # a = 0.00395373*har2wave
             # a = 0.00500124*har2wave
             # a = -9.129961343400107E-002 * har2wave
+            # a = 0*har2wave
             # energies_non[i, j] = np.mean(Energy[5000:]) - a
 
     for j in range(trials_i):
@@ -63,25 +64,30 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             #                  f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
             # energies_imp[i, j] += np.mean(Energy[5000:])
 
-            Energy = np.load(f'Trial_wvfn_testing/results/pdimer_waters_described/' +
-                              f'pdimer_waters_described_{non_imp_samp_walkers[i]}_' +
-                              f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
-            energies_imp[i, j] = np.mean(Energy[5000:]) + 11792.22559467
-            # energies_imp[i, j] = np.mean(Energy[5000:]) + (9.12996e-2*har2wave)
+            # Energy = np.load(f'Trial_wvfn_testing/results/pdimer_waters_described/' +
+            #                   f'pdimer_waters_described_{non_imp_samp_walkers[i]}_' +
+            #                   f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
+            # energies_imp[i, j] = np.mean(Energy[5000:]) + 11792.22559467
+            # energies_imp[i, j] = np.mean(Energy[5000:]) + (9.129961343400107E-002*har2wave)
+
             # Energy = np.load(f'Trial_wvfn_testing/results/ptrimer_full_imp_samp/' +
             #                  f'ptrimer_full_imp_samp_{imp_samp_walkers[i]}_' +
             #                  f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
             # a = -9.129961343400107E-002 * har2wave
             # energies_imp[i, j] = np.mean(Energy[5000:]) - a
 
-            #Energy = np.load(f'Trial_wvfn_testing/results/ptetramer_full_imp_samp/' +
-            #                 f'ptetramer_full_imp_samp_{imp_samp_walkers[i]}_' +
-            #                 f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
-            #a = -0.122146858971399 * har2wave
-            #energies_imp[i, j] = np.mean(Energy[5000:]) - a
+            Energy = np.load(f'Trial_wvfn_testing/results/ptetramer_full_imp_samp/' +
+                            f'ptetramer_full_imp_samp_{imp_samp_walkers[i]}_' +
+                            f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
+            a = -0.122146858971399 * har2wave
+            energies_imp[i, j] = np.mean(Energy[5000:]) - a
+            # Energy = np.load(f'Trial_wvfn_testing/results/ptetramer_w_tetramer_params_imp_samp/' +
+            #                  f'ptetramer_w_tetramer_params_imp_samp_{imp_samp_walkers[i]}_' +
+            #                  f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
+            # energies_imp[i, j] = np.mean(Energy[5000:]) - a
 
-            # Energy = np.load(f'Trial_wvfn_testing/results/pmonomer_full_imp_samp/' +
-            #                  f'pmonomer_full_imp_samp_{imp_samp_walkers[i]}_' +
+            # Energy = np.load(f'Trial_wvfn_testing/results/pmonomer_imp_samp/' +
+            #                  f'pmonomer_imp_samp_{imp_samp_walkers[i]}_' +
             #                  f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
             # a = 0 * har2wave
             # energies_imp[i, j] = np.mean(Energy[5000:]) - a
@@ -89,10 +95,12 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     avg_imp = np.mean(energies_imp, axis=1)
     print(avg_imp)
     std_imp = np.std(energies_imp, axis=1)
+    # std_imp = np.zeros(std_imp.shape)
     print(std_imp)
     avg_non = np.mean(energies_non, axis=1)
     print(avg_non)
     std_non = np.std(energies_non, axis=1)
+    # std_non = np.zeros(std_non.shape)
     print(std_non)
     fig, axes = plt.subplots(2, 1, sharex=True, gridspec_kw={'hspace': 0})
     axes[0].errorbar(non_imp_samp_walkers, avg_non, yerr=std_non, marker='s', markerfacecolor='none', color='red', label='No Impt. Samp.')
@@ -122,10 +130,12 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     # axes[0].set_ylim(8540, 8600)
     # axes[1].set_ylim(18000, 18199)
     # axes[0].set_ylim(18001, 18200)
-    #axes[1].set_ylim(23300, 23799)
-    #axes[0].set_ylim(23301, 23800)
+    # axes[1].set_ylim(23300, 23799)
+    # axes[0].set_ylim(23301, 23800)
     # axes[1].set_ylim(20580, 20649)
     # axes[0].set_ylim(20581, 20650)
+    # axes[0].set_ylim(7421, 7500)
+    # axes[1].set_ylim(7420, 7499)
     axes[0].legend()
     axes[1].legend()
     plt.tight_layout()
@@ -135,13 +145,30 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
 
 walkers1 = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 walkers10 = [100, 200, 500, 1000, 2000, 5000, 10000]
+walkers11 = [100, 200, 500, 1000, 2000, 5000, 15000]
+walkers67 = [100, 200, 500, 1000, 2000, 5000, 20000]
+walkers89 = [1000, 2000, 5000]
 walkers3 = [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000, 25000]
 walkers5 = [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000, 25000, 60000]
 walkers6 = [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000, 25000, 40000, 50000, 60000]
 walkers2 = [500, 1000, 2000, 5000, 10000]
 walkers4 = [100, 200, 500, 1000, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
             5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 20000]
-lets_get_some_energies(walkers1, walkers1, 5, 5, 5)
+lets_get_some_energies(walkers89, walkers89, 5, 3, 5)
 plt.show()
 
-
+# blah = np.load(f'Trial_wvfn_testing/results/ptetramer_w_tetramer_params_imp_samp/' +
+#                              f'ptetramer_w_tetramer_params_imp_samp_{5000}_' +
+#                              f'Walkers_Test_{1}.npz')
+# blah2 = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp/' +
+#                              f'ptetramer_non_imp_samp_{5000}_' +
+#                              f'Walkers_Test_{1}.npz')
+#
+# a = blah['weights']
+# a = -0.122146858971399 * har2wave
+# b = blah['des']
+# eref = blah['Eref']
+# plt.plot(blah2['Eref'])
+# plt.plot(eref)
+# plt.show()
+# plt.close()

@@ -5,8 +5,6 @@ import multiprocessing as mp
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 from ProtWaterPES import Potential
 
-from itertools import repeat
-
 # constants and conversion factors
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
@@ -51,10 +49,11 @@ def V_ref_calc(Psi, dtau):
 # The weighting calculation that gets the weights of each walker in the simulation
 def Weighting(Vref, Psi, DW, dtau):
     N_0 = len(Psi.coords)
-    Psi.weights = Psi.weights * np.exp(-(Psi.V - Vref) * dtau)
+    Psi.weights = Psi.weights * np.nan_to_num(np.exp(-(Psi.V - Vref) * dtau))
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1./float(N_0)
     death = np.argwhere(Psi.weights < threshold)
+    # print(len(death))
     for i in death:
         ind = np.argmax(Psi.weights)
         if DW is True:
@@ -76,6 +75,7 @@ def descendants(Psi):
     d = np.bincount(Psi.walkers, weights=Psi.weights)
     while len(d) < N_0:
         d = np.append(d, 0.)
+    Psi.walkers = np.arange(0, len(Psi.walkers))
     return d
 
 

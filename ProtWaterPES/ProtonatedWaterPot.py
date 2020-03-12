@@ -69,6 +69,8 @@ class Potential:
         else:
             pot = self._pot(coords.T, len(coords), self._natm)
 
+        pot = np.where(np.isnan(pot), 100, pot)
+
         if self._natm == 10:
             death = np.argwhere(pot < (ptrimer-one_wvnum))
         elif self._natm == 13:
