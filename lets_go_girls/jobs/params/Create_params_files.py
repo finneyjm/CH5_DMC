@@ -1,16 +1,17 @@
 walkers = [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000, 25000]
 # walkers = [6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500]
-walkers = [50000]
+# walkers = [50000]
 bro_str = ['5', '10']
 bro = [5, 10]
 atoms = ['C', 'D', 'D', 'D', 'D', 'D']
+ts = 10
 
 # for j in range(len(bro)):
 # for ts in bro:
 for j in range(6):
     for i in range(5):
         for x in range(len(walkers)):
-            with open(f'params_Non_imp_sampled_{j}H_{walkers[x]}_walkers_test_{i+1}.py', 'w') as myfile:
+            with open(f'params_Non_imp_sampled_{j}H_ts_{ts}_{walkers[x]}_walkers_test_{i+1}.py', 'w') as myfile:
                 myfile.write('import numpy as np\n\n')
                 for hs in range(j):
                     atoms[hs+1] = 'H'
@@ -31,10 +32,10 @@ for j in range(6):
                 myfile.write('pars = {\n')
                 myfile.write(f'    "N_0": {walkers[x]},\n')
                 myfile.write('    "time_steps": 20000,\n')
-                myfile.write(f'    "dtau": 1,\n')
+                myfile.write(f'    "dtau": {ts},\n')
                 myfile.write('    "equilibration": 5000,\n')
                 myfile.write('    "wait_time": 500,\n')
-                myfile.write(f'    "output": "Non_imp_sampled_{j}H_{walkers[x]}_Walkers_Test_{i+1}",\n')
+                myfile.write(f'    "output": "Non_imp_sampled_{j}H_ts_{ts}_{walkers[x]}_Walkers_Test_{i+1}",\n')
                 myfile.write('    "atoms": atoms,\n')
                 # myfile.write('    "imp_samp": True,\n')
                 # myfile.write('    "trial_wvfn": wvfn,\n')
@@ -42,5 +43,5 @@ for j in range(6):
                 # myfile.write('    "hh_relate": hh,\n')
                 # myfile.write('    "rand_samp": False,\n')
                 myfile.write('}\n\n')
-                myfile.write(f'output_dir = "Non_imp_sampled_{j}H"\n')
+                myfile.write(f'output_dir = "Non_imp_sampled_{j}H_ts_{ts}"\n')
                 myfile.close()

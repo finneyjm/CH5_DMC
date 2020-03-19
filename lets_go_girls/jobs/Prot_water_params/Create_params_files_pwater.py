@@ -1,13 +1,17 @@
-walkers = [10, 100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000, 25000, 30000, 40000]
+walkers = [10, 20, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000, 15000, 20000, 25000, 30000, 40000]
 # walkers = [6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500]
+walkers = [5000]
 # walkers = [50000]
 # bro_str = ['5', '10']
 # bro = [5, 10]
 atoms = ['H', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O']
-ts = 1
+ts = 10
+thresh = 'pone'
+thresh_num = 0.1
 system = 'ptetramer'
-type_of_sim = 'non_imp_samp'
+type_of_sim = f'non_imp_samp_ts_{ts}_thresh_{thresh}'
 imp_samp = False
+weighting = None
 params = 'tetramer'
 # for j in range(len(bro)):
 # for ts in bro:
@@ -26,7 +30,6 @@ for i in range(5):
                 if system == 'pmonomer':
                     myfile.write('trial_wvfn = {\n')
                     myfile.write('    "reg_oh": free_oh_wvfn,\n')
-                    myfile.write('    "ang": None, \n')
                     myfile.write('}\n\n')
                 else:
                     if params == 'waters':
@@ -88,6 +91,10 @@ for i in range(5):
             if imp_samp:
                 myfile.write('    "imp_samp": True,\n')
                 myfile.write('    "trial_wvfn": trial_wvfn,\n')
+            if thresh is not None:
+                myfile.write(f'    "threshold": {thresh_num/walkers[x]}\n')
+            if weighting == 'discrete':
+                myfile.write(f'    "weighting": "discrete"\n')
             # myfile.write('    "imp_samp_type": "dev_dep",\n')
             # myfile.write('    "hh_relate": hh,\n')
             # myfile.write('    "rand_samp": False,\n')

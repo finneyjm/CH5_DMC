@@ -36,10 +36,13 @@ class JacobIsDumb(ValueError):
 
 
 # Function to go through the DMC algorithm
-def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250, atoms=None,
+def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=150, atoms=None,
         imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, multicore=True,
-        trial_wvfn=None, rand_samp=True, system='CH5'):
+        trial_wvfn=None, rand_samp=True, system='CH5', imp_samp_equilibration=True,
+        imp_samp_equilibration_time=5000, equilibrations_dtau=10, threshold=None, weighting='continuous'):
     interp_exp = None
+    if threshold is None:
+        threshold = 1/float(N_0)
     if system == 'CH5':
         if imp_samp is True:
             if trial_wvfn is None:
@@ -187,19 +190,29 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
                 raise JacobIsDumb("We don't serve that kind of atom in these here parts")
 
         if imp_samp is True:
+            if imp_samp_equilibration:
+                _, _, _, Eref, _, _ = pni.simulation_time(psi, sigmaOH, imp_samp_equilibration_time,
+                                                                     equilibrations_dtau,
+                                                                     imp_samp_equilibration_time,
+                                                                     wait_time, propagation, multicore, threshold)
+
+                Eref = Eref[-1]
+            else:
+                Eref = None
+
             Fqx, psi.psit = pi.drift(psi.coords, psi.atoms, (len(atoms)-1)/3, psi.interp_reg_oh, psi.interp_hbond,
                                      psi.interp_OO_shift, psi.interp_OO_scale, psi.interp_ang, multicore)
 
             coords, weights, time, Eref_array, sum_weights, accept, des = pi.simulation_time(psi, alpha, sigmaOH, Fqx,
                                                                                              time_steps, dtau, equilibration,
                                                                                              wait_time, propagation,
-                                                                                             multicore)
+                                                                                             threshold, multicore, Eref)
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, accept=accept, des=des)
         else:
             coords, weights, time, Eref_array, sum_weights, des = pni.simulation_time(psi, sigmaOH, time_steps, dtau,
                                                                                       equilibration, wait_time, propagation,
-                                                                                      multicore)
+                                                                                      multicore, threshold, weighting)
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, des=des)
 
@@ -244,20 +257,31 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=250
                 raise JacobIsDumb("We don't serve that kind of atom in these here parts")
 
         if imp_samp is True:
-            Fqx, psi.psit = pi.drift(psi.coords, psi.atoms, (len(atoms) - 1) / 3, psi.interp_reg_oh, psi.interp_hbond,
+            if imp_samp_equilibration:
+                _, _, _, Eref, _, _ = pni.simulation_time(psi, sigmaOH, imp_samp_equilibration_time,
+                                                          equilibrations_dtau,
+                                                          imp_samp_equilibration_time,
+                                                          wait_time, propagation, multicore, threshold)
+
+                Eref = Eref[-1]
+            else:
+                Eref = None
+
+            Fqx, psi.psit = pi.drift(psi.coords, psi.atoms, (len(atoms)-1)/3, psi.interp_reg_oh, psi.interp_hbond,
                                      psi.interp_OO_shift, psi.interp_OO_scale, psi.interp_ang, multicore)
+
             coords, weights, time, Eref_array, sum_weights, accept, des = pi.simulation_time(psi, alpha, sigmaOH, Fqx,
-                                                                                             time_steps, dtau,
-                                                                                             equilibration,
+                                                                                             time_steps, dtau, equilibration,
                                                                                              wait_time, propagation,
-                                                                                             multicore)
+                                                                                             threshold, multicore, Eref)
+
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, accept=accept, des=des)
         else:
             coords, weights, time, Eref_array, sum_weights, des = pni.simulation_time(psi, sigmaOH, time_steps, dtau,
                                                                                       equilibration, wait_time,
                                                                                       propagation,
-                                                                                      multicore)
+                                                                                      multicore, threshold, weighting)
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, des=des)
 

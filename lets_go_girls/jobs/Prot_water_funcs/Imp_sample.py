@@ -288,7 +288,6 @@ def dists(coords, num_waters, dist_type):
             bonds = [[4, 7], [4, 13], [4, 10]]
         elif dist_type == 'OO':
             bonds = [[7, 10], [7, 13], [10, 13]]
-
     cd1 = coords[:, tuple(x[0] for x in np.array(bonds)-1)]
     cd2 = coords[:, tuple(x[1] for x in np.array(bonds)-1)]
     dis = np.linalg.norm(cd2-cd1, axis=2)
@@ -370,9 +369,9 @@ def E_ref_calc(Psi, alpha):
 
 
 # Calculate the weights of the walkers and figure out the birth/death if needed
-def Weighting(Eref, Psi, Fqx, dtau, DW):
+def Weighting(Eref, Psi, Fqx, dtau, DW, threshold):
     Psi.weights = Psi.weights * np.nan_to_num(np.exp(-(Psi.El - Eref) * dtau))
-    threshold = 1./float(len(Psi.coords))
+    # threshold = 1./float(len(Psi.coords))
     death = np.argwhere(Psi.weights < threshold)  # should I kill a walker?
     for i in death:
         ind = np.argmax(Psi.weights)
@@ -397,7 +396,7 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
 
 
 def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
-                    equilibration, wait_time, propagation, multicore=True):
+                    equilibration, wait_time, propagation, threshold, multicore=True, Eref=None):
     DW = False
     num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
     time = np.zeros(time_steps)
@@ -424,7 +423,8 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
             else:
                 psi.V = get_pot(psi.coords)
             psi = E_loc(psi, sigma, dtau)
-            Eref = E_ref_calc(psi, alpha)
+            if Eref is None:
+                Eref = E_ref_calc(psi, alpha)
 
         psi, Fqx, acceptance = Kinetic(psi, Fqx, sigma, multicore)
 
@@ -435,7 +435,7 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
 
         psi = E_loc(psi, sigma, dtau)
 
-        psi = Weighting(Eref, psi, Fqx, dtau, DW)
+        psi = Weighting(Eref, psi, Fqx, dtau, DW, threshold)
         Eref = E_ref_calc(psi, alpha)
 
         Eref_array[i] = Eref

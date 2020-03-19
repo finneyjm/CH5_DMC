@@ -90,7 +90,7 @@ def descendants(Psi):
 
 def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, propagation, multicore):
     DW = False
-    num_o_collections = int((time_steps - equilibration) / wait_time) + 1
+    num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
     coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
@@ -140,3 +140,11 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, pr
             num += 1
 
     return coords, weights, time, Vref_array, sum_weights, des
+
+
+
+
+
+
+
+

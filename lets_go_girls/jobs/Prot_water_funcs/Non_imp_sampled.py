@@ -38,22 +38,23 @@ def Kinetic(Psi, sigma):
 
 
 # Calculate V_ref for the weighting calculation and to determine the ground state energy
-def V_ref_calc(Psi, dtau):
+def V_ref_calc(Psi, dtau, weight='continuous'):
     alpha = 1./(2.*dtau)
     P0 = sum(Psi.weights_i)
-    P = sum(Psi.weights)
-    V_ref = sum(Psi.weights * Psi.V) / P - alpha * (sum((Psi.weights - Psi.weights_i)) / P0)
+    if weight == 'continuous':
+        P = sum(Psi.weights)
+        V_ref = sum(Psi.weights * Psi.V) / P - alpha * (sum((Psi.weights - Psi.weights_i)) / P0)
+    elif weight == 'discrete':
+        P = len(Psi.coords)
+        V_ref = np.mean(Psi.V) - alpha*(P-P0)/P0
     return V_ref
 
 
 # The weighting calculation that gets the weights of each walker in the simulation
-def Weighting(Vref, Psi, DW, dtau):
-    N_0 = len(Psi.coords)
+def Weighting(Vref, Psi, DW, dtau, threshold):
     Psi.weights = Psi.weights * np.nan_to_num(np.exp(-(Psi.V - Vref) * dtau))
     # Conditions to prevent one walker from obtaining all the weight
-    threshold = 1./float(N_0)
     death = np.argwhere(Psi.weights < threshold)
-    # print(len(death))
     for i in death:
         ind = np.argmax(Psi.weights)
         if DW is True:
@@ -66,6 +67,26 @@ def Weighting(Vref, Psi, DW, dtau):
         Psi.weights[ind] = Biggo_weight / 2.
         Psi.coords[i[0]] = Biggo_pos
         Psi.V[i[0]] = Biggo_pot
+    return Psi
+
+
+def Discrete_weighting(Vref, Psi, DW, dtau):
+    probs = np.nan_to_num(np.exp(-(Psi.V - Vref) * dtau))
+    check = np.random.random(len(Psi.coords))
+    death = np.logical_or((1-probs) < check, Psi.V < Vref)
+    Psi.coords = Psi.coords[death]
+    Psi.V = Psi.V[death]
+    check = check[death]
+    probs = probs[death]
+    if DW:
+        Psi.walkers = Psi.walkers[death]
+    birth = np.logical_and((probs-1) > check, Psi.V < Vref)
+    Psi.coords = np.concatenate((Psi.coords, Psi.coords[birth]))
+    Psi.V = np.concatenate((Psi.V, Psi.V[birth]))
+    if DW:
+        Psi.walkers = np.concatenate((Psi.walkers, Psi.walkers[birth]))
+    else:
+        Psi.walkers = np.arange(0, len(Psi.coords))
     return Psi
 
 
@@ -98,21 +119,27 @@ def Parr_Potential(Psi):
     return Psi
 
 
-def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, propagation, multicore):
+def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
+                    propagation, multicore, threshold, weighting='continuous'):
     DW = False
-    num_o_collections = int((time_steps - equilibration) / wait_time) + 1
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
+    num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
     coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
     weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
     des = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    if weighting == 'discrete':
+        buffer = int(len(psi.coords)/5)
+        coords = np.append(coords, np.zeros((num_o_collections, buffer, psi.coords.shape[1], psi.coords.shape[2])))
+        weights = np.append(weights, np.zeros((num_o_collections, buffer)))
+        des = np.append(des, np.zeros((num_o_collections, buffer)))
+
     num = 0
     prop = float(propagation)
     wait = float(wait_time)
     Vref_array = np.zeros(time_steps)
 
     for i in range(int(time_steps)):
-
         if DW is False:
             prop = float(propagation)
             wait -= 1.
@@ -124,7 +151,7 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, pr
             else:
                 psi.V = get_pot(psi.coords)
 
-            V_ref = V_ref_calc(psi, dtau)
+            V_ref = V_ref_calc(psi, dtau, weighting)
 
         psi = Kinetic(psi, sigmaCH)
 
@@ -133,8 +160,11 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, pr
         else:
             psi.V = get_pot(psi.coords)
 
-        psi = Weighting(V_ref, psi, DW, dtau)
-        V_ref = V_ref_calc(psi, dtau)
+        if weighting == 'discrete':
+            psi = Discrete_weighting(V_ref, psi, DW, dtau)
+        else:
+            psi = Weighting(V_ref, psi, DW, dtau, threshold)
+        V_ref = V_ref_calc(psi, dtau, weighting)
 
         Vref_array[i] = V_ref
         time[i] = i + 1
@@ -143,11 +173,18 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time, pr
             DW = True
             wait = float(wait_time)
             Psi_tau = copy.deepcopy(psi)
-            coords[num] = Psi_tau.coords
-            weights[num] = Psi_tau.weights
+            if weighting == 'discrete':
+                coords[num, :len(Psi_tau.coords)] = Psi_tau.coords
+                weights[num, :len(Psi_tau.weights)] = Psi_tau.weights
+            else:
+                coords[num] = Psi_tau.coords
+                weights[num] = Psi_tau.weights
         elif prop == 0:
             DW = False
-            des[num] = descendants(psi)
+            if weighting == 'discrete':
+                des[num, :len(Psi_tau.weights)] = descendants(psi)
+            else:
+                des[num] = descendants(psi)
             num += 1
 
     return coords, weights, time, Vref_array, sum_weights, des
