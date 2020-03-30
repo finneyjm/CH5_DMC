@@ -59,26 +59,29 @@ def E_loc(Psi, int):
 
 def let_do_some_plotting():
     Psi = Walkers(N_0)
-    Psi.coords = np.linspace(0.8, 1.6, N_0)*ang2bohr
+    Psi.coords = np.linspace(0.7, 1.75, N_0)*ang2bohr
     grid = np.linspace(0.4, 6, 5000)
-    psi = np.zeros((4, 5000))
-    psi[0, :] = np.load('GSW_min_CH_5.npy')
-    psi[1, :] = np.load('GSW_min_CH_2.npy')
-    psi[2, :] = np.mean([psi[0, :], psi[1, :]], axis=0)/np.linalg.norm(np.mean([psi[0, :], psi[1, :]], axis=0))
-    psi[3, :] = np.load('Switch_min_wvfn_speed_1.0.npy')[1, :]
+    GSW = np.zeros((3, 5, 5000))
+    for i in range(5):
+        GSW[0, i, :] += np.load(f'GSW_min_CH_{i + 1}.npy')
+    avg_wvfn = np.mean(GSW[0], axis=0)/np.linalg.norm(np.mean(GSW[0], axis=0))
+    psi = np.zeros((3, 5000))
+    psi[0] = GSW[0, -1]
+    psi[1] = GSW[0, 2]
+    psi[2] = avg_wvfn
     pot = interpolate.splrep(grid, np.load('Potential_CH_stretch5.npy'), s=0)
     Psi.V = Potential(Psi, pot)
     # np.savetxt('Potential_CH_stretch_5.csv', Psi.V*har2wave, delimiter=',')
     fig, axes = plt.subplots()
-    axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label='Potential')
+    axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label='High Freq Potential')
     axes.set_ylim(-10000, 10000)
     axes.set_xlabel(r'r$_{CH}$ (Angstrom)')
     axes.set_ylabel('Energy (cm^-1)')
     axes.legend(loc='lower right')
     fig.savefig('Local_energy_powerpoint_potential_1.png')
-    colors = ['red', 'green', 'orange', 'blue']
-    labels = ['High Freq CH stretch', 'Low Freq CH stretch', 'Average', 'Switch']
-    for i in range(4):
+    colors = ['red', 'green', 'orange']
+    labels = ['High Freq CH stretch', 'Low Freq CH stretch', 'Average']
+    for i in range(3):
         interp = interpolate.splrep(grid, psi[i, :], s=0)
         Psi.El, wvfn = E_loc(Psi, interp)
         # np.savetxt(f'Local_Energy_CH_stretch_5_{colors[i]}.csv', Psi.El*har2wave, delimiter=',')
@@ -86,7 +89,8 @@ def let_do_some_plotting():
         axes.plot(Psi.coords/ang2bohr, Psi.El*har2wave, color=colors[i], label=labels[i])
         axes.set_ylim(-10000, 10000)
         axes.legend(loc='lower right')
-        fig.savefig(f'Local_energy_powerpoint_CH_stretch_1{i}.png')
+        # fig.savefig(f'Local_energy_powerpoint_CH_stretch_1{i}.png')
+    plt.show()
     plt.close(fig)
 
 

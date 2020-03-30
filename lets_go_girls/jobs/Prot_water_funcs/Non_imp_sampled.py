@@ -67,6 +67,20 @@ def Weighting(Vref, Psi, DW, dtau, threshold):
         Psi.weights[ind] = Biggo_weight / 2.
         Psi.coords[i[0]] = Biggo_pos
         Psi.V[i[0]] = Biggo_pot
+
+    death = np.argwhere(Psi.weights > 20)
+    for i in death:
+        ind = np.argmin(Psi.weights)
+        if DW is True:
+            Biggo_num = float(Psi.walkers[i[0]])
+            Psi.walkers[ind] = Biggo_num
+        Biggo_weight = float(Psi.weights[i[0]])
+        Biggo_pos = np.array(Psi.coords[i[0]])
+        Biggo_pot = float(Psi.V[i[0]])
+        Psi.weights[i[0]] = Biggo_weight / 2.
+        Psi.weights[ind] = Biggo_weight / 2.
+        Psi.coords[ind] = Biggo_pos
+        Psi.V[ind] = Biggo_pot
     return Psi
 
 
@@ -91,9 +105,12 @@ def Discrete_weighting(Vref, Psi, DW, dtau):
 
 
 # Calculates the descendant weight for the walkers before descendant weighting
-def descendants(Psi):
-    N_0 = len(Psi.coords)
-    d = np.bincount(Psi.walkers, weights=Psi.weights)
+def descendants(Psi, weighting, N_0=None):
+    if weighting == 'discrete':
+        d = np.bincount(Psi.walkers)
+    else:
+        N_0 = len(Psi.coords)
+        d = np.bincount(Psi.walkers, weights=Psi.weights)
     while len(d) < N_0:
         d = np.append(d, 0.)
     Psi.walkers = np.arange(0, len(Psi.walkers))
@@ -129,10 +146,10 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
     weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
     des = np.zeros(np.append(num_o_collections, psi.weights.shape))
     if weighting == 'discrete':
-        buffer = int(len(psi.coords)/5)
-        coords = np.append(coords, np.zeros((num_o_collections, buffer, psi.coords.shape[1], psi.coords.shape[2])))
-        weights = np.append(weights, np.zeros((num_o_collections, buffer)))
-        des = np.append(des, np.zeros((num_o_collections, buffer)))
+        buffer = int(len(psi.coords))
+        coords = np.hstack((coords, np.zeros((num_o_collections, buffer, psi.coords.shape[1], psi.coords.shape[2]))))
+        weights = np.hstack((weights, np.zeros((num_o_collections, buffer))))
+        des = np.hstack((des, np.zeros((num_o_collections, buffer))))
 
     num = 0
     prop = float(propagation)
@@ -175,16 +192,15 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
             Psi_tau = copy.deepcopy(psi)
             if weighting == 'discrete':
                 coords[num, :len(Psi_tau.coords)] = Psi_tau.coords
-                weights[num, :len(Psi_tau.weights)] = Psi_tau.weights
             else:
                 coords[num] = Psi_tau.coords
                 weights[num] = Psi_tau.weights
         elif prop == 0:
             DW = False
             if weighting == 'discrete':
-                des[num, :len(Psi_tau.weights)] = descendants(psi)
+                des[num, :len(Psi_tau.coords)] = descendants(psi, weighting, len(Psi_tau.coords))
             else:
-                des[num] = descendants(psi)
+                des[num] = descendants(psi, weighting)
             num += 1
 
     return coords, weights, time, Vref_array, sum_weights, des

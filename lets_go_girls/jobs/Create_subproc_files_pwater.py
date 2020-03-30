@@ -1,9 +1,9 @@
-walkers = [[5000]]
+walkers = [[2000], [5000], [10000]]
 
-size = ['med']
+size = ['small', 'med', 'large']
 
 system = 'ptetramer'
-type_of_sim = 'non_imp_samp_ts_10_thresh_pone'
+type_of_sim = 'full_imp_samp'
 # thresh = ['half', 'one', 'five', 'ten', 'twenty']
 # for i in thresh:
 for a, b in zip(walkers, size):

@@ -392,12 +392,33 @@ def Weighting(Eref, Psi, Fqx, dtau, DW, threshold):
         Psi.V[i[0]] = Biggo_pot
         Psi.El[i[0]] = Biggo_el
         Fqx[i[0]] = Biggo_force
+
+    death = np.argwhere(Psi.weights > 20)
+    for i in death:
+        ind = np.argmin(Psi.weights)
+        if DW is True:
+            Biggo_num = float(Psi.walkers[i[0]])
+            Psi.walkers[ind] = Biggo_num
+        Biggo_weight = float(Psi.weights[i[0]])
+        Biggo_pos = np.array(Psi.coords[i[0]])
+        Biggo_pot = float(Psi.V[i[0]])
+        Biggo_el = float(Psi.El[i[0]])
+        Biggo_force = np.array(Fqx[i[0]])
+        Biggo_psit = np.array(Psi.psit[i[0]])
+        Psi.weights[i[0]] = Biggo_weight / 2.
+        Psi.weights[ind] = Biggo_weight / 2.
+        Psi.coords[ind] = Biggo_pos
+        Psi.V[ind] = Biggo_pot
+        Psi.El[ind] = Biggo_el
+        Fqx[ind] = Biggo_force
+        Psi.psit[ind] = Biggo_psit
     return Psi
 
 
 def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
                     equilibration, wait_time, propagation, threshold, multicore=True, Eref=None):
     DW = False
+    weighting = 'continuous'
     num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
@@ -451,7 +472,7 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
             weights[num] = Psi_tau.weights
         elif prop == 0:
             DW = False
-            des[num] = descendants(psi)
+            des[num] = descendants(psi, weighting)
             num += 1
 
     return coords, weights, time, Eref_array, sum_weights, accept, des

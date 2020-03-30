@@ -58,29 +58,30 @@ def rotateBackToFrame(coordz, a, b, c,
     else:
         return finalCoords
 
-thresh = ['half', 'one', 'five', 'ten', 'twenty']
-i = 1
-j = 4
-
-
-blah = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp_ts_10_thresh_{thresh[i]}/' +
-                         f'ptetramer_non_imp_samp_ts_10_thresh_{thresh[i]}_{5000}_' +
+# thresh = ['half', 'one', 'five', 'ten', 'twenty', 'pone']
+# i = -1
+j = 2
+#
+#
+blah = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp_ts_10/' +
+                         f'ptetramer_non_imp_samp_ts_10_{10000}_' +
                          f'Walkers_Test_{j + 1}.npz')
 
 coords = blah['coords'][:20]
 coords = np.reshape(coords, (coords.shape[0]*coords.shape[1], coords.shape[2], coords.shape[3]))
-des = blah['weights'][:20]
+des = blah['des'][:20]
 # print(des.shape)
 des = np.reshape(des, (des.shape[0]*des.shape[1]))
 
 
 coords = rotateBackToFrame(coords, 7, 10, 13)
-amp, xx = np.histogram(coords[:, 4-1, 2], weights=des, range=(-2, 2), bins=50, density=True)
+amp, xx = np.histogram(coords[:, 4-1, 2], weights=des, range=(-2, 2), bins=40, density=True)
+# amp, xx = np.histogram(coords[:, 4-1, 2], weights=des, bins=40, density=True)
 bins = (xx[1:] + xx[:-1]) / 2.
 
 plt.plot(bins, amp)
 plt.xlabel('Z Displacement (Bohr)')
-# plt.show()
+plt.show()
 # ang2bohr = 1.e-10/5.291772106712e-11
 
 # tetramer = [[-0.31106354,  -0.91215572,  -0.20184621],
@@ -99,11 +100,11 @@ plt.xlabel('Z Displacement (Bohr)')
 
 # coords = np.array([tetramer]*3)*ang2bohr
 
-from ProtWaterPES import Potential
+# from ProtWaterPES import Potential
 
-pot = Potential(13)
-v = pot.get_potential(coords[:-40000])
-a = 4
+# pot = Potential(13)
+# v = pot.get_potential(coords[:-40000])
+# a = 4
 # pot = Potential(coords.shape[1])
 # v1 = pot.get_potential(coords)
 # coord_rot = rotateBackToFrame(coords, 7, 10, 13)

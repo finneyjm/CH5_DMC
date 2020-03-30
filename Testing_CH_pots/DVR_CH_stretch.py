@@ -107,19 +107,26 @@ def run(CH, type, coords, mass):
 
 
 # wvfns = [1, 2, 3, 4, 5]
-wvfn = np.zeros((5, 1000))
-for i in np.arange(1, 6):
+# wvfn = np.zeros((5, 1000))
+# for i in np.arange(1, 6):
 # for i in wvfns:
-    g, wvfn[i-1] = run(i, 'min', coords_initial_min, m_red)
-for i in range(5):
-    plt.plot(g/ang2bohr, wvfn[i], label=f'Ground State Wavefunction {i+1}')
-plt.xlim(0.6, 1.8)
-plt.xlabel(r'r$_{CH}$ ($\AA$)', fontsize=16)
-plt.ylabel('P(r)', fontsize=16)
-plt.legend(bbox_to_anchor=(1.04, 1.), fontsize=14)
+#     g, wvfn[i-1] = run(i, 'min', coords_initial_min, m_red)
+# for i in range(5):
+#     plt.plot(g/ang2bohr, wvfn[i], label=f'Ground State Wave function {i+1}')
+# plt.xlim(0.6, 1.8)
+# plt.xlabel(r'r$_{CH}$ ($\AA$)', fontsize=16)
+# plt.ylabel('P(r)', fontsize=16)
+# plt.legend(bbox_to_anchor=(1.04, 1.), fontsize=14)
 # plt.tight_layout(rect=[0, 0, 0.75, 1])
-plt.savefig('GSWs_min_for_ppt.png', bbox_inches='tight')
+# plt.savefig('GSWs_min_for_ppt.png', bbox_inches='tight')
 # run(i, 'cs', coords_initial_cs, m_red_D)
 # run(i, 'c2v', coords_initial_c2v, m_red_D)
-
+g = grid(0.4, 6, 5000, 5, coords_initial_min)
+a = np.linspace(0.4, 6, 5000)
+V = np.diag(Potential(g, 5))
+plt.plot(a/ang2bohr, V)
+plt.xlim(0.6, 2.5)
+plt.ylim(0, 7000)
+# plt.show()
+np.save('Potential_CH_stretch5', V)
 

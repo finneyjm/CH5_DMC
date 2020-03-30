@@ -36,13 +36,15 @@ class JacobIsDumb(ValueError):
 
 
 # Function to go through the DMC algorithm
-def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=150, atoms=None,
+def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=None, atoms=None,
         imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, multicore=True,
         trial_wvfn=None, rand_samp=True, system='CH5', imp_samp_equilibration=True,
         imp_samp_equilibration_time=5000, equilibrations_dtau=10, threshold=None, weighting='continuous'):
     interp_exp = None
+    if propagation is None:
+        propagation = int(250/dtau)
     if threshold is None:
-        threshold = 1/float(N_0)
+        threshold = 0.1
     if system == 'CH5':
         if imp_samp is True:
             if trial_wvfn is None:
