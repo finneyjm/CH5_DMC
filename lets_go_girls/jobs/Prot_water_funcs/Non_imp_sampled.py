@@ -51,7 +51,7 @@ def V_ref_calc(Psi, dtau, weight='continuous'):
 
 
 # The weighting calculation that gets the weights of each walker in the simulation
-def Weighting(Vref, Psi, DW, dtau, threshold):
+def Weighting(Vref, Psi, DW, dtau, threshold, max_thresh):
     Psi.weights = Psi.weights * np.nan_to_num(np.exp(-(Psi.V - Vref) * dtau))
     # Conditions to prevent one walker from obtaining all the weight
     death = np.argwhere(Psi.weights < threshold)
@@ -68,7 +68,7 @@ def Weighting(Vref, Psi, DW, dtau, threshold):
         Psi.coords[i[0]] = Biggo_pos
         Psi.V[i[0]] = Biggo_pot
 
-    death = np.argwhere(Psi.weights > 20)
+    death = np.argwhere(Psi.weights > max_thresh)
     for i in death:
         ind = np.argmin(Psi.weights)
         if DW is True:
@@ -137,7 +137,7 @@ def Parr_Potential(Psi):
 
 
 def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
-                    propagation, multicore, threshold, weighting='continuous'):
+                    propagation, multicore, threshold, max_thresh, weighting='continuous'):
     DW = False
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
@@ -180,7 +180,7 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
         if weighting == 'discrete':
             psi = Discrete_weighting(V_ref, psi, DW, dtau)
         else:
-            psi = Weighting(V_ref, psi, DW, dtau, threshold)
+            psi = Weighting(V_ref, psi, DW, dtau, threshold, max_thresh)
         V_ref = V_ref_calc(psi, dtau, weighting)
 
         Vref_array[i] = V_ref

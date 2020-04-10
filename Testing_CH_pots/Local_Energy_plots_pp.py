@@ -73,14 +73,14 @@ def let_do_some_plotting():
     Psi.V = Potential(Psi, pot)
     # np.savetxt('Potential_CH_stretch_5.csv', Psi.V*har2wave, delimiter=',')
     fig, axes = plt.subplots()
-    axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label='High Freq Potential')
+    axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label=r'V(r$_{\rm{5}}$')
     axes.set_ylim(-10000, 10000)
-    axes.set_xlabel(r'r$_{CH}$ (Angstrom)')
-    axes.set_ylabel('Energy (cm^-1)')
+    axes.set_xlabel(r'r$_{\rm{CH}}$ (Angstrom)')
+    axes.set_ylabel(r'Energy (cm$^{-1}$)')
     axes.legend(loc='lower right')
     fig.savefig('Local_energy_powerpoint_potential_1.png')
     colors = ['red', 'green', 'orange']
-    labels = ['High Freq CH stretch', 'Low Freq CH stretch', 'Average']
+    labels = [r'E$_L(r_{CH_{\rm{5}}})$', r'E$_{L}(r_{CH_{\rm{3}}})$', r'E$_{L}(r_{avg})$']
     for i in range(3):
         interp = interpolate.splrep(grid, psi[i, :], s=0)
         Psi.El, wvfn = E_loc(Psi, interp)
@@ -90,6 +90,7 @@ def let_do_some_plotting():
         axes.set_ylim(-10000, 10000)
         axes.legend(loc='lower right')
         # fig.savefig(f'Local_energy_powerpoint_CH_stretch_1{i}.png')
+    plt.tight_layout()
     plt.show()
     plt.close(fig)
 

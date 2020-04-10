@@ -39,12 +39,15 @@ class JacobIsDumb(ValueError):
 def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=None, atoms=None,
         imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, multicore=True,
         trial_wvfn=None, rand_samp=True, system='CH5', imp_samp_equilibration=True,
-        imp_samp_equilibration_time=5000, equilibrations_dtau=10, threshold=None, weighting='continuous'):
+        imp_samp_equilibration_time=5000, equilibrations_dtau=10, threshold=None, max_thresh=None,
+        weighting='continuous'):
     interp_exp = None
     if propagation is None:
         propagation = int(250/dtau)
     if threshold is None:
         threshold = 0.1
+    if max_thresh is None:
+        max_thresh = 20
     if system == 'CH5':
         if imp_samp is True:
             if trial_wvfn is None:
@@ -196,7 +199,8 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                 _, _, _, Eref, _, _ = pni.simulation_time(psi, sigmaOH, imp_samp_equilibration_time,
                                                                      equilibrations_dtau,
                                                                      imp_samp_equilibration_time,
-                                                                     wait_time, propagation, multicore, threshold)
+                                                                     wait_time, propagation, multicore, threshold,
+                                                                     max_thresh)
 
                 Eref = Eref[-1]
             else:
@@ -208,13 +212,15 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
             coords, weights, time, Eref_array, sum_weights, accept, des = pi.simulation_time(psi, alpha, sigmaOH, Fqx,
                                                                                              time_steps, dtau, equilibration,
                                                                                              wait_time, propagation,
-                                                                                             threshold, multicore, Eref)
+                                                                                             threshold, max_thresh,
+                                                                                             multicore, Eref)
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, accept=accept, des=des)
         else:
             coords, weights, time, Eref_array, sum_weights, des = pni.simulation_time(psi, sigmaOH, time_steps, dtau,
                                                                                       equilibration, wait_time, propagation,
-                                                                                      multicore, threshold, weighting)
+                                                                                      multicore, threshold, max_thresh,
+                                                                                      weighting)
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, des=des)
 
@@ -263,7 +269,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                 _, _, _, Eref, _, _ = pni.simulation_time(psi, sigmaOH, imp_samp_equilibration_time,
                                                           equilibrations_dtau,
                                                           imp_samp_equilibration_time,
-                                                          wait_time, propagation, multicore, threshold)
+                                                          wait_time, propagation, multicore, threshold, max_thresh)
 
                 Eref = Eref[-1]
             else:
@@ -275,7 +281,8 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
             coords, weights, time, Eref_array, sum_weights, accept, des = pi.simulation_time(psi, alpha, sigmaOH, Fqx,
                                                                                              time_steps, dtau, equilibration,
                                                                                              wait_time, propagation,
-                                                                                             threshold, multicore, Eref)
+                                                                                             threshold, max_thresh,
+                                                                                             multicore, Eref)
 
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, accept=accept, des=des)
@@ -283,7 +290,8 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
             coords, weights, time, Eref_array, sum_weights, des = pni.simulation_time(psi, sigmaOH, time_steps, dtau,
                                                                                       equilibration, wait_time,
                                                                                       propagation,
-                                                                                      multicore, threshold, weighting)
+                                                                                      multicore, threshold, max_thresh,
+                                                                                      weighting)
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, des=des)
 

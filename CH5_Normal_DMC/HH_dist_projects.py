@@ -52,23 +52,23 @@ plt.show()
 # plt.savefig(f'HH_distances_CH5_averaged.png')
 plt.close()
 
-amp_all = np.zeros((bining, 5))
-coords = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/HH_to_rCHrCD_{isotop}H_GSW2_{N_0}_Walkers_Test_{test_num}.npz')['coords'][wvfn_num]
-weights = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/HH_to_rCHrCD_{isotop}H_GSW2_{N_0}_Walkers_Test_{test_num}.npz')['weights'][wvfn_num]
-asdf = hh_dist(coords)
-for j in range(5):
-    lots_o_weights = np.array([weights]*4)
-    flat_weights = lots_o_weights.flatten()
-    amp, xx = np.histogram(asdf[:, j].flatten('F')/ang2bohr, weights=flat_weights, bins=bining, range=(0.5, 2.5), density=True)
-    amp_all[:, j] += amp
-bins = (xx[1:] + xx[:-1])/2.
-plt.figure(2)
-for i in range(5):
-   plt.plot(bins, amp_all[:, i], label=atoms[i])
-# plt.savefig(f'HH_distances/non_imp_samp/hh_dist_projection_non_imp_samp_{N_0}_walkers.png')
-plt.legend()
-plt.show()
-plt.close()
+# amp_all = np.zeros((bining, 5))
+# coords = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/HH_to_rCHrCD_{isotop}H_GSW2_{N_0}_Walkers_Test_{test_num}.npz')['coords'][wvfn_num]
+# weights = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/HH_to_rCHrCD_{isotop}H_GSW2_{N_0}_Walkers_Test_{test_num}.npz')['weights'][wvfn_num]
+# asdf = hh_dist(coords)
+# for j in range(5):
+#     lots_o_weights = np.array([weights]*4)
+#     flat_weights = lots_o_weights.flatten()
+#     amp, xx = np.histogram(asdf[:, j].flatten('F')/ang2bohr, weights=flat_weights, bins=bining, range=(0.5, 2.5), density=True)
+#     amp_all[:, j] += amp
+# bins = (xx[1:] + xx[:-1])/2.
+# plt.figure(2)
+# for i in range(5):
+#    plt.plot(bins, amp_all[:, i], label=atoms[i])
+# # plt.savefig(f'HH_distances/non_imp_samp/hh_dist_projection_non_imp_samp_{N_0}_walkers.png')
+# plt.legend()
+# plt.show()
+# plt.close()
 
 
 

@@ -9,9 +9,10 @@ ts = 10
 thresh = None
 thresh_num = 0.1
 system = 'ptetramer'
-type_of_sim = f'non_imp_samp_ts_{ts}'
+type_of_sim = f'non_imp_samp_discrete_ts_10'
+max_thresh = None
 imp_samp = False
-weighting = None
+weighting = 'discrete'
 params = 'tetramer'
 # for j in range(len(bro)):
 # for ts in bro:
@@ -95,6 +96,8 @@ for i in range(5):
                 myfile.write(f'    "threshold": {thresh_num/walkers[x]}\n')
             if weighting == 'discrete':
                 myfile.write(f'    "weighting": "discrete"\n')
+            if max_thresh is not None:
+                myfile.write(f'    "max_thesh": {max_thresh}\n')
             # myfile.write('    "imp_samp_type": "dev_dep",\n')
             # myfile.write('    "hh_relate": hh,\n')
             # myfile.write('    "rand_samp": False,\n')

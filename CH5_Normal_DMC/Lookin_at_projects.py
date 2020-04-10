@@ -60,28 +60,34 @@ def rotateBackToFrame(coordz, a, b, c,
 
 # thresh = ['half', 'one', 'five', 'ten', 'twenty', 'pone']
 # i = -1
-j = 2
+j = 5
+Nw = 40000
 #
 #
-blah = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp_ts_10/' +
-                         f'ptetramer_non_imp_samp_ts_10_{10000}_' +
-                         f'Walkers_Test_{j + 1}.npz')
-
-coords = blah['coords'][:20]
-coords = np.reshape(coords, (coords.shape[0]*coords.shape[1], coords.shape[2], coords.shape[3]))
-des = blah['des'][:20]
-# print(des.shape)
-des = np.reshape(des, (des.shape[0]*des.shape[1]))
-
-
-coords = rotateBackToFrame(coords, 7, 10, 13)
-amp, xx = np.histogram(coords[:, 4-1, 2], weights=des, range=(-2, 2), bins=40, density=True)
-# amp, xx = np.histogram(coords[:, 4-1, 2], weights=des, bins=40, density=True)
-bins = (xx[1:] + xx[:-1]) / 2.
-
-plt.plot(bins, amp)
-plt.xlabel('Z Displacement (Bohr)')
-plt.show()
+# for j in np.arange(1, 5):
+#     blah = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp_ts_10/' +
+#                              f'ptetramer_non_imp_samp_ts_10_{Nw}_' +
+#                              f'Walkers_Test_{j}.npz')
+#
+    # coords = blah['coords'][:20]
+    # coords = np.reshape(coords, (coords.shape[0]*coords.shape[1], coords.shape[2], coords.shape[3]))
+    # des = blah['des'][:20]
+    # # print(des.shape)
+    # des = np.reshape(des, (des.shape[0]*des.shape[1]))
+#
+#
+#     coords = rotateBackToFrame(coords, 7, 10, 13)
+#     # sym_coords = np.hstack((coords[:, 3, 2], coords[:, 3, 2]*-1))
+#     # sym_weights = np.hstack((des, des))
+#     # amp, xx = np.histogram(sym_coords, weights=sym_weights, range=(-2, 2), bins=40, density=True)
+#     amp, xx = np.histogram(coords[:, 4-1, 2], weights=des, bins=40, range=(-2, 2), density=True)
+#     bins = (xx[1:] + xx[:-1]) / 2.
+#
+#     plt.plot(bins, amp, label=f'non imp samp ts 10 {Nw} walkers trial {j}')
+#     plt.legend()
+#     plt.xlabel('Z Displacement (Bohr)')
+#     plt.savefig(f'Projections_pwater/ptetramer_non_imp_samp_ts_10_{Nw}_walkers_{j}')
+#     plt.close()
 # ang2bohr = 1.e-10/5.291772106712e-11
 
 # tetramer = [[-0.31106354,  -0.91215572,  -0.20184621],

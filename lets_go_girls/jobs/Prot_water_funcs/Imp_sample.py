@@ -369,7 +369,7 @@ def E_ref_calc(Psi, alpha):
 
 
 # Calculate the weights of the walkers and figure out the birth/death if needed
-def Weighting(Eref, Psi, Fqx, dtau, DW, threshold):
+def Weighting(Eref, Psi, Fqx, dtau, DW, threshold, max_thresh):
     Psi.weights = Psi.weights * np.nan_to_num(np.exp(-(Psi.El - Eref) * dtau))
     # threshold = 1./float(len(Psi.coords))
     death = np.argwhere(Psi.weights < threshold)  # should I kill a walker?
@@ -393,7 +393,8 @@ def Weighting(Eref, Psi, Fqx, dtau, DW, threshold):
         Psi.El[i[0]] = Biggo_el
         Fqx[i[0]] = Biggo_force
 
-    death = np.argwhere(Psi.weights > 20)
+
+    death = np.argwhere(Psi.weights > max_thresh)
     for i in death:
         ind = np.argmin(Psi.weights)
         if DW is True:
@@ -416,7 +417,7 @@ def Weighting(Eref, Psi, Fqx, dtau, DW, threshold):
 
 
 def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
-                    equilibration, wait_time, propagation, threshold, multicore=True, Eref=None):
+                    equilibration, wait_time, propagation, threshold, max_thresh, multicore=True, Eref=None):
     DW = False
     weighting = 'continuous'
     num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
@@ -456,7 +457,7 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
 
         psi = E_loc(psi, sigma, dtau)
 
-        psi = Weighting(Eref, psi, Fqx, dtau, DW, threshold)
+        psi = Weighting(Eref, psi, Fqx, dtau, DW, threshold, max_thresh)
         Eref = E_ref_calc(psi, alpha)
 
         Eref_array[i] = Eref
