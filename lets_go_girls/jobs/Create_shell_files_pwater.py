@@ -1,9 +1,9 @@
 size = ['small', 'med', 'large']
 s = ['s', 'm', 'l']
-size = ['med']
-s = ['m']
-system = 'ptetramer'
-type_of_sim = 'non_imp_samp_discrete_ts_10'
+# size = ['med']
+# s = ['m']
+system = 'pmonomer'
+type_of_sim = 'non_imp_samp'
 # thresh = ['half', 'one', 'five', 'ten', 'twenty']
 
 # for i in thresh:
@@ -14,9 +14,9 @@ for a, b in zip(size, s):
         myfile.write(f'#SBATCH --job-name={system}_{type_of_sim}_{b}\n\n')
         myfile.write('## Allocation Definition\n\n')
         myfile.write('## Which queue should we use?\n\n')
-        if b == 's' or b == 'm':
-            myfile.write('#SBATCH --partition=ilahie\n\n')
-            myfile.write('#SBATCH --account=ilahie\n\n')
+        if b == 's' or b == 'm' or b == 'l':
+            myfile.write('#SBATCH --partition=ckpt\n\n')
+            myfile.write('#SBATCH --account=chem-ckpt\n\n')
             myfile.write('## Number of cores\n\n')
             myfile.write('#SBATCH --tasks=28\n\n')
         else:
@@ -30,7 +30,7 @@ for a, b in zip(size, s):
         myfile.write('#SBATCH --nodes=1\n\n')
         myfile.write('#SBATCH --exclude=n2023\n\n')
         myfile.write('## Time needed (days-hours:minutes:seconds\n\n')
-        myfile.write('#SBATCH --time=4-00:00:00\n\n')
+        myfile.write('#SBATCH --time=00-05:00:00\n\n')
         myfile.write('## Memory per node\n\n')
         myfile.write('#SBATCH --mem=122G\n\n')
         myfile.write('## Where is the working directory of this job?\n\n')

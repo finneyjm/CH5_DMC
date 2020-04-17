@@ -22,7 +22,12 @@ class Walkers(object):
 
     def __init__(self, walkers, atoms, coords_initial):
         self.walkers = np.arange(0, walkers)
-        self.coords = np.array([coords_initial]*walkers)*1.01
+        half = int(walkers / 2)
+        self.coords = np.array([coords_initial] * walkers) * 1.05
+        if len(atoms) == 13:
+            self.coords[:half, :4, 2] *= -1
+        elif len(atoms) == 4:
+            self.coords[:, 3, 2] *= -1
         self.weights = np.zeros(walkers) + 1.
         self.weights_i = np.zeros(walkers) + 1.
         self.V = np.zeros(walkers)

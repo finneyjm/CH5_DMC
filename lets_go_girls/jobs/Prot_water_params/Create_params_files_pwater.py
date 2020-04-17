@@ -1,19 +1,19 @@
-walkers = [10, 20, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000, 15000, 20000, 25000, 30000, 40000]
+walkers = [10, 20, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000, 15000, 20000, 25000, 30000, 40000]
 # walkers = [6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500]
 # walkers = [5000]
 # walkers = [50000]
 # bro_str = ['5', '10']
 # bro = [5, 10]
-atoms = ['H', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O']
-ts = 10
+atoms = ['H', 'H', 'H', 'O']
+ts = 1
 thresh = None
 thresh_num = 0.1
-system = 'ptetramer'
-type_of_sim = f'non_imp_samp_discrete_ts_10'
+system = 'pmonomer'
+type_of_sim = f'non_imp_samp'
 max_thresh = None
 imp_samp = False
-weighting = 'discrete'
-params = 'tetramer'
+weighting = None
+params = 'waters'
 # for j in range(len(bro)):
 # for ts in bro:
 # for j in range(6):
@@ -26,13 +26,15 @@ for i in range(5):
             #     atoms[hs+1] = 'H'
             myfile.write(f'atoms = {atoms}\n\n')
             if imp_samp:
-                myfile.write('wvfn = np.load("params/wvfns/free_oh_wvfn.npy")\n')
-                myfile.write('free_oh_wvfn = interpolate.splrep(wvfn[:, 0], wvfn[:, 1], s=0)\n\n')
                 if system == 'pmonomer':
+                    myfile.write('wvfn = np.load("Prot_water_params/wvfns/hydronium_oh_wvfn.npy")\n')
+                    myfile.write('free_oh_wvfn = interpolate.splrep(wvfn[:, 0], wvfn[:, 1], s=0)\n\n')
                     myfile.write('trial_wvfn = {\n')
                     myfile.write('    "reg_oh": free_oh_wvfn,\n')
                     myfile.write('}\n\n')
                 else:
+                    myfile.write('wvfn = np.load("Prot_water_params/wvfns/free_oh_wvfn.npy")\n')
+                    myfile.write('free_oh_wvfn = interpolate.splrep(wvfn[:, 0], wvfn[:, 1], s=0)\n\n')
                     if params == 'waters':
                         myfile.write('trial_wvfn = {\n')
                         myfile.write('    "reg_oh": free_oh_wvfn,\n')

@@ -60,7 +60,14 @@ class Walkers(object):
                 raise JacobIsDumb('That atom is not currently supported you dingus')
 
 
-ln
+def ch_dist(coords):
+    N = len(coords)
+    rch = np.zeros((N, 5))
+    for i in range(5):
+        rch[:, i] = np.sqrt((coords[:, i + 1, 0] - coords[:, 0, 0]) ** 2 +
+                            (coords[:, i + 1, 1] - coords[:, 0, 1]) ** 2 +
+                            (coords[:, i + 1, 2] - coords[:, 0, 2]) ** 2)
+    return rch
 
 
 # Evaluate PsiT for each bond CH bond length in the walker set

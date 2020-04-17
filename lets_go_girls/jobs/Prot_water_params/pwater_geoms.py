@@ -98,7 +98,7 @@ monomer = np.flip([[0, 0, 0],
             [r*np.sin(beta), 0, r*np.cos(beta)],
             [-1/2*r*np.sin(beta), np.sqrt(3)/2*r*np.sin(beta), r*np.cos(beta)],
             [-1/2*r*np.sin(beta), -np.sqrt(3)/2*r*np.sin(beta), r*np.cos(beta)]], 0)/ang2bohr
-# print(monomer)
+print(monomer)
 r = 1.827793856
 beta = np.deg2rad(90)
 monomer4 = [[r*np.sin(beta), 0, r*np.cos(beta)],
@@ -136,13 +136,13 @@ trimer = [[-0.00032173,  -1.66883417,  -0.56979199],
           [-2.55611419,   0.78549017,  -0.75941312],
           [-2.71764621,   0.37748843,   0.71971598],
           [-2.07898673,   0.45950719,   0.00731627]]
-# from ProtWaterPES import Potential
-# a = np.array([monomer]*3)*ang2bohr
-# b = np.array([monomer2]*3)*ang2bohr
+from ProtWaterPES import Potential
+a = np.array([monomer]*3)*ang2bohr
+b = np.array([monomer2]*3)*ang2bohr
 # c = np.array([monomer3]*3)
-# d = np.array([monomer4]*3)
-# pot = Potential(4)
-# print(pot.get_potential(a))
-# print(pot.get_potential(b))
+d = np.array([monomer4]*3)
+pot = Potential(4)
+print(pot.get_potential(a))
+print(pot.get_potential(b))
 # print(pot.get_potential(np.flip(c, 1)))
-# print(pot.get_potential(d))
+print(pot.get_potential(d))
