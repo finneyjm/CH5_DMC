@@ -1,19 +1,23 @@
-walkers = [10, 20, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000, 15000, 20000, 25000, 30000, 40000]
+walkers = [10, 20, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 75000, 100000]
+# walkers = [100000]
 # walkers = [6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500]
 # walkers = [5000]
 # walkers = [50000]
 # bro_str = ['5', '10']
 # bro = [5, 10]
-atoms = ['H', 'H', 'H', 'O']
-ts = 1
+atoms = ['H', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O']
+ts = 8
 thresh = None
 thresh_num = 0.1
-system = 'pmonomer'
-type_of_sim = f'non_imp_samp'
+system = 'ptetramer'
+type_of_sim = f'non_imp_samp_ts_8'
 max_thresh = None
-imp_samp = False
+imp_samp = None
 weighting = None
-params = 'waters'
+params = 'tetramer'
+shift = False
+patch = True
+deuterated = True
 # for j in range(len(bro)):
 # for ts in bro:
 # for j in range(6):
@@ -27,13 +31,21 @@ for i in range(5):
             myfile.write(f'atoms = {atoms}\n\n')
             if imp_samp:
                 if system == 'pmonomer':
-                    myfile.write('wvfn = np.load("Prot_water_params/wvfns/hydronium_oh_wvfn.npy")\n')
+                    if shift:
+                        myfile.write('wvfn = np.load("Prot_water_params/wvfns/hydronium_shifted_oh_wvfn.npy")\n')
+                    elif params == 'water':
+                        myfile.write('wvfn = np.load("Prot_water_params/wvfns/free_oh_wvfn.npy")\n')
+                    else:
+                        myfile.write('wvfn = np.load("Prot_water_params/wvfns/hydronium_oh_wvfn.npy")\n')
                     myfile.write('free_oh_wvfn = interpolate.splrep(wvfn[:, 0], wvfn[:, 1], s=0)\n\n')
                     myfile.write('trial_wvfn = {\n')
                     myfile.write('    "reg_oh": free_oh_wvfn,\n')
                     myfile.write('}\n\n')
                 else:
-                    myfile.write('wvfn = np.load("Prot_water_params/wvfns/free_oh_wvfn.npy")\n')
+                    if deuterated:
+                        myfile.write('wvfn = np.load("Prot_water_params/wvfns/free_od_wvfn.npy")\n')
+                    else:
+                        myfile.write('wvfn = np.load("Prot_water_params/wvfns/free_oh_wvfn.npy")\n')
                     myfile.write('free_oh_wvfn = interpolate.splrep(wvfn[:, 0], wvfn[:, 1], s=0)\n\n')
                     if params == 'waters':
                         myfile.write('trial_wvfn = {\n')
@@ -44,27 +56,60 @@ for i in range(5):
                         myfile.write('    "OO_scale": None, \n')
                         myfile.write('}\n\n')
                     elif params == 'tetramer':
-                        myfile.write('hbond_wvfn = np.load("Prot_water_params/wvfns/shared_prot_moveable_wvfn.npy")\n')
+                        if deuterated:
+                            myfile.write(
+                                'hbond_wvfn = np.load("Prot_water_params/wvfns/shared_deuterium_moveable_wvfn.npy")\n')
+
+                        else:
+                            myfile.write('hbond_wvfn = np.load("Prot_water_params/wvfns/shared_prot_moveable_wvfn.npy")\n')
                         myfile.write('hbond_wvfn = interpolate.splrep(hbond_wvfn[:, 0], hbond_wvfn[:, 1], s=0)\n\n')
                         myfile.write('trial_wvfn = {\n')
                         myfile.write('    "reg_oh": free_oh_wvfn,\n')
                         myfile.write('    "ang": None, \n')
                         myfile.write('    "hbond": hbond_wvfn,\n')
-                        myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                        if patch and deuterated is False:
+                            myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                         'bowman_patched_h9o4_Re_Polynomials")),\n')
+                            myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                         'bowman_patched_h9o4_Std_Polynomials"))\n')
+                        elif patch and deuterated:
+                            myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                     'bowman_patched_D9O4_Re_Polynomials")),\n')
+                            myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                     'bowman_patched_D9O4_Std_Polynomials"))\n')
+                        else:
+                            myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
                                      'bowman_h9o4_Re_Polynomials")),\n')
-                        myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                            myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
                                      'bowman_h9o4_Std_Polynomials"))\n')
                         myfile.write('}\n\n')
                     elif params == 'trimer':
-                        myfile.write('hbond_wvfn = np.load("Prot_water_params/wvfns/shared_prot_moveable_wvfn.npy")\n')
+                        if deuterated:
+                            myfile.write(
+                                'hbond_wvfn = np.load("Prot_water_params/wvfns/shared_deuterium_moveable_wvfn.npy")\n')
+
+                        else:
+                            myfile.write(
+                                'hbond_wvfn = np.load("Prot_water_params/wvfns/shared_prot_moveable_wvfn.npy")\n')
                         myfile.write('hbond_wvfn = interpolate.splrep(hbond_wvfn[:, 0], hbond_wvfn[:, 1], s=0)\n\n')
                         myfile.write('trial_wvfn = {\n')
                         myfile.write('    "reg_oh": free_oh_wvfn,\n')
                         myfile.write('    "ang": None, \n')
                         myfile.write('    "hbond": hbond_wvfn,\n')
-                        myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                        if patch and deuterated is False:
+                            myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                         'bowman_patched_h7o3_Re_Polynomials")),\n')
+                            myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                         'bowman_patched_h7o3_Std_Polynomials"))\n')
+                        elif patch and deuterated:
+                            myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                         'bowman_patched_D7O3_Re_Polynomials")),\n')
+                            myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                                         'bowman_patched_D7O3_Std_Polynomials"))\n')
+                        else:
+                            myfile.write('    "OO_shift": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
                                      'bowman_h7o3_Re_Polynomials")),\n')
-                        myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
+                            myfile.write('    "OO_scale": np.array(np.loadtxt("Prot_water_params/shared_prot_params/'
                                      'bowman_h7o3_Std_Polynomials"))\n')
                         myfile.write('}\n\n')
 

@@ -26,13 +26,13 @@ coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000
                           [2.233806981137821, 0.3567096955165336, 0.000000000000000],
                           [-0.8247121421923925, -0.6295306113384560, -1.775332267901544],
                           [-0.8247121421923925, -0.6295306113384560, 1.775332267901544]])
-print(np.sqrt(coords_initial[1, 0]**2 + coords_initial[1, 1]**2))
+print(np.sqrt(coords_initial[2, 0]**2 + coords_initial[2, 1]**2)/ang2bohr)
 order = [[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]
 wvfn_zmat = CoordinateSet(wvfn, system=CartesianCoordinates3D).convert(ZMatrixCoordinates, ordering=order).coords
 blah = np.array(wvfn_zmat)
 blah[:, :, 1] = np.ones((20000, 5))
 wvfn_coords = CoordinateSet(blah, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-wvfn_hh = hh_dist(wvfn_coords)
+# wvfn_hh = hh_dist(wvfn_coords)
 # plt.scatter(np.std(wvfn_hh[5], axis=1), wvfn_zmat[5, :, 1], label='random walker 1')
 # plt.scatter(np.std(wvfn_hh[6], axis=1), wvfn_zmat[6, :, 1], label='random walker 2')
 # plt.scatter(np.std(wvfn_hh[7], axis=1), wvfn_zmat[7, :, 1], label='random walker 3')
@@ -78,6 +78,7 @@ hh_c2v = hh_dist(coords_c2v)
 
 rch = np.array([zmat[0, :, 1], zmat_cs[0, :, 1], zmat_c2v[0, :, 1]]).flatten()
 std_hh = np.array([np.std(hh[0], axis=1), np.std(hh_cs[0], axis=1), np.std(hh_c2v[0], axis=1)]).flatten()
+print(std_hh/ang2bohr)
 ind = np.argsort(std_hh)
 new_hh = std_hh[ind]
 new_rch = rch[ind]
@@ -94,7 +95,7 @@ def quad_fit(x, *args):
 
 
 params = [0.02388915, 6.29098812, 2.0149631]
-fitted_params, _ = scipy.optimize.curve_fit(exp_fit, new_hh, new_rch, p0=params)
+fitted_params, _ = scipy.optimize.curve_fit(exp_fit, new_hh, zmat[0, 1, 1]-new_rch, p0=params)
 print(fitted_params)
 params2 = [1, 1, 1, 1]
 fitted_params2, _ = scipy.optimize.curve_fit(quad_fit, new_hh, new_rch, p0=params2)
@@ -104,19 +105,26 @@ g = np.linspace(0, 1., num=5000)
 # np.save('sigma_hh_to_rch_cub_relationship', np.vstack((g, quad_fit(g, *fitted_params2))))
 # np.save('sigma_hh_to_rch_exp_relationship_params', fitted_params)
 # np.save('sigma_hh_to_rch_cub_relationship_params', fitted_params2)
-plt.scatter(np.std(hh[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat[0, :, 1]/ang2bohr, label='C$_s$ Min')
-plt.scatter(np.std(hh_cs[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat_cs[0, :, 1]/ang2bohr, marker='o', facecolors='none', edgecolors='green', label=r'$C_s$ SP')
-plt.scatter(np.std(hh_c2v[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat_c2v[0, :, 1]/ang2bohr, marker='D', color='orange', label=r'$C_{2v}$ SP')
-# plt.plot(new_hh/ang2bohr, new_rch/ang2bohr)
-plt.plot(g/ang2bohr, zmat[0, 1, 1]/ang2bohr - exp_fit(g, *fitted_params)/ang2bohr, color='red', label='Fit')
+# plt.scatter(np.std(hh[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat[0, :, 1]/ang2bohr, s=100, label='C$_s$ Min')
+# plt.scatter(np.std(hh_cs[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat_cs[0, :, 1]/ang2bohr, s=100, marker='o', facecolors='none', edgecolors='green', label=r'$C_s$ SP')
+# plt.scatter(np.std(hh_c2v[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat_c2v[0, :, 1]/ang2bohr, s=100, marker='D', color='orange', label=r'$C_{2v}$ SP')
+# plt.plot(g/ang2bohr, zmat[0, 1, 1]/ang2bohr - exp_fit(g, *fitted_params)/ang2bohr, color='k', linestyle='--', label='Fit')
+
+plt.scatter(np.std(hh_cs[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr- zmat_cs[0, :, 1]/ang2bohr, s=100, marker='o', facecolors='none', edgecolors='green', label=r'$C_s$ SP')
+plt.scatter(np.std(hh_c2v[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr-zmat_c2v[0, :, 1]/ang2bohr, s=100, marker='D', color='orange', label=r'$C_{2v}$ SP')
+plt.scatter(np.std(hh[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr-zmat[0, :, 1]/ang2bohr, s=100, label='C$_s$ Min')
+plt.plot(g/ang2bohr, exp_fit(g, *fitted_params)/ang2bohr, color='k', linestyle='--', label='Fit')
 # plt.plot(g, quad_fit(g, *fitted_params2), label='quadratic fit')
-plt.legend(loc='lower left', fontsize=16)
-plt.xlabel(r'$\sigma_{i}$ ($\AA$)', fontsize=22)
-plt.ylabel(r'$\delta(\sigma_i)$ ($\AA$)', fontsize=22)
+# plt.legend(loc='lower left', fontsize=16)
+plt.xlabel(r'$\sigma$ ($\rm\AA$)', fontsize=22)
+
+# plt.ylabel(r'r$_{\rmCH}$ ($\rm\AA$)', fontsize=22)
+
+plt.ylabel(r'$\delta(\sigma)$ ($\rm\AA$)', fontsize=22)
 plt.tick_params(axis='both', which='major', labelsize=16)
 plt.xlim(0, 0.205)
 # plt.ylim(2.04/ang2bohr, 1.219)
-plt.ylim(-.01, .12)
+plt.ylim(-0.009, 0.1201)
 plt.tight_layout()
 # plt.savefig('sigma_HH_to_rCH_relationship.png')
 plt.show()

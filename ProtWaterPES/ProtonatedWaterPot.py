@@ -6,10 +6,11 @@ class Potential:
 
     has_been_loaded = False
 
-    def __init__(self, natm):
+    def __init__(self, natm, bare_dimer=False):
         if self.has_been_loaded:
             raise Exception("Can't load this Bowman potential twice")
         self._natm = natm
+        self._dimer = bare_dimer
         self.load_potential()
 
     def init_potential(self):
@@ -40,14 +41,23 @@ class Potential:
                 )
                 os.chdir('..')
                 os.chdir(where_u_at)
-                sys.path.insert(0, where_u_at)
+                print(os.getcwd())
 
-                try:
-                    import ProtWaterPot
-                except ImportError:
-                    self.compile_potential()
-                ProtWaterPot.init_param(self._natm)
-                self._pot = ProtWaterPot.proto_potcalc
+                sys.path.insert(0, where_u_at)
+                if self._dimer is False:
+                    try:
+                         import ProtWaterPot
+                    except ImportError:
+                         self.compile_potential()
+                    ProtWaterPot.init_param(self._natm)
+                    self._pot = ProtWaterPot.proto_potcalc
+                else:
+                    try:
+                         import dimer_pot
+                    except ImportError:
+                         self.compile_potential()
+                    dimer_pot.init_param_dimer()
+                    self._pot = dimer_pot.dimer_calc
             finally:
                 os.chdir(cur_dir)
 

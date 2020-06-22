@@ -73,6 +73,17 @@ dimer = [[0.000210, -0.040199, 0.000028],
          [1.647240, 0.780469, 0.328402],
          [1.688077, -0.438127, -0.678047],
          [1.199846, -0.040312, 0.062887]]
+import numpy as np
+dimer2 = np.array([[2.254868053895938, 0.000000000000000, 0.000000000000000],
+         [-2.254868053895938, 0.000000000000000, 0.000000000000000],
+         [0.000000000000000, 0.000000000000000, 0.1235103451781876],
+         [-3.013194720920241, 1.489183788836780, -0.7465980020137635],
+         [-3.201587564645578, -0.4544810799466731, 1.498136372134866],
+         [3.013194720920241, -1.489183788836780, -0.7465980020137635],
+         [3.201587564645578, 0.4544810799466731, 1.498136372134866]])
+
+dimer2 = dimer2[[3, 4, 2, 1, -2, -1, 0]]
+
 
 monomer = [[0.93273984, -0.03166913, -0.23931206],
            [-0.43894472, 0.82361013, -0.23931163],
@@ -137,12 +148,14 @@ trimer = [[-0.00032173,  -1.66883417,  -0.56979199],
           [-2.71764621,   0.37748843,   0.71971598],
           [-2.07898673,   0.45950719,   0.00731627]]
 from ProtWaterPES import Potential
-a = np.array([monomer]*3)*ang2bohr
-b = np.array([monomer2]*3)*ang2bohr
+# a = np.array([monomer]*3)*ang2bohr
+b = np.array([dimer2]*3)
 # c = np.array([monomer3]*3)
-d = np.array([monomer4]*3)
-pot = Potential(4)
-print(pot.get_potential(a))
+# d = np.array([monomer4]*3)
+pot = Potential(7, True)
+# print(pot.get_potential(a))
 print(pot.get_potential(b))
+har2wave = 219474.6
+print(pot.get_potential(b)*har2wave)
 # print(pot.get_potential(np.flip(c, 1)))
-print(pot.get_potential(d))
+# print(pot.get_potential(d))

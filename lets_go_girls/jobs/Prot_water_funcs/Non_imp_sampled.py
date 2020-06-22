@@ -142,7 +142,7 @@ def Parr_Potential(Psi):
 
 
 def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
-                    propagation, multicore, threshold, max_thresh, weighting='continuous'):
+                    propagation, multicore, threshold, max_thresh, weighting='continuous', output='before_output_patch'):
     DW = False
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
@@ -160,7 +160,7 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
     prop = float(propagation)
     wait = float(wait_time)
     Vref_array = np.zeros(time_steps)
-
+    a = 0
     for i in range(int(time_steps)):
         if DW is False:
             prop = float(propagation)
@@ -191,6 +191,18 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
         Vref_array[i] = V_ref
         time[i] = i + 1
         sum_weights[i] = np.sum(psi.weights)
+
+        if (i+1) % 500 == 0:
+            print(f'time step {i+1} Energy = {Vref_array[i]}')
+            if i > 500:
+                print(f'Average E ref = {np.mean(Vref_array[500:])}')
+            if a == 0:
+                np.savez(f'wvfn_1_{output}', coords = psi.coords, weights=psi.weights, eref=V_ref)
+                a = 1
+            elif a == 1:
+                np.savez(f'wvfn_2_{output}', coords=psi.coords, weights=psi.weights, eref=V_ref)
+                a = 0
+
         if i >= int(equilibration)-1 and wait <= 0. < prop:
             DW = True
             wait = float(wait_time)

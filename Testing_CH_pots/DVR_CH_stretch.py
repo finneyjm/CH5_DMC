@@ -16,10 +16,11 @@ coords_initial_cs = np.array([[0.000000000000000, 0.000000000000000, 0.000000000
                        [-1.145620108130841, 1.659539840225091, -0.4971351597887673]])
 coords_initial_c2v = np.array([[0.000000000000000, 0.000000000000000, 0.386992362158741],
                        [0.000000000000000, 0.000000000000000, -1.810066283748844],
-                       [1.797239666982623, 0.000000000000000, 1.381637275550612],
-                       [-1.797239666982623, 0.000000000000000, 1.381637275550612],
                        [0.000000000000000, -1.895858229423645, -0.6415748897955779],
-                       [0.000000000000000, 1.895858229423645, -0.6415748897955779]])
+                       [0.000000000000000, 1.895858229423645, -0.6415748897955779],
+                       [1.797239666982623, 0.000000000000000, 1.381637275550612],
+
+                       [-1.797239666982623, 0.000000000000000, 1.381637275550612]])
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
 m_C = 12.0000000000 / (Avo_num*me*1000)
@@ -35,15 +36,18 @@ def grid(a, b, N, CH, coords_initial):
     spacing = np.linspace(a, b, num=N)
     if CH == 1:
         new_coords = CoordinateSet(coords_initial, system=CartesianCoordinates3D)
-        new_coords = new_coords.convert(ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+        new_coords = new_coords.convert(ZMatrixCoordinates, ordering=([[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]]))
+        new_coords = new_coords.convert(CartesianCoordinates3D).coords
+        print(new_coords[1, 0]/ang2bohr)
         g = np.array([new_coords]*N)
         g[:, 1, 0] = spacing
-    if CH is not 1:
+    elif CH is not 1:
         sub = np.array([coords_initial[1]])
         coords_initial[1] = coords_initial[CH]
         coords_initial[CH] = sub
         new_coords = CoordinateSet(coords_initial, system=CartesianCoordinates3D)
-        new_coords = new_coords.convert(ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+        new_coords = new_coords.convert(ZMatrixCoordinates, ordering=([[0, 0, 0, 0], [1, 0, 0, 0], [2, 0, 1, 0], [3, 0, 1, 2], [4, 0, 1, 2], [5, 0, 1, 2]])).convert(CartesianCoordinates3D).coords
+        print(new_coords[1, 0]/ang2bohr)
         g = np.array([new_coords] * N)
         g[:, 1, 0] = spacing
     else:
@@ -51,7 +55,7 @@ def grid(a, b, N, CH, coords_initial):
     return g
 
 
-def Potential(grid, CH):
+def Potential(grid):
     V = CH5pot.mycalcpot(grid, len(grid[:, 0, 0]))
     V_final = np.diag(np.array(V))
     return V_final
@@ -83,29 +87,26 @@ def Energy(T, V):
     return En, Eigv
 
 
-def run(CH, type, coords, mass):
-    g = grid(0.4, 6., 1000, CH, coords)
-    V = Potential(g, CH)
+def run(CH, coords, mass):
+    g = grid(0.4, 6., 5000, CH, coords)
+    V = Potential(g)
     T = Kinetic_Calc(g, mass)
     En, Eig = Energy(T, V)
     print(En[0]*har2wave)
     if np.max(Eig[:, 0]) < 0.005:
         Eig[:, 0] *= -1.
-    if CH == 2:
-    # plt.plot(g[:, 1, 0], np.diag(V)*har2wave)
-    # plt.plot(g[:, 1, 0], (Eig[:, 0])*50000 + En[0]*har2wave)
-        plt.plot(g[:, 1, 0]/ang2bohr, Eig[:, 0])
-        plt.xlim(0.6, 1.8)
-    # plt.ylim(0, 20000)
-        plt.xlabel(r'r$_{CH}$ ($\AA$)', fontsize=16)
-        plt.ylabel('P(r)', fontsize=16)
-    # plt.show()
-    # plt.close()
-        plt.savefig('GSW_2_min_wvfn_for_ppt.png')
-    # np.save(f'GSW_{type}_CD_{CH}', Eig[:, 0])
+    print((En[1]-En[0])*har2wave)
     return g[:, 1, 0], Eig[:, 0]
 
 
+for i in range(5):
+    # print(f'Min {i+1}')
+    # g, eig = run(i+1, coords_initial_min, m_red)
+    # print(f'Cs {i+1}')
+    # g, eig = run(i+1, coords_initial_cs, m_red)
+    print(f'C2v {i+1}')
+    g, eig = run(i+1, coords_initial_c2v, m_red)
+    np.save(f'GSW_c2v_CH_{i+1}', eig)
 # wvfns = [1, 2, 3, 4, 5]
 # wvfn = np.zeros((5, 1000))
 # for i in np.arange(1, 6):
@@ -121,12 +122,12 @@ def run(CH, type, coords, mass):
 # plt.savefig('GSWs_min_for_ppt.png', bbox_inches='tight')
 # run(i, 'cs', coords_initial_cs, m_red_D)
 # run(i, 'c2v', coords_initial_c2v, m_red_D)
-g = grid(0.4, 6, 5000, 5, coords_initial_min)
-a = np.linspace(0.4, 6, 5000)
-V = np.diag(Potential(g, 5))
-plt.plot(a/ang2bohr, V)
-plt.xlim(0.6, 2.5)
-plt.ylim(0, 7000)
+# g = grid(0.4, 6, 5000, 2, coords_initial_min)
+# a = np.linspace(0.4, 6, 5000)
+# V = np.diag(Potential(g, 2))
+# plt.plot(a/ang2bohr, V)
+# plt.xlim(0.6, 2.5)
+# plt.ylim(0, 7000)
 # plt.show()
-np.save('Potential_CH_stretch5', V)
+# np.save('Potential_CH_stretch2', V)
 

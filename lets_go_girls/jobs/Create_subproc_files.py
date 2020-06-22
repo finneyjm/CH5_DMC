@@ -13,15 +13,15 @@ bro = [5, 10]
 # for k in range(4):
 #         for j in range(len(bro)):
             # for i in range(5):
-for j in range(6):
+# for j in range(6):
     # for i in range(5):
-        for a, b in zip(walkers, size):
-            with open(f'Non_imp_sampled_{j}H_ts_10_subproc_{b}.py', 'w') as myfile:
-                myfile.write('import subprocess as proc\n')
-                myfile.write(f'walkers = {a}\n\n')
-                myfile.write('for j in walkers:\n')
-                myfile.write('    for i in range(5):\n')
-                myfile.write(f'        proc.call(["python", "runDMC.py", '
-                             f'f"params_Non_imp_sampled_{j}H_ts_10_{{j}}_walkers_test_{{i+1}}"])\n')
-                myfile.close()
+for a, b in zip(walkers, size):
+    with open(f'time_test.py', 'w') as myfile:
+        myfile.write('import subprocess as proc\n')
+        myfile.write(f'walkers = {a}\n\n')
+        myfile.write('for j in walkers:\n')
+        myfile.write('    for i in range(5):\n')
+        myfile.write(f'        proc.call(["python", "runDMC.py", '
+                     f'f"params_Non_imp_sampled_{5}H_ts_10_{{j}}_walkers_test_{{i+1}}"])\n')
+        myfile.close()
 

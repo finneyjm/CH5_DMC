@@ -69,27 +69,28 @@ def let_do_some_plotting():
     psi[0] = GSW[0, -1]
     psi[1] = GSW[0, 2]
     psi[2] = avg_wvfn
-    pot = interpolate.splrep(grid, np.load('Potential_CH_stretch5.npy'), s=0)
+    pot = interpolate.splrep(grid, np.load('Potential_CH_stretch2.npy'), s=0)
     Psi.V = Potential(Psi, pot)
     # np.savetxt('Potential_CH_stretch_5.csv', Psi.V*har2wave, delimiter=',')
     fig, axes = plt.subplots()
-    axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, color='black', label=r'V(r$_{\rm{5}}$')
-    axes.set_ylim(-10000, 10000)
-    axes.set_xlabel(r'r$_{\rm{CH}}$ (Angstrom)')
-    axes.set_ylabel(r'Energy (cm$^{-1}$)')
-    axes.legend(loc='lower right')
+    axes.plot(Psi.coords/ang2bohr, Psi.V*har2wave, linewidth=3, color='black', label='V')
+    # axes.set_ylim(-10000, 10000)
+    axes.set_xlabel(r'r$_{\rm{CH}^{(2)}}$ ($\rm\AA$)', fontsize=22)
+    axes.set_ylabel(r'E$_0$(cm$^{-1}$)', fontsize=22)
+    # axes.legend(loc='lower right')
     fig.savefig('Local_energy_powerpoint_potential_1.png')
-    colors = ['red', 'green', 'orange']
-    labels = [r'E$_L(r_{CH_{\rm{5}}})$', r'E$_{L}(r_{CH_{\rm{3}}})$', r'E$_{L}(r_{avg})$']
+    colors = ['red', 'orange', 'indigo']
+    labels = [r'E$_L^{(\rm{CH}^{\rm{5}})}$', r'E$_L^{(\rm{CH}^{\rm{2}})}$', r'E$_L^{(\rm{CH}^{\rm{avg}})}$']
+    line = ['--', 'solid', 'dotted']
     for i in range(3):
         interp = interpolate.splrep(grid, psi[i, :], s=0)
         Psi.El, wvfn = E_loc(Psi, interp)
-        # np.savetxt(f'Local_Energy_CH_stretch_5_{colors[i]}.csv', Psi.El*har2wave, delimiter=',')
-        # np.savetxt(f'Wavefunction_CH_stretch_5_{colors[i]}.csv', wvfn, delimiter=',')
-        axes.plot(Psi.coords/ang2bohr, Psi.El*har2wave, color=colors[i], label=labels[i])
-        axes.set_ylim(-10000, 10000)
-        axes.legend(loc='lower right')
-        # fig.savefig(f'Local_energy_powerpoint_CH_stretch_1{i}.png')
+        axes.plot(Psi.coords/ang2bohr, Psi.El*har2wave, linewidth=3, color=colors[i], linestyle=line[i], label=labels[i])
+    axes.set_xlim(0.8, 1.6)
+    axes.set_ylim(-7500, 10000)
+    leg = plt.legend(loc='lower left', fontsize=14)
+    leg.get_frame().set_edgecolor('white')
+    plt.tick_params(labelsize=16)
     plt.tight_layout()
     plt.show()
     plt.close(fig)
