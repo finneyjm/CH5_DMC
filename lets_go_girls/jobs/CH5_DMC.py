@@ -40,7 +40,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
         imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, multicore=True,
         trial_wvfn=None, rand_samp=True, system='CH5', imp_samp_equilibration=True,
         imp_samp_equilibration_time=5000, equilibrations_dtau=10, threshold=None, max_thresh=None,
-        weighting='continuous', bare_dimer=False):
+        weighting='continuous'):
     interp_exp = None
     if propagation is None:
         propagation = int(250/dtau)

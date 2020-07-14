@@ -212,8 +212,8 @@ def gmat(mu1, mu2, mu3, r1, r2, ang):
 
 def angles(coords, dists, num_waters):
     if num_waters == 2:
-        v1 = (coords[:, 1] - coords[:, 3]) / np.broadcast_to(dists[:, 0, None], (len(dists), 3))
-        v2 = (coords[:, 2] - coords[:, 3]) / np.broadcast_to(dists[:, 1, None], (len(dists), 3))
+        v1 = (coords[:, 0] - coords[:, 3]) / np.broadcast_to(dists[:, 0, None], (len(dists), 3))
+        v2 = (coords[:, 1] - coords[:, 3]) / np.broadcast_to(dists[:, 1, None], (len(dists), 3))
         v3 = (coords[:, 4] - coords[:, 6]) / np.broadcast_to(dists[:, 2, None], (len(dists), 3))
         v4 = (coords[:, 5] - coords[:, 6]) / np.broadcast_to(dists[:, 3, None], (len(dists), 3))
 

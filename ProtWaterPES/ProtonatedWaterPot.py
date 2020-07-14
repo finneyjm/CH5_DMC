@@ -2,15 +2,16 @@ import os, sys
 import numpy as np
 
 
+
 class Potential:
 
     has_been_loaded = False
 
-    def __init__(self, natm, bare_dimer=False):
+    def __init__(self, natm):
         if self.has_been_loaded:
             raise Exception("Can't load this Bowman potential twice")
         self._natm = natm
-        self._dimer = bare_dimer
+        # self._dimer = bare_dimer
         self.load_potential()
 
     def init_potential(self):
@@ -44,20 +45,12 @@ class Potential:
                 print(os.getcwd())
 
                 sys.path.insert(0, where_u_at)
-                if self._dimer is False:
-                    try:
-                         import ProtWaterPot
-                    except ImportError:
-                         self.compile_potential()
-                    ProtWaterPot.init_param(self._natm)
-                    self._pot = ProtWaterPot.proto_potcalc
-                else:
-                    try:
-                         import dimer_pot
-                    except ImportError:
-                         self.compile_potential()
-                    dimer_pot.init_param_dimer()
-                    self._pot = dimer_pot.dimer_calc
+                try:
+                     import ProtWaterPot
+                except ImportError:
+                     self.compile_potential()
+                ProtWaterPot.init_param(self._natm)
+                self._pot = ProtWaterPot.proto_potcalc
             finally:
                 os.chdir(cur_dir)
 
@@ -76,6 +69,14 @@ class Potential:
         if self._natm == 4:
             coords = np.flip(coords, 1)
             pot = self._pot(coords, len(coords), self._natm)
+        elif len(coords) == 21:
+            coord = coords.reshape(1, 7, 3)
+            # print(coords.shape)
+            # print(coords)
+            # print(coord)
+            # print(coord.shape)
+            pot = self._pot(coord.T, len(coord), self._natm)
+            # print(pot)
         else:
             pot = self._pot(coords.T, len(coords), self._natm)
 
@@ -85,8 +86,8 @@ class Potential:
             death = np.argwhere(pot < (ptrimer-one_wvnum))
         elif self._natm == 13:
             death = np.argwhere(pot < (ptetramer-one_wvnum))
-        elif self._natm == 7:
-            death = np.argwhere(pot < (pdimer-one_wvnum))
+        # elif self._natm == 7:
+        #     death = np.argwhere(pot < (pdimer-one_wvnum))
         elif self._natm == 4:
             death = np.argwhere(pot < -one_wvnum)
         else:

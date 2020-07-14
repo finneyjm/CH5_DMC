@@ -5,19 +5,20 @@ walkers = [10, 20, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 
 # walkers = [50000]
 # bro_str = ['5', '10']
 # bro = [5, 10]
-atoms = ['H', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O']
-ts = 8
+atoms = ['H', 'H', 'H', 'O', 'H', 'H', 'O']
+ts = 1
 thresh = None
 thresh_num = 0.1
-system = 'ptetramer'
-type_of_sim = f'non_imp_samp_ts_8'
+system = 'pdimer'
+type_of_sim = f'full_imp_samp'
 max_thresh = None
-imp_samp = None
+imp_samp = True
 weighting = None
-params = 'tetramer'
+params = 'waters'
 shift = False
 patch = True
-deuterated = True
+deuterated = False
+bare = True
 # for j in range(len(bro)):
 # for ts in bro:
 # for j in range(6):
@@ -131,7 +132,7 @@ for i in range(5):
             myfile.write(f'    "system": "{system}",\n')
             myfile.write('    "time_steps": 20000,\n')
             myfile.write(f'    "dtau": {ts},\n')
-            myfile.write('    "multicore": True,\n')
+            myfile.write('    "multicore": False,\n')
             myfile.write('    "equilibration": 5000,\n')
             myfile.write('    "wait_time": 500,\n')
             myfile.write(f'    "output": "{system}_{type_of_sim}_{walkers[x]}_Walkers_Test_{i+1}",\n')
@@ -145,6 +146,8 @@ for i in range(5):
                 myfile.write(f'    "weighting": "discrete"\n')
             if max_thresh is not None:
                 myfile.write(f'    "max_thesh": {max_thresh}\n')
+            if bare:
+                myfile.write(f'    "bare_dimer": {bare}\n')
             # myfile.write('    "imp_samp_type": "dev_dep",\n')
             # myfile.write('    "hh_relate": hh,\n')
             # myfile.write('    "rand_samp": False,\n')

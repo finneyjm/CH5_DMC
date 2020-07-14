@@ -94,29 +94,34 @@ hbond_wvfn2 = np.load('../wvfns/free_oh_wvfn.npy')
 
 x1 = (hbond_wvfn2[:, 0] - hbond_wvfn2[np.argmax(hbond_wvfn[:, 1]), 0])
 x2 = (hbond_wvfn[:, 0])
-print(x2/x1)
-print(x1/x2)
+hyd = np.load('../wvfns/hydronium_oh_wvfn.npy').T
+
+arg = np.argmax(hyd[1, :])
+print(hyd[0, arg]/ang2bohr)
+#print(x2/x1)
+#print(x1/x2)
 
 
 def calculate_std(x, wvfn):
     return np.sqrt(np.dot(wvfn**2, x**2)-(np.dot(wvfn**2, x)**2))
 
 
-print(calculate_std(x1, hbond_wvfn2[:, 1]))
+print(calculate_std(hyd[0]/ang2bohr, hyd[1]/(np.sqrt(np.dot(hyd[1], hyd[1])))))
+#print(calculate_std(x1, hbond_wvfn2[:, 1]))
 new_wvfn = hbond_wvfn2[:, 1]/(np.sqrt(np.dot(hbond_wvfn2[:, 1], hbond_wvfn2[:, 1])))
-print(np.dot(new_wvfn, new_wvfn))
-print(np.dot(hbond_wvfn2[:, 1], hbond_wvfn2[:, 1]))
-print(np.dot(hbond_wvfn[:, 1], hbond_wvfn[:, 1]))
+#print(np.dot(new_wvfn, new_wvfn))
+#print(np.dot(hbond_wvfn2[:, 1], hbond_wvfn2[:, 1]))
+#print(np.dot(hbond_wvfn[:, 1], hbond_wvfn[:, 1]))
 a = calculate_std(x1, new_wvfn)
-print(calculate_std(x1/a, hbond_wvfn2[:, 1]/np.dot(hbond_wvfn2[:, 1], hbond_wvfn2[:, 1])))
+#print(calculate_std(x1/a, hbond_wvfn2[:, 1]/np.dot(hbond_wvfn2[:, 1], hbond_wvfn2[:, 1])))
 # print(hbond_wvfn2[:, 1]/hbond_wvfn[:, 1])
 # print(x1/a/x2)
-print(calculate_std(a*x2, hbond_wvfn[:, 1]))
+#print(calculate_std(a*x2, hbond_wvfn[:, 1]))
 
 oo_scale_trim = np.array(np.loadtxt('bowman_h7o3_Std_Polynomials'))
 oo_shift_trim = np.array(np.loadtxt('bowman_h7o3_Re_Polynomials'))
 
-x = np.linspace(2.25, 3.55, 100)*ang2bohr
+x = np.linspace(2.25, 3.55, 1000)*ang2bohr
 
 scale_tet = np.poly1d(oo_scale_tet)
 shift_tet = np.poly1d(oo_shift_tet)
@@ -137,25 +142,30 @@ shift_trim = np.poly1d(oo_shift_trim)
 # plt.tight_layout()
 # plt.show()
 
-fig, ax1 = plt.subplots()
+fig, axes = plt.subplots(1, 2)
 
-ax2 = ax1.twinx()
+# ax2 = ax1.twinx()
 
-ax1.plot(x/ang2bohr, scale_tet(x)/ang2bohr, color='blue', linewidth=4.0, linestyle='--', label=r'$\rmH_9O_4^+$')
-ax1.plot(x/ang2bohr, scale_trim(x)/ang2bohr, color='blue', linewidth=4.0, label=r'$\rmH_7O_3^+$')
+axes[0].plot(x/ang2bohr, shift_tet(x)/ang2bohr, color='purple', linewidth=4.0, label=r'$\rmH_9O_4^+$')
+axes[0].plot(x/ang2bohr, shift_trim(x)/ang2bohr, color='blue', linewidth=4.0, label=r'$\rmH_7O_3^+$')
+# ax1.scatter(6, 0.98499, color='black', label='hydronium rmax')
+# ax2.scatter(6, 0.070644, color='purple', label='hydronium std')
+axes[1].plot(x/ang2bohr, scale_tet(x)/ang2bohr, color='purple', linewidth=4.0, label = r'$\rmH_9O_4^+$')
+axes[1].plot(x/ang2bohr, scale_trim(x)/ang2bohr, color='blue', linewidth=4.0, label=r'$\rmH_7O_3^+$')
+axes[0].set_xlabel(r'R$_{\rm{OO}} (\rm\AA)$', fontsize=22)
+axes[1].set_xlabel(r'R$_{\rm{OO}} (\rm\AA)$', fontsize=22)
+axes[0].set_ylabel(r'r$_{\rm{OH}}^{\rm{max}} (\rm\AA)$', fontsize=22)
+axes[1].set_ylabel(r'$\rm\sigma_{OH} (\rm\AA)$', fontsize=22)
 
-ax2.plot(x/ang2bohr, shift_tet(x)/ang2bohr, color='red', linewidth=4.0, linestyle='--')
-ax2.plot(x/ang2bohr, shift_trim(x)/ang2bohr, color='red', linewidth=4.0)
-ax1.set_xlabel(r'R$_{\rm{OO}} (\rm\AA)$', fontsize=22)
-ax1.set_ylabel(r'r$_{\rm{OH}}^{\rm{max}} (\rm\AA)$', fontsize=22, color='blue')
-ax2.set_ylabel(r'$\rm\sigma_{OH} (\rm\AA)$', fontsize=22, color='red')
-
-ax1.legend(fontsize=14)
+leg = axes[0].legend(fontsize=14)
+leg.get_frame().set_edgecolor('white')
 # ax2.legend()
-ax1.tick_params(axis='y', labelleft=True, labelright=False,
-                    left=True, right=False, labelsize=14, labelcolor='blue')
-ax1.tick_params(axis='x', labelbottom=True, labeltop=False, bottom=True, top=False, labelsize=14)
-ax2.tick_params(labelbottom=True, labeltop=False, labelleft=False, labelright=True,
-                     bottom=True, top=False, left=False, right=True, labelsize=14, labelcolor='red')
+axes[0].tick_params(axis='y', labelleft=True, labelright=False,
+                    left=True, right=False, labelsize=14)
+axes[0].tick_params(axis='x', labelbottom=True, labeltop=False, bottom=True, top=False, labelsize=14)
+axes[1].tick_params(axis='x', labelbottom=True, labeltop=False, bottom=True, top=False, labelsize=14)
+axes[1].tick_params(labelbottom=True, labeltop=False, labelleft=False, labelright=True,
+                     bottom=True, top=False, left=False, right=True, labelsize=14)
+axes[1].yaxis.set_label_position('right')
 plt.tight_layout()
 plt.show()

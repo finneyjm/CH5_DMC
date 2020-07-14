@@ -20,21 +20,21 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     N_i = len(imp_samp_walkers)
     N_n = len(non_imp_samp_walkers)
     energies_imp = np.zeros((N_i, trials_i))
-    energies_imp2 = np.zeros((N_i, trials_i))
+    energies_imp2 = np.zeros((N_i+1, trials_i))
     energies_imp3 = np.zeros((N_i, trials_i))
     energies_non = np.zeros((N_n, trials_ni))
 
     for j in range(trials_ni):
         for i in range(N_n):
-            Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled{ni[isotop]}/' +
-                             f'Non_imp_sampled{ni[isotop]}_{non_imp_samp_walkers[i]}_' +
-                             f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
-            energies_non[i, j] += np.mean(Energy[5000:])
+            # Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled{ni[isotop]}/' +
+            #                  f'Non_imp_sampled{ni[isotop]}_{non_imp_samp_walkers[i]}_' +
+            #                  f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
+            # energies_non[i, j] += np.mean(Energy[5000:])
             #
-            # Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled_pdimer/' +
-            #                   f'Non_imp_sampled_pdimer_{non_imp_samp_walkers[i]}_' +
-            #                   f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
-            # energies_non[i, j] += np.mean(Energy[5000:]) + 11792.2255946
+            Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled_pdimer/' +
+                              f'Non_imp_sampled_pdimer_{non_imp_samp_walkers[i]}_' +
+                              f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
+            energies_non[i, j] += np.mean(Energy[5000:]) + 11804.25054877
             #
             # Energy = np.load(f'Trial_wvfn_testing/results/ptrimer_non_imp_samp/' +
             #                  f'ptrimer_non_imp_samp_{non_imp_samp_walkers[i]}_' +
@@ -48,7 +48,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             # Energy = Energy['Eref']*har2wave
             # a = -0.122146858971399 * har2wave
             # energies_non[i, j] = np.mean(Energy[avg_beg:avg_end]) - a
-            #
+
             # Energy = np.load(f'Trial_wvfn_testing/results/pmonomer_non_imp_samp/' +
             #                  f'pmonomer_non_imp_samp_{non_imp_samp_walkers[i]}_' +
             #                  f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
@@ -58,20 +58,20 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
 
     for j in range(trials_i):
         for i in range(N_i):
-            Energy = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/' +
-                             f'HH_to_rCHrCD_{isotop}H_GSW2_{imp_samp_walkers[i]}_' +
-                             f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
-            energies_imp[i, j] += np.mean(Energy[5000:])
-
+            # Energy = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/' +
+            #                  f'HH_to_rCHrCD_{isotop}H_GSW2_{imp_samp_walkers[i]}_' +
+            #                  f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
+            # energies_imp[i, j] += np.mean(Energy[5000:])
+            #
             # Energy = np.load(f'Trial_wvfn_testing/results/Average_fd/' +
             #                  f'Average_fd_{imp_samp_walkers[i]}_Walkers' +
             #                  f'_Test_{j+1}.npz')['Eref']*har2wave
             # energies_imp[i, j] += np.mean(Energy[5000:])
 
-            # Energy = np.load(f'Trial_wvfn_testing/results/pdimer_full_imp_samp/' +
-            #                   f'pdimer_full_imp_samp_{imp_samp_walkers[i]}_' +
-            #                   f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
-            # energies_imp[i, j] = np.mean(Energy[5000:]) + 11792.22559467
+            Energy = np.load(f'Trial_wvfn_testing/results/pdimer_full_imp_samp/' +
+                              f'pdimer_full_imp_samp_{imp_samp_walkers[i]}_' +
+                              f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
+            energies_imp[i, j] = np.mean(Energy[5000:]) + 11804.25054877
             #
             #
             # Energy = np.load(f'Trial_wvfn_testing/results/ptrimer_full_imp_samp/' +
@@ -111,11 +111,11 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
             #                  f'Walkers_Test_{j+1}.npz')['Eref'] * har2wave
             # a = 0 * har2wave
             # energies_imp[i, j] = np.mean(Energy[5000:]) - a
-            Energy = np.load(f'Trial_wvfn_testing/results/pmonomer_full_imp_samp_water/' +
-                             f'pmonomer_full_imp_samp_water_{imp_samp_walkers[i]}_' +
-                             f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
-            a = 0 * har2wave
-            energies_imp2[i, j] = np.mean(Energy[5000:]) - a
+            # Energy = np.load(f'Trial_wvfn_testing/results/pmonomer_full_imp_samp_water/' +
+            #                  f'pmonomer_full_imp_samp_water_{imp_samp_walkers[i]}_' +
+            #                  f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
+            # a = 0 * har2wave
+            # energies_imp2[i, j] = np.mean(Energy[5000:]) - a
 
 
 
@@ -135,8 +135,8 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     #     a = -0.122146858971399 * har2wave
     #     energies_imp[-1, j] = np.mean(Energy[avg_beg:avg_end]) - a
 
-    # energies_non2 = np.zeros((3, 5))
-    # walkers = [10000, 20000, 40000]
+    # energies_non2 = np.zeros((6, 5))
+    # walkers = [10000, 20000, 40000, 50000, 60000, 75000]
     # for i in range(len(walkers)):
     #     for j in range(trials_ni):
     #         Energy = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp_ts_10/' +
@@ -145,6 +145,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     #         Energy = Energy['Eref'] * har2wave
     #         a = -0.122146858971399 * har2wave
     #         energies_non2[i, j] = np.mean(Energy[avg_beg:avg_end]) - a
+    # print(energies_non2)
     # avg_non_2 = np.mean(energies_non2, axis=1)
     # std_non_2 = np.std(energies_non2, axis=1)
 
@@ -192,8 +193,8 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
 
     avg_non = np.mean(energies_non, axis=1)
     #dimer
-    # avg_non = np.append(avg_non, 12359.101235609602)
-    # non_imp_samp_walkers = np.append(non_imp_samp_walkers, 20000)
+    avg_non = np.append(avg_non, 12359.101235609602-11792.22559467+11804.25054877)
+    non_imp_samp_walkers = np.append(non_imp_samp_walkers, 20000)
 
     #trimer
     # avg_non = np.append(avg_non, 18006.18049926232)
@@ -205,7 +206,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
 
     std_non = np.std(energies_non, axis=1)
     #dimer
-    # std_non = np.append(std_non, 4.1243809112563055)
+    std_non = np.append(std_non, 4.1243809112563055)
 
     #trimer
     # std_non = np.append(std_non, 6.935699043543936)
@@ -234,7 +235,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
 
     # print(energies_imp)
     # np.savetxt(f'energies_imp_monomer_{avg_beg}_to_{avg_end}.csv', energies_imp, delimiter=',')
-    np.savetxt(f'energies_imp2_monomer_{avg_beg}_to_{avg_end}.csv', energies_imp2, delimiter=',')
+    # np.savetxt(f'energies_imp2_monomer_{avg_beg}_to_{avg_end}.csv', energies_imp2, delimiter=',')
     # np.savetxt(f'energies_imp3_{avg_beg}_to_{avg_end}.csv', energies_imp3, delimiter=',')
     # np.savetxt(f'energies_non_monomer_{avg_beg}_to_{avg_end}.csv', energies_non, delimiter=',')
     # print(energies_imp2)
@@ -243,30 +244,30 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     fig, axes = plt.subplots()
     # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [18002.9] * 5000, yerr= 14.4, color='purple', label="Anne's Std")
     # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [18002.9] * 5000, yerr= 0, color='black', label="Anne's Value")
-    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [7452] * 5000, yerr= 2, color='purple', label="Lit Std")
-    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [7451] * 5000, yerr= 0, color='black', label="Lit Value")
-    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [12393] * 5000, yerr=5, color='grey')
-    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [12393] * 5000, yerr=0, color='black',
-    #               label="Lit Value")
+    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [7453.9] * 5000, yerr= 5.84, color='grey')
+    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [7453.9] * 5000, yerr= 0, color='black', label="Literature")
+    axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [12393] * 5000, yerr=5, color='grey')
+    axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [12393] * 5000, yerr=0, color='black',
+                  label="Literature")
     # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [18018] * 5000, yerr=3, color='grey')
     # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [18018] * 5000, yerr=0, color='black',
-    #               label="Lit Value")
+    #               label="Literature")
     # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [23405] * 5000, yerr=21, color='grey')
     # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [23405] * 5000, yerr=0, color='black',
-    #               label="Lit Value")
-    axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [ens[isotop]] * 5000, yerr=ens_std[isotop],
-                  color='grey', alpha=0.1)
-    axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [ens[isotop]] * 5000, yerr=0, color='black', label="Lit. Value")
+    #               label="Literature")
+    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [ens[isotop]] * 5000, yerr=ens_std[isotop],
+    #               color='grey', alpha=0.1)
+    # axes.errorbar(np.linspace(0, non_imp_samp_walkers[-1], 5000), [ens[isotop]] * 5000, yerr=0, color='black', label="Literature")
 
     axes.errorbar(non_imp_samp_walkers, avg_non, yerr=std_non, marker='s', markerfacecolor='none', color='red', label='Unguided')
-    # axes.errorbar(np.append(walkers, (50000, 75000)), np.append(avg_non_2, (23409.767609315135,23397.004058174014)),
-    #               yerr=np.append(std_non_2, (11.518102585589363, 2.6360764022356307)), marker='s', markerfacecolor='none', color='black',
-    #               label='No Impt. Samp. ts 10')
+    # axes.errorbar(walkers,  avg_non_2,
+    #               yerr=std_non_2, marker='s', markerfacecolor='none', color='green',
+    #               label='Unguided ts = 10 a.u.')
     # axes.errorbar(walkers, avg_non_2, yerr=std_non_2, marker='s', markerfacecolor='none', color='black',
     #               label='No Impt. Samp. ts = 10')
     # axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='blue', label=r'Guided (H$_7$O$_3^+$)', marker='o')
-    # axes.errorbar(imp_samp_walkers, avg_imp2, yerr=std_imp2, color='orange', label='Guided (water)', marker='v')
-    axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='blue', label='Guided', marker='o')
+    axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='orange', label='Guided (water)', marker='v')
+    # axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='blue', label='Guided', marker='o')
 
     # axes.errorbar(np.append(imp_samp_walkers, (30000, 40000)), avg_imp, yerr=std_imp, color='purple', label=r'Guided (H$_9$O$_4^+$)', marker='s')
     # axes.errorbar(np.append(imp_samp_walkers, 30000), avg_imp2, yerr=std_imp2, color='orange', label='Guided (water)', marker='v')
@@ -312,9 +313,9 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     # axes[1].set_ylim(7420, 7499)
     # axes.set_ylim(7430, 7530)
     # axes.set_ylim(17970, 18070)
-    # axes.set_ylim(12330, 12430)
-    leg = plt.legend(loc='upper right', fontsize=14)
-    leg.get_frame().set_edgecolor('white')
+    axes.set_ylim(12350, 12450)
+    # leg = plt.legend(loc='upper right', fontsize=14)
+    # leg.get_frame().set_edgecolor('white')
     # axes[1].legend()
     plt.tight_layout()
     # fig.savefig(f'Convergence_plots/Energy_convergence_CH5_for_ppt.png')
@@ -342,9 +343,9 @@ walkers99 = [50, 100, 200, 500, 2000, 5000]
 # walkers4 = [100, 200, 500, 1000, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
 #             5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 20000]
 # for i in range(6):
-lets_get_some_energies(walkers10, walkers12, 5, 5, 0)
-# plt.show()
-# plt.close()
+lets_get_some_energies(walkers12, walkers11, 5, 5, 0)
+plt.show()
+plt.close()
 
 # blah = np.load(f'Trial_wvfn_testing/results/ptetramer_full_imp_samp/' +
 #                              f'ptetramer_full_imp_samp_{5000}_' +

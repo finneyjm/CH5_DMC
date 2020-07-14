@@ -25,58 +25,58 @@ def angles(coords):
 
 
 bins = 60
-# new_amps = np.zeros((3, bins, 20))
-# walk = [10000, 20000, 40000]
-# samp = ['full', 'non', 'non']
-# for trial, w, s in zip(range(len(walk)), walk, samp):
-#     for i in range(20):
-#         wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}_imp_samp/' +
-#                         f'ptrimer_{s}_imp_samp_{w}_' +
-#                         f'Walkers_Test_{5}.npz')
-#         coords = wvfn1['coords'][i]
-#         coords1 = coords
-#         des = wvfn1['des'][i]
-#         weights1 = des
-#         ang1 = angles(coords1)
-#         amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-#         bins1 = (xx[1:] + xx[:-1]) / 2.
-#         new_amps[trial, :, i] = amp1
-# avg = np.average(new_amps, axis=2)
-# std = np.std(new_amps, axis=2)
-# samp = ['Guided', 'Unguided', 'Unguided']
-# colors = ['red', 'blue', 'green']
-# order = [2, 1, 0]
-# sub = [-1, 0, 1]
-# for i in order:
-#     plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk[i]}')
-#     std_x = [110, 120, 130]
-#     plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-#     plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-#     plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-# leg = plt.legend(loc='upper left', fontsize=14)
-# leg.get_frame().set_edgecolor('white')
-# plt.ylim(-0.005, 0.125)
-# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-#                 bottom=True, top=False, left=True, right=False, labelsize=14)
-# plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
-# plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
-# plt.tight_layout()
-# plt.show()
+new_amps = np.zeros((3, bins, 20))
+walk = [10000, 10000, 10000]
+samp = ['full_imp_samp', 'full_imp_samp_w_tetramer_params_patched', 'imp_samp_waters']
+for trial, w, s in zip(range(len(walk)), walk, samp):
+    for i in range(20):
+        wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}/' +
+                        f'ptrimer_{s}_10000_' +
+                        f'Walkers_Test_{5}.npz')
+        coords = wvfn1['coords'][i]
+        coords1 = coords
+        des = wvfn1['des'][i]
+        weights1 = des
+        ang1 = angles(coords1)
+        amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+        bins1 = (xx[1:] + xx[:-1]) / 2.
+        new_amps[trial, :, i] = amp1
+avg = np.average(new_amps, axis=2)
+std = np.std(new_amps, axis=2)
+samp = ['Trimer Params', 'Tetramer Params', 'Water Params'] 
+colors = ['red', 'black', 'orange']
+order = [2, 1, 0]
+sub = [-1, 0, 1]
+for i in order:
+    plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk[i]}')
+    std_x = [110, 120, 130]
+    plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+    plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+    plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+leg = plt.legend(loc='upper left', fontsize=14)
+leg.get_frame().set_edgecolor('white')
+plt.ylim(-0.005, 0.125)
+plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False, 
+                bottom=True, top=False, left=True, right=False, labelsize=14)
+plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
+plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
+plt.tight_layout()
+plt.show()
 
 
-walkers = 40000
+walkers = 10000
 
-imp_samp = 'non'
+imp_samp = 'full_imp_samp_w_tetramer_params_patched'
 collect_coords = np.zeros((walkers, 20))
 collect_weights = np.zeros((walkers, 20))
 amps = np.zeros((bins, 20))
 
 for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}_imp_samp/' +
-                                 f'ptrimer_{imp_samp}_imp_samp_{walkers}_' +
+    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+                                 f'ptrimer_{imp_samp}_{walkers}_' +
                                  f'Walkers_Test_{5}.npz')
     coords = wvfn1['coords'][i]
-    # coords1 = np.reshape(coords, (coords.shape[0]*coords.shape[1], coords.shape[2], coords.shape[3]))
+   # coords1 = np.reshape(coords, (coords.shape[0]*coords.shape[1], coords.shape[2], coords.shape[3]))
     coords1 = coords
     des = wvfn1['des'][i]
     weights1 = des

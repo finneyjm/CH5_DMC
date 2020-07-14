@@ -121,7 +121,8 @@ monomer4 = [[r*np.sin(beta), 0, r*np.cos(beta)],
 import numpy as np
 np.save('trimer_coords', np.array(trimer)*ang2bohr)
 np.save('tetramer_coords', np.array(tetramer))
-np.save('dimer_coords', np.array(dimer)*ang2bohr)
+np.save('dimer_coords', np.array(dimer2))
+print(dimer2)
 np.save('monomer_coords', np.array(monomer)*ang2bohr)
 np.save('monomer_coords_from_Anne', np.array(monomer2)*ang2bohr)
 
@@ -147,15 +148,54 @@ trimer = [[-0.00032173,  -1.66883417,  -0.56979199],
           [-2.55611419,   0.78549017,  -0.75941312],
           [-2.71764621,   0.37748843,   0.71971598],
           [-2.07898673,   0.45950719,   0.00731627]]
-from ProtWaterPES import Potential
+from ProtWaterPES.ProtonatedWaterPot import Potential
+from scipy import optimize
+
+pot = Potential(7)
+blah = [[-3.02335769e+00,  1.47088648e+00, -7.54653891e-01],
+  [-3.20568026e+00, -4.82187122e-01,  1.47684554e+00],
+  [-3.54108573e-04,  3.42610666e-04,  1.19594149e-01],
+  [-2.25285171e+00,  2.81378090e-04, -2.74881609e-04],
+  [ 3.02279864e+00, -1.47210751e+00, -7.50958455e-01],
+  [ 3.20473079e+00,  4.85583323e-01,  1.47652817e+00],
+  [ 2.25219663e+00,  9.32069234e-05,  2.19029686e-04]]
+a = np.array([blah]*1)
+har2wave = 219474.6
+# print(a.shape)
+# print(pot.get_potential(a.flatten()))
+# result = optimize.minimize(pot.get_potential, a, method='Nelder-Mead')
+# print(result.success)
+# print(result.x.reshape(1, 7, 3))
+# print(result.nit)
+# print(result.nfev)
+# print(result.fun*har2wave)
+# result = optimize.minimize(pot.get_potential, result.x.reshape(1, 7, 3), method='CG')
+# print(result.x.reshape(1, 7, 3))
+# print(result.fun*har2wave)
+# print(result.success)
+# print(result.nit)
+# print(result.nfev)
+pot1 = pot.get_potential(a.flatten())
+print(pot1*har2wave)
+result = optimize.minimize(pot.get_potential, a, method='CG')
+while result.fun < pot1:
+    print(result.fun*har2wave)
+    pot1 = result.fun
+    x = result.x.reshape(1, 7, 3)
+    result = optimize.minimize(pot.get_potential, x, method='Nelder-Mead')
+    x = result.x.reshape(1, 7, 3)
+    # pot1 = result.fun
+    # result = optimize.minimize(pot.get_potential, x, method='CG')
+print(result.x.reshape(1, 7, 3))
+
 # a = np.array([monomer]*3)*ang2bohr
-b = np.array([dimer2]*3)
+# b = np.array([dimer2]*3)
 # c = np.array([monomer3]*3)
 # d = np.array([monomer4]*3)
-pot = Potential(7, True)
+# pot = Potential(7, True)
 # print(pot.get_potential(a))
-print(pot.get_potential(b))
-har2wave = 219474.6
-print(pot.get_potential(b)*har2wave)
+# print(pot.get_potential(b))
+# har2wave = 219474.6
+# print(pot.get_potential(b)*har2wave)
 # print(pot.get_potential(np.flip(c, 1)))
 # print(pot.get_potential(d))
