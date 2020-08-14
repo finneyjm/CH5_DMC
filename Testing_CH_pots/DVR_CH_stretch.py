@@ -96,17 +96,28 @@ def run(CH, coords, mass):
     if np.max(Eig[:, 0]) < 0.005:
         Eig[:, 0] *= -1.
     print((En[1]-En[0])*har2wave)
-    return g[:, 1, 0], Eig[:, 0]
+    return g[:, 1, 0], Eig[:, 0], np.diag(V)
 
 
-for i in range(5):
+
+print(m_red)
+print(m_red_D)
+# g, eig, V = run(2, coords_initial_min, m_red_D)
+# dx = (6-0.4)/5000
+#
+# ind = np.argmin(V)
+# second_der = ((1/90*V[ind-3] - 3/20*V[ind-2] + 3/2*V[ind-1] - 49/18*V[ind] + 3/2*V[ind+1] - 3/20*V[ind+2] + 1/90*V[ind+3])/dx**2)
+# freq = np.sqrt(1/m_red_D*second_der)
+# print(freq*har2wave)
+
+# for i in range(5):
     # print(f'Min {i+1}')
     # g, eig = run(i+1, coords_initial_min, m_red)
     # print(f'Cs {i+1}')
     # g, eig = run(i+1, coords_initial_cs, m_red)
-    print(f'C2v {i+1}')
-    g, eig = run(i+1, coords_initial_c2v, m_red)
-    np.save(f'GSW_c2v_CH_{i+1}', eig)
+    # print(f'C2v {i+1}')
+    # g, eig = run(i+1, coords_initial_c2v, m_red)
+    # np.save(f'GSW_c2v_CH_{i+1}', eig)
 # wvfns = [1, 2, 3, 4, 5]
 # wvfn = np.zeros((5, 1000))
 # for i in np.arange(1, 6):

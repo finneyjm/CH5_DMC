@@ -11,18 +11,18 @@ def exportCoords(cds, fn):  # for partridge schwinke
     fl.close()
 
 
-def PatrickShinglePotential(walkerSet, calc_number, sim=None):
-    import subprocess as sub
-    exportCoords(walkerSet, f'PES{calc_number}' + '/hoh_coord.dat')
-    proc = sub.Popen('./calc_h2o_pot', cwd=f'PES{calc_number}')
-    proc.wait()
-    bigPotz = np.loadtxt(f'PES{calc_number}' + '/hoh_pot.dat')
-    return bigPotz
-#
-#
+# def PatrickShinglePotential(walkerSet, calc_number, sim=None):
+#     import subprocess as sub
+#     exportCoords(walkerSet, f'PES{calc_number}' + '/hoh_coord.dat')
+#     proc = sub.Popen('./calc_h2o_pot', cwd=f'PES{calc_number}')
+#     proc.wait()
+#     bigPotz = np.loadtxt(f'PES{calc_number}' + '/hoh_pot.dat')
+#     return bigPotz
+
+
 def PatrickShinglePotential(walkerSet):
     import PSchwenk.h2o_pot as h2o_pot
-    print(walkerSet.T.shape)
+#     print(walkerSet.T.shape)
     V = np.array(h2o_pot.calc_hoh_pot(np.flip(walkerSet, axis=1), len(walkerSet)))
 
     return V

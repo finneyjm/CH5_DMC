@@ -17,6 +17,7 @@ def dists2(coords):
     dis = np.linalg.norm(cd2 - cd1, axis=2)
     return dis
 
+
 def dists3(coords):
     bonds = [[7, 5], [7, 6], [10, 8], [10, 9]]
     cd1 = coords[:, tuple(x[0] for x in np.array(bonds) - 1)]
@@ -71,58 +72,154 @@ def angles3(coords): # outer HOH angles
     return np.rad2deg(np.vstack((ang1, ang2)).flatten())
 
 ######## OOO angles #######
-bins = 60
-new_amps = np.zeros((3, bins, 20))
-walk = [10000, 20000, 40000]
-samp = ['imp_samp_waters', 'non_imp_samp', 'non_imp_samp']
-for trial, w, s in zip(range(len(walk)), walk, samp):
-    for i in range(20):
-        wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}/' +
-                        f'ptrimer_{s}_{w}_' +
-                        f'Walkers_Test_{5}.npz')
-        coords = wvfn1['coords'][i]
-        coords1 = coords
-        des = wvfn1['des'][i]
-        weights1 = des
-        ang1 = angles(coords1)
-        amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-        bins1 = (xx[1:] + xx[:-1]) / 2.
-        new_amps[trial, :, i] = amp1
-avg = np.average(new_amps, axis=2)
-std = np.std(new_amps, axis=2)
-samp = ['Guided', 'Unguided', 'Unguided']
-colors = ['red', 'blue', 'green']
-order = [2, 1, 0]
-sub = [-1, 0, 1]
-for i in order:
-    plt.plot(bins1, avg[i], color='black', linewidth=3)
-    plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk[i]}')
-    std_x = [110, 120, 130]
-    plt.errorbar(std_x[0] - sub[i], avg[i, 20 - sub[i]], yerr=std[i, 20 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[1] - sub[i], avg[i, 30 - sub[i]], yerr=std[i, 30 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[2] - sub[i], avg[i, 40 - sub[i]], yerr=std[i, 40 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-    plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-    plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+# bins = 60
+# new_amps = np.zeros((4, bins, 20))
+# walk = [10000, 20000, 40000, 20000]
+# walk_leg = ['10 000', '20 000', '40 000', '20 000']
+# samp = ['imp_samp_waters', 'non_imp_samp', 'non_imp_samp', 'non_imp_samp_ts_10']
+# for trial, w, s in zip(range(len(walk)), walk, samp):
+#     for i in range(20):
+#         wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}/' +
+#                         f'ptrimer_{s}_{w}_' +
+#                         f'Walkers_Test_{5}.npz')
+#         coords = wvfn1['coords'][i]
+#         coords1 = coords
+#         des = wvfn1['des'][i]
+#         weights1 = des
+#         ang1 = angles(coords1)
+#         amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#         bins1 = (xx[1:] + xx[:-1]) / 2.
+#         new_amps[trial, :, i] = amp1
+# avg = np.average(new_amps, axis=2)
+# std = np.std(new_amps, axis=2)
+# samp = ['Guided', r'Unguided $\Delta\tau$ = 1', r'Unguided $\Delta\tau$ = 1', r'Unguided $\Delta\tau$ = 10']
+# colors = ['red', 'blue', 'green', 'purple']
+# order = [2, 1, 0, 3]
+# sub = [-1, 0, 1, 2]
+# for i in order:
+#     plt.plot(bins1, avg[i], color='black', linewidth=3)
+#     plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk_leg[i]}')
+#     std_x = [110, 120, 130]
+#     plt.errorbar(std_x[0] - sub[i], avg[i, 20 - sub[i]], yerr=std[i, 20 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[1] - sub[i], avg[i, 30 - sub[i]], yerr=std[i, 30 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[2] - sub[i], avg[i, 40 - sub[i]], yerr=std[i, 40 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#     plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#     plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#     # plt.plot(110, 0.12, label='Averages')
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005, 0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
+# plt.ylabel(r'$\rmP(\rm\theta_{\rmOOO})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
 
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005, 0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
-plt.tight_layout()
-plt.show()
 
+# walkers = 10000
+#
+# imp_samp = 'imp_samp_waters'
+# color = 'red'
+# collect_coords = np.zeros((walkers, 20))
+# collect_weights = np.zeros((walkers, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     weights1 = des
+#
+#     ang1 = angles(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [110, 120, 130]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005, 0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+# walkers = 20000
+#
+# imp_samp = 'non_imp_samp'
+# color = 'blue'
+# collect_coords = np.zeros((walkers, 20))
+# collect_weights = np.zeros((walkers, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     weights1 = des
+#
+#     ang1 = angles(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [110, 120, 130]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005, 0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
 
-walkers = 10000
+walkers = 20000
 
-imp_samp = 'imp_samp_waters'
-color = 'red'
+imp_samp = 'non_imp_samp_ts_10'
+color = 'purple'
 collect_coords = np.zeros((walkers, 20))
 collect_weights = np.zeros((walkers, 20))
 amps = np.zeros((bins, 20))
@@ -165,482 +262,435 @@ plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
 plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
 plt.tight_layout()
 plt.show()
-
-walkers = 20000
-
-imp_samp = 'non_imp_samp'
-color = 'blue'
-collect_coords = np.zeros((walkers, 20))
-collect_weights = np.zeros((walkers, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    weights1 = des
-
-    ang1 = angles(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [110, 120, 130]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005, 0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-walkers = 40000
-
-imp_samp = 'non_imp_samp'
-color = 'green'
-collect_coords = np.zeros((walkers, 20))
-collect_weights = np.zeros((walkers, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    weights1 = des
-
-    ang1 = angles(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [110, 120, 130]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005, 0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-######## bound HOH angle ######
-bins = 60
-new_amps = np.zeros((3, bins, 20))
-walk = [10000, 20000, 40000]
-samp = ['imp_samp_waters', 'non_imp_samp', 'non_imp_samp']
-for trial, w, s in zip(range(len(walk)), walk, samp):
-    for i in range(20):
-        wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}/' +
-                        f'ptrimer_{s}_{w}_' +
-                        f'Walkers_Test_{5}.npz')
-        coords = wvfn1['coords'][i]
-        coords1 = coords
-        des = wvfn1['des'][i]
-        weights1 = des
-        ang1 = angles2(coords1)
-        amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-        bins1 = (xx[1:] + xx[:-1]) / 2.
-        new_amps[trial, :, i] = amp1
-avg = np.average(new_amps, axis=2)
-std = np.std(new_amps, axis=2)
-samp = ['Guided', 'Unguided', 'Unguided']
-colors = ['red', 'blue', 'green']
-order = [2, 1, 0]
-sub = [-1, 0, 1]
-for i in order:
-    plt.plot(bins1, avg[i], color='black', linewidth=3)
-    plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk[i]}')
-    std_x = [110, 120, 130]
-    plt.errorbar(std_x[0] - sub[i], avg[i, 20 - sub[i]], yerr=std[i, 20 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[1] - sub[i], avg[i, 30 - sub[i]], yerr=std[i, 30 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[2] - sub[i], avg[i, 40 - sub[i]], yerr=std[i, 40 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-    plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-    plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-
-walkers = 10000
-
-imp_samp = 'imp_samp_waters'
-color = 'red'
-collect_coords = np.zeros((walkers, 20))
-collect_weights = np.zeros((walkers, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    weights1 = des
-
-    ang1 = angles2(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [110, 120, 130]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-walkers = 20000
-
-imp_samp = 'non_imp_samp'
-color = 'blue'
-collect_coords = np.zeros((walkers, 20))
-collect_weights = np.zeros((walkers, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    weights1 = des
-
-    ang1 = angles2(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [110, 120, 130]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-walkers = 40000
-
-imp_samp = 'non_imp_samp'
-color = 'green'
-collect_coords = np.zeros((walkers, 20))
-collect_weights = np.zeros((walkers, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    weights1 = des
-
-    ang1 = angles2(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [110, 120, 130]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-
-# ######## outer HOH angle ######
-bins = 60
-new_amps = np.zeros((3, bins, 20))
-walk = [10000, 20000, 40000]
-samp = ['imp_samp_waters', 'non_imp_samp', 'non_imp_samp']
-for trial, w, s in zip(range(len(walk)), walk, samp):
-    for i in range(20):
-        wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}/' +
-                        f'ptrimer_{s}_{w}_' +
-                        f'Walkers_Test_{5}.npz')
-        coords = wvfn1['coords'][i]
-        coords1 = coords
-        des = wvfn1['des'][i]
-        des = np.vstack((des, des)).flatten()
-        weights1 = des
-        ang1 = angles3(coords1)
-        amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
-        bins1 = (xx[1:] + xx[:-1]) / 2.
-        new_amps[trial, :, i] = amp1
-avg = np.average(new_amps, axis=2)
-std = np.std(new_amps, axis=2)
-samp = ['Guided', 'Unguided', 'Unguided']
-colors = ['red', 'blue', 'green']
-order = [2, 1, 0]
-sub = [-1, 0, 1]
-for i in order:
-    plt.plot(bins1, avg[i], color='black', linewidth=3)
-    plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk[i]}')
-    std_x = [95, 105, 115]
-    plt.errorbar(std_x[0] - sub[i], avg[i, 20 - sub[i]], yerr=std[i, 20 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[1] - sub[i], avg[i, 30 - sub[i]], yerr=std[i, 30 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[2] - sub[i], avg[i, 40 - sub[i]], yerr=std[i, 40 - sub[i]], elinewidth=3.5, color='black',
-                 capsize=6.5, capthick=3.5)
-    plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-    plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-    plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-
-walkers = 10000
-
-imp_samp = 'imp_samp_waters'
-color = 'red'
-collect_coords = np.zeros((walkers*2, 20))
-collect_weights = np.zeros((walkers*2, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    des = np.vstack((des, des)).flatten()
-    weights1 = des
-
-    ang1 = angles3(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [95, 105, 115]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-walkers = 20000
-
-imp_samp = 'non_imp_samp'
-color = 'blue'
-collect_coords = np.zeros((walkers*2, 20))
-collect_weights = np.zeros((walkers*2, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    des = np.vstack((des, des)).flatten()
-    weights1 = des
-
-    ang1 = angles3(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [95, 105, 115]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
-plt.tight_layout()
-plt.show()
-
-walkers = 40000
-
-imp_samp = 'non_imp_samp'
-color = 'green'
-collect_coords = np.zeros((walkers*2, 20))
-collect_weights = np.zeros((walkers*2, 20))
-amps = np.zeros((bins, 20))
-
-for i in range(20):
-    wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
-                                 f'ptrimer_{imp_samp}_{walkers}_' +
-                                 f'Walkers_Test_{5}.npz')
-    coords = wvfn1['coords'][i]
-    coords1 = coords
-    des = wvfn1['des'][i]
-    des = np.vstack((des, des)).flatten()
-    weights1 = des
-
-    ang1 = angles3(coords1)
-    collect_coords[:, i] = ang1
-    collect_weights[:, i] = weights1
-
-    amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
-    bins1 = (xx[1:] + xx[:-1]) / 2.
-    amps[:, i] = amp1
-    plt.plot(bins1, amp1)
-plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
-plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
-std = np.std(amps, axis=1)
-std_x = [95, 105, 115]
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
-plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
-
-
-leg = plt.legend(loc='upper left', fontsize=14)
-leg.get_frame().set_edgecolor('white')
-plt.ylim(-0.005,  0.125)
-plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
-                bottom=True, top=False, left=True, right=False, labelsize=14)
-plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
-plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
-plt.tight_layout()
-plt.show()
+#
+# walkers = 40000
+#
+# imp_samp = 'non_imp_samp'
+# color = 'green'
+# collect_coords = np.zeros((walkers, 20))
+# collect_weights = np.zeros((walkers, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     weights1 = des
+#
+#     ang1 = angles(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [110, 120, 130]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005, 0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmOOO}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmOOO})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+# ######## bound HOH angle ######
+# bins = 60
+# new_amps = np.zeros((3, bins, 20))
+# walk = [10000, 20000, 40000]
+# samp = ['imp_samp_waters', 'non_imp_samp', 'non_imp_samp']
+# for trial, w, s in zip(range(len(walk)), walk, samp):
+#     for i in range(20):
+#         wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}/' +
+#                         f'ptrimer_{s}_{w}_' +
+#                         f'Walkers_Test_{5}.npz')
+#         coords = wvfn1['coords'][i]
+#         coords1 = coords
+#         des = wvfn1['des'][i]
+#         weights1 = des
+#         ang1 = angles2(coords1)
+#         amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#         bins1 = (xx[1:] + xx[:-1]) / 2.
+#         new_amps[trial, :, i] = amp1
+# avg = np.average(new_amps, axis=2)
+# std = np.std(new_amps, axis=2)
+# samp = ['Guided', 'Unguided', 'Unguided']
+# colors = ['red', 'blue', 'green']
+# order = [2, 1, 0]
+# sub = [-1, 0, 1]
+# for i in order:
+#     plt.plot(bins1, avg[i], color='black', linewidth=3)
+#     plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk[i]}')
+#     std_x = [110, 120, 130]
+#     plt.errorbar(std_x[0] - sub[i], avg[i, 20 - sub[i]], yerr=std[i, 20 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[1] - sub[i], avg[i, 30 - sub[i]], yerr=std[i, 30 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[2] - sub[i], avg[i, 40 - sub[i]], yerr=std[i, 40 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#     plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#     plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+#
+# walkers = 10000
+#
+# imp_samp = 'imp_samp_waters'
+# color = 'red'
+# collect_coords = np.zeros((walkers, 20))
+# collect_weights = np.zeros((walkers, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     weights1 = des
+#
+#     ang1 = angles2(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [110, 120, 130]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+# walkers = 20000
+#
+# imp_samp = 'non_imp_samp'
+# color = 'blue'
+# collect_coords = np.zeros((walkers, 20))
+# collect_weights = np.zeros((walkers, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     weights1 = des
+#
+#     ang1 = angles2(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [110, 120, 130]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+# walkers = 40000
+#
+# imp_samp = 'non_imp_samp'
+# color = 'green'
+# collect_coords = np.zeros((walkers, 20))
+# collect_weights = np.zeros((walkers, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     weights1 = des
+#
+#     ang1 = angles2(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(89.5, 149.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [110, 120, 130]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH,b}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH,b})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+#
+# # ######## outer HOH angle ######
+# bins = 60
+# new_amps = np.zeros((3, bins, 20))
+# walk = [10000, 20000, 40000]
+# samp = ['imp_samp_waters', 'non_imp_samp', 'non_imp_samp']
+# for trial, w, s in zip(range(len(walk)), walk, samp):
+#     for i in range(20):
+#         wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{s}/' +
+#                         f'ptrimer_{s}_{w}_' +
+#                         f'Walkers_Test_{5}.npz')
+#         coords = wvfn1['coords'][i]
+#         coords1 = coords
+#         des = wvfn1['des'][i]
+#         des = np.vstack((des, des)).flatten()
+#         weights1 = des
+#         ang1 = angles3(coords1)
+#         amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
+#         bins1 = (xx[1:] + xx[:-1]) / 2.
+#         new_amps[trial, :, i] = amp1
+# avg = np.average(new_amps, axis=2)
+# std = np.std(new_amps, axis=2)
+# samp = ['Guided', 'Unguided', 'Unguided']
+# colors = ['red', 'blue', 'green']
+# order = [2, 1, 0]
+# sub = [-1, 0, 1]
+# for i in order:
+#     plt.plot(bins1, avg[i], color='black', linewidth=3)
+#     plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk[i]}')
+#     std_x = [95, 105, 115]
+#     plt.errorbar(std_x[0] - sub[i], avg[i, 20 - sub[i]], yerr=std[i, 20 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[1] - sub[i], avg[i, 30 - sub[i]], yerr=std[i, 30 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[2] - sub[i], avg[i, 40 - sub[i]], yerr=std[i, 40 - sub[i]], elinewidth=3.5, color='black',
+#                  capsize=6.5, capthick=3.5)
+#     plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#     plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#     plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+#
+# walkers = 10000
+#
+# imp_samp = 'imp_samp_waters'
+# color = 'red'
+# collect_coords = np.zeros((walkers*2, 20))
+# collect_weights = np.zeros((walkers*2, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     des = np.vstack((des, des)).flatten()
+#     weights1 = des
+#
+#     ang1 = angles3(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [95, 105, 115]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+# walkers = 20000
+#
+# imp_samp = 'non_imp_samp'
+# color = 'blue'
+# collect_coords = np.zeros((walkers*2, 20))
+# collect_weights = np.zeros((walkers*2, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     des = np.vstack((des, des)).flatten()
+#     weights1 = des
+#
+#     ang1 = angles3(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [95, 105, 115]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()
+#
+# walkers = 40000
+#
+# imp_samp = 'non_imp_samp'
+# color = 'green'
+# collect_coords = np.zeros((walkers*2, 20))
+# collect_weights = np.zeros((walkers*2, 20))
+# amps = np.zeros((bins, 20))
+#
+# for i in range(20):
+#     wvfn1 = np.load(f'Trial_wvfn_testing/results/ptrimer_{imp_samp}/' +
+#                                  f'ptrimer_{imp_samp}_{walkers}_' +
+#                                  f'Walkers_Test_{5}.npz')
+#     coords = wvfn1['coords'][i]
+#     coords1 = coords
+#     des = wvfn1['des'][i]
+#     des = np.vstack((des, des)).flatten()
+#     weights1 = des
+#
+#     ang1 = angles3(coords1)
+#     collect_coords[:, i] = ang1
+#     collect_weights[:, i] = weights1
+#
+#     amp1, xx = np.histogram(ang1, weights=weights1, bins=bins, range=(74.5, 134.5), density=True)
+#     bins1 = (xx[1:] + xx[:-1]) / 2.
+#     amps[:, i] = amp1
+#     plt.plot(bins1, amp1)
+# plt.plot(bins1, np.average(amps, axis=1), color='black', linewidth=3.5)
+# plt.plot(bins1, np.average(amps, axis=1), color=color, linewidth=2.5)
+# std = np.std(amps, axis=1)
+# std_x = [95, 105, 115]
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=3.5, color='black', capsize=6.5, capthick=3.5, zorder=3)
+# plt.errorbar(std_x[0], np.average(amps, axis=1)[20], yerr=std[20], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[1], np.average(amps, axis=1)[30], yerr=std[30], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+# plt.errorbar(std_x[2], np.average(amps, axis=1)[40], yerr=std[40], elinewidth=2.5, color=color, capsize=5, capthick=2.5, zorder=3)
+#
+#
+# leg = plt.legend(loc='upper left', fontsize=14)
+# leg.get_frame().set_edgecolor('white')
+# plt.ylim(-0.005,  0.125)
+# plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+#                 bottom=True, top=False, left=True, right=False, labelsize=14)
+# plt.xlabel(r'$\rm\theta_{\rmHOH}$', fontsize=22)
+# plt.ylabel(r'$\Psi(\rm\theta_{\rmHOH})$', fontsize=22)
+# plt.tight_layout()
+# plt.show()

@@ -88,7 +88,9 @@ def dists(coords, num_waters, dist_type):
 ang2bohr = (1.e-10)/(5.291772106712e-11)
 
 oo_scale_tet = np.array(np.loadtxt('bowman_patched_H9O4_Std_Polynomials'))
+oo_scale_tet_dat = np.array(np.loadtxt('bowman_patched_H9O4_Std'))
 oo_shift_tet = np.array(np.loadtxt('bowman_patched_H9O4_Re_Polynomials'))
+oo_shift_tet_dat = np.array(np.loadtxt('bowman_patched_H9O4_Re'))
 
 hbond_wvfn2 = np.load('../wvfns/free_oh_wvfn.npy')
 
@@ -119,9 +121,12 @@ a = calculate_std(x1, new_wvfn)
 #print(calculate_std(a*x2, hbond_wvfn[:, 1]))
 
 oo_scale_trim = np.array(np.loadtxt('bowman_h7o3_Std_Polynomials'))
+oo_scale_trim_dat = np.array(np.loadtxt('bowman_patched_H7O3_Std'))
 oo_shift_trim = np.array(np.loadtxt('bowman_h7o3_Re_Polynomials'))
+oo_shift_trim_dat = np.array(np.loadtxt('bowman_patched_H7O3_Re'))
 
-x = np.linspace(2.25, 3.55, 1000)*ang2bohr
+x = np.linspace(2.15, 3.55, 1000)*ang2bohr
+x2 = np.linspace(2.25, 3.62, 1000)*ang2bohr
 
 scale_tet = np.poly1d(oo_scale_tet)
 shift_tet = np.poly1d(oo_shift_tet)
@@ -146,12 +151,16 @@ fig, axes = plt.subplots(1, 2)
 
 # ax2 = ax1.twinx()
 
-axes[0].plot(x/ang2bohr, shift_tet(x)/ang2bohr, color='purple', linewidth=4.0, label=r'$\rmH_9O_4^+$')
-axes[0].plot(x/ang2bohr, shift_trim(x)/ang2bohr, color='blue', linewidth=4.0, label=r'$\rmH_7O_3^+$')
+axes[0].plot(x2/ang2bohr, shift_tet(x2)/ang2bohr, color='purple', linewidth=2.0, label=r'H$^+($H$_2$O)$_4$')
+axes[0].scatter(oo_shift_tet_dat[:, 0], oo_shift_tet_dat[:, 1], edgecolors='purple', facecolors='none')
+axes[0].plot(x/ang2bohr, shift_trim(x)/ang2bohr, color='blue', linewidth=2.0, label=r'H$^+($H$_2$O)$_3$')
+axes[0].scatter(oo_shift_trim_dat[:, 0], oo_shift_trim_dat[:, 1], edgecolors='blue', facecolors='none', marker='s')
 # ax1.scatter(6, 0.98499, color='black', label='hydronium rmax')
 # ax2.scatter(6, 0.070644, color='purple', label='hydronium std')
-axes[1].plot(x/ang2bohr, scale_tet(x)/ang2bohr, color='purple', linewidth=4.0, label = r'$\rmH_9O_4^+$')
-axes[1].plot(x/ang2bohr, scale_trim(x)/ang2bohr, color='blue', linewidth=4.0, label=r'$\rmH_7O_3^+$')
+axes[1].plot(x2/ang2bohr, scale_tet(x2)/ang2bohr, color='purple', linewidth=2.0, label = r'H$^+($H$_2$O)$_4$')
+axes[1].scatter(oo_scale_tet_dat[:, 0], oo_scale_tet_dat[:, 1], edgecolors='purple', facecolors='none')
+axes[1].plot(x/ang2bohr, scale_trim(x)/ang2bohr, color='blue', linewidth=2.0, label=r'H$^+($H$_2$O)$_3$')
+axes[1].scatter(oo_scale_trim_dat[:, 0], oo_scale_trim_dat[:, 1], edgecolors='blue', facecolors='none', marker='s')
 axes[0].set_xlabel(r'R$_{\rm{OO}} (\rm\AA)$', fontsize=22)
 axes[1].set_xlabel(r'R$_{\rm{OO}} (\rm\AA)$', fontsize=22)
 axes[0].set_ylabel(r'r$_{\rm{OH}}^{\rm{max}} (\rm\AA)$', fontsize=22)
@@ -164,8 +173,8 @@ axes[0].tick_params(axis='y', labelleft=True, labelright=False,
                     left=True, right=False, labelsize=14)
 axes[0].tick_params(axis='x', labelbottom=True, labeltop=False, bottom=True, top=False, labelsize=14)
 axes[1].tick_params(axis='x', labelbottom=True, labeltop=False, bottom=True, top=False, labelsize=14)
-axes[1].tick_params(labelbottom=True, labeltop=False, labelleft=False, labelright=True,
-                     bottom=True, top=False, left=False, right=True, labelsize=14)
-axes[1].yaxis.set_label_position('right')
+axes[1].tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+                     bottom=True, top=False, left=True, right=False, labelsize=14)
+# axes[1].yaxis.set_label_position('right')
 plt.tight_layout()
 plt.show()

@@ -45,9 +45,9 @@ type_of_sim = 'full_imp_samp_water'
 #         myfile.write('DIFF=$(echo "$END - $START" | bc)\n')
 #         myfile.write(f'echo "{system}_{type_of_sim}_{b} took: $DIFF"')
 
-size = ['large']
-s = ['l']
-system = 'ptetramer'
+size = ['small']
+s = ['s']
+system = 'pmonomer'
 
 type_of_sim = 'non_imp_samp_ts_10'
 
@@ -61,14 +61,14 @@ for i in range(5):
             myfile.write('## Which queue should we use?\n\n')
             # if b == 's' or b == 'm':
             if i > 3:
-                myfile.write('#SBATCH --partition=chem\n\n')
-                myfile.write('#SBATCH --account=chem\n\n')
+                myfile.write('#SBATCH --partition=ilahie\n\n')
+                myfile.write('#SBATCH --account=ilahie\n\n')
                 myfile.write('## Number of cores\n\n')
                 myfile.write('#SBATCH --tasks=28\n\n')
 
             elif i < 1:
-                myfile.write('#SBATCH --partition=stf\n\n')
-                myfile.write('#SBATCH --account=stf\n\n')
+                myfile.write('#SBATCH --partition=ilahie\n\n')
+                myfile.write('#SBATCH --account=ilahie\n\n')
                 myfile.write('## Number of cores\n\n')
                 myfile.write('#SBATCH --tasks=28\n\n')
             else:
@@ -78,12 +78,12 @@ for i in range(5):
                 myfile.write('#SBATCH --tasks=28\n\n')
             myfile.write('## Number of nodes\n\n')
             myfile.write('#SBATCH --nodes=1\n\n')
-            myfile.write('#SBATCH --exclude=n2023\n\n')
+            # myfile.write('#SBATCH --exclude=n2023\n\n')
             myfile.write('## Time needed (days-hours:minutes:seconds\n\n')
             if b == 's':
-                myfile.write('#SBATCH --time=0-04:00:00\n\n')
+                myfile.write('#SBATCH --time=0-12:00:00\n\n')
             elif b == 'm':
-                myfile.write('#SBATCH --time=0-04:00:00\n\n')
+                myfile.write('#SBATCH --time=0-12:00:00\n\n')
             elif b == 'l':
                 myfile.write('#SBATCH --time=4-00:00:00\n\n')
             elif b == 'b':
@@ -99,15 +99,16 @@ for i in range(5):
             myfile.write('module load contrib/python/3.6.3\n')
             myfile.write('START=$(date +%s.%N)\n\n')
             if b == 's':
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_1000_walkers_test_{i+1}\n')
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_100_walkers_test_{i+1}\n')
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_200_walkers_test_{i+1}\n')
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_500_walkers_test_{i+1}\n')
+                # myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_1000_walkers_test_{i+1}\n')
+                # myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_100_walkers_test_{i+1}\n')
+                # myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_200_walkers_test_{i+1}\n')
+                # myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_500_walkers_test_{i+1}\n')
+                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_20000_walkers_test_{i+1}\n')
             elif b == 'm':
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_2000_walkers_test_{i+1}\n')
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_5000_walkers_test_{i+1}\n')
+                # myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_2000_walkers_test_{i+1}\n')
+                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_25000_walkers_test_{i+1}\n')
             elif b == 'l':
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_60000_walkers_test_{i+1}\n')
+                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_20000_walkers_test_{i+1}\n')
             elif b == 'b':
                 myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_75000_walkers_test_{i + 1}\n')
             elif b == 'vb':

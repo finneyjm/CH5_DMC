@@ -53,44 +53,44 @@ class Walkers(object):
 
 
 # Evaluate PsiT for each bond CH bond length in the walker set
-def psi_t(rch, interp, imp_samp_type, coords, interp_exp=None, multicore=True):
+def psi_t(rch, interp, imp_samp_type, coords, interp_exp=None, multicore=True, analytic_rch=None):
     if multicore is True:
         if imp_samp_type == 'dev_dep':
-            psi = all_da_psi(coords, rch, interp, imp_samp_type, interp_exp)
+            psi = all_da_psi(coords, rch, interp, imp_samp_type, interp_exp, analytic_rch=analytic_rch)
         elif imp_samp_type == 'fd':
-            psi = all_da_psi(coords, rch, interp, imp_samp_type)
+            psi = all_da_psi(coords, rch, interp, imp_samp_type, analytic_rch=analytic_rch)
     else:
         if imp_samp_type == 'dev_dep':
-            psi = get_da_psi(coords, rch, interp, imp_samp_type, interp_exp)
+            psi = get_da_psi(coords, rch, interp, imp_samp_type, interp_exp, analytic_rch=analytic_rch)
         elif imp_samp_type == 'fd':
-            psi = get_da_psi(coords, rch, interp, imp_samp_type)
+            psi = get_da_psi(coords, rch, interp, imp_samp_type, analytic_rch=analytic_rch)
     return psi
 
 
-def all_da_psi(coords, rch, interp, imp_samp_type, interp_exp=None):
+def all_da_psi(coords, rch, interp, imp_samp_type, interp_exp=None, analytic_rch=None):
     coords = np.array_split(coords, mp.cpu_count() - 1)
     rch = np.array_split(rch, mp.cpu_count() - 1)
-    psi = pool.starmap(get_da_psi, zip(coords, rch, repeat(interp), repeat(imp_samp_type), repeat(interp_exp)))
+    psi = pool.starmap(get_da_psi, zip(coords, rch, repeat(interp), repeat(imp_samp_type), repeat(interp_exp), repeat(analytic_rch)))
     psi = np.concatenate(psi)
     return psi
 
 
-def get_da_psi(coords, rch, interp, imp_samp_type, interp_exp=None):
+def get_da_psi(coords, rch, interp, imp_samp_type, interp_exp=None, analytic_rch=None):
     much_psi = np.zeros((len(coords), 3, 6, 3))
-    psi = psi_t_extra(coords, interp, imp_samp_type, interp_exp, rch=rch)
+    psi = psi_t_extra(coords, interp, imp_samp_type, interp_exp, rch=rch, analytic_rch=analytic_rch)
     asdf = np.broadcast_to(np.prod(psi, axis=1)[:, None, None], (len(coords), 6, 3))
     much_psi[:, 1] += asdf
     for atoms in range(6):
         for xyz in range(3):
             coords[:, atoms, xyz] -= dx
-            much_psi[:, 0, atoms, xyz] = np.prod(psi_t_extra(coords, interp, imp_samp_type, interp_exp), axis=1)
+            much_psi[:, 0, atoms, xyz] = np.prod(psi_t_extra(coords, interp, imp_samp_type, interp_exp, analytic_rch=analytic_rch), axis=1)
             coords[:, atoms, xyz] += 2.*dx
-            much_psi[:, 2, atoms, xyz] = np.prod(psi_t_extra(coords, interp, imp_samp_type, interp_exp), axis=1)
+            much_psi[:, 2, atoms, xyz] = np.prod(psi_t_extra(coords, interp, imp_samp_type, interp_exp, analytic_rch=analytic_rch), axis=1)
             coords[:, atoms, xyz] -= dx
     return much_psi
 
 
-def psi_t_extra(coords, interp, imp_samp_type, interp_exp=None, rch=None):
+def psi_t_extra(coords, interp, imp_samp_type, interp_exp=None, rch=None, analytic_rch=None):
     if rch is None:
         rch = ch_dist(coords)
     if imp_samp_type == 'dev_dep':
@@ -105,8 +105,21 @@ def psi_t_extra(coords, interp, imp_samp_type, interp_exp=None, rch=None):
                 shift[:, i] = hh_relate_cub(hh[:, i], *interp_exp)
             elif len(interp_exp) == 3:
                 shift[:, i] = hh_relate_fit(hh[:, i], *interp_exp)
-        psi[:, i] = interpolate.splev(rch[:, i] - shift[:, i], interp[i], der=0)
+        if analytic_rch is not None:
+            psi[:, i] = rch_harm_osc(rch[:, i], shift[:, i], interp[i])
+        else:
+            psi[:, i] = interpolate.splev(rch[:, i] - shift[:, i], interp[i], der=0)
     return psi
+
+
+def rch_harm_osc(x, shift, interp):
+    freq, atom = interp
+
+    m = 1/atom
+
+    freq /= har2wave
+    alpha = freq / m
+    return (alpha / np.pi) ** (1 / 4) * np.exp(-alpha * (x - shift) ** 2 / 2)
 
 
 def hh_relate_fit(x, *args):
@@ -135,8 +148,8 @@ def hh_dist(carts, rch):
     return hh_std
 
 
-def drift(rch, coords, interp, imp_samp_type, interp_exp=None, multicore=True):
-    psi = psi_t(rch, interp, imp_samp_type, coords, multicore=multicore, interp_exp=interp_exp)
+def drift(rch, coords, interp, imp_samp_type, interp_exp=None, multicore=True, analytic_rch=None):
+    psi = psi_t(rch, interp, imp_samp_type, coords, multicore=multicore, interp_exp=interp_exp, analytic_rch=analytic_rch)
     blah = (psi[:, 2] - psi[:, 0]) / dx / psi[:, 1]
     return blah, psi
 
@@ -152,14 +165,14 @@ def metropolis(Fqx, Fqy, x, y, sigmaCH, psi1, psi2):
 
 
 # Random walk of all the walkers
-def Kinetic(Psi, Fqx, sigmaCH, imp_samp_type, interp_exp=None, multicore=True):
+def Kinetic(Psi, Fqx, sigmaCH, imp_samp_type, interp_exp=None, multicore=True, analytic_rch=None):
     Drift = sigmaCH**2/2.*Fqx   # evaluate the drift term from the F that was calculated in the previous step
     randomwalk = np.zeros((len(Psi.coords), 6, 3))  # normal randomwalk from DMC
     randomwalk[:, 1:6, :] = np.random.normal(0.0, sigmaCH[1:6], size=(len(Psi.coords), 5, 3))
     randomwalk[:, 0, :] = np.random.normal(0.0, sigmaCH[0], size=(len(Psi.coords), 3))
     y = randomwalk + Drift + np.array(Psi.coords)  # the proposed move for the walkers
     rchy = ch_dist(y)
-    Fqy, psi = drift(rchy, y, Psi.interp, imp_samp_type, multicore, interp_exp)
+    Fqy, psi = drift(rchy, y, Psi.interp, imp_samp_type, multicore, interp_exp, analytic_rch=analytic_rch)
     a = metropolis(Fqx, Fqy, Psi.coords, y, sigmaCH, Psi.psit, psi)
     check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
@@ -214,7 +227,7 @@ def Weighting(Eref, Psi, Fqx, dtau, DW):
 
 
 def simulation_time(psi, alpha, sigmaCH, Fqx, imp_samp_type, time_steps, dtau,
-                    equilibration, wait_time, propagation, multicore=True, interp_exp=None):
+                    equilibration, wait_time, propagation, multicore=True, interp_exp=None, analytic_rch=None):
     DW = False
     num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
     time = np.zeros(time_steps)
@@ -227,8 +240,12 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, imp_samp_type, time_steps, dtau,
     prop = float(propagation)
     wait = float(wait_time)
     Eref_array = np.zeros(time_steps)
-
+    print('starting simulation')
     for i in range(int(time_steps)):
+        if (i+1) % 500 == 0:
+            print(i+1)
+            print(Eref*har2wave)
+
         if DW is False:
             prop = float(propagation)
             wait -= 1.
@@ -243,7 +260,7 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, imp_samp_type, time_steps, dtau,
             psi = E_loc(psi, sigmaCH, dtau)
             Eref = E_ref_calc(psi, alpha)
 
-        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH, imp_samp_type, multicore, interp_exp)
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigmaCH, imp_samp_type, multicore, interp_exp, analytic_rch=analytic_rch)
 
         if multicore is True:
             psi = Parr_Potential(psi)
@@ -270,7 +287,6 @@ def simulation_time(psi, alpha, sigmaCH, Fqx, imp_samp_type, time_steps, dtau,
             DW = False
             des[num] = descendants(psi)
             num += 1
-
     return coords, weights, time, Eref_array, sum_weights, accept, des
 
 

@@ -58,69 +58,67 @@ def rotateBackToFrame(coordz, a, b, c,
     else:
         return finalCoords
 
-# thresh = ['half', 'one', 'five', 'ten', 'twenty', 'pone']
-# i = -1
-j = 5
-Nw = 40000
-#
-#
-# for j in np.arange(1, 5):
-#     blah = np.load(f'Trial_wvfn_testing/results/ptetramer_non_imp_samp_ts_10/' +
-#                              f'ptetramer_non_imp_samp_ts_10_{Nw}_' +
-#                              f'Walkers_Test_{j}.npz')
-#
-    # coords = blah['coords'][:20]
-    # coords = np.reshape(coords, (coords.shape[0]*coords.shape[1], coords.shape[2], coords.shape[3]))
-    # des = blah['des'][:20]
-    # # print(des.shape)
-    # des = np.reshape(des, (des.shape[0]*des.shape[1]))
-#
-#
-#     coords = rotateBackToFrame(coords, 7, 10, 13)
-#     # sym_coords = np.hstack((coords[:, 3, 2], coords[:, 3, 2]*-1))
-#     # sym_weights = np.hstack((des, des))
-#     # amp, xx = np.histogram(sym_coords, weights=sym_weights, range=(-2, 2), bins=40, density=True)
-#     amp, xx = np.histogram(coords[:, 4-1, 2], weights=des, bins=40, range=(-2, 2), density=True)
-#     bins = (xx[1:] + xx[:-1]) / 2.
-#
-#     plt.plot(bins, amp, label=f'non imp samp ts 10 {Nw} walkers trial {j}')
-#     plt.legend()
-#     plt.xlabel('Z Displacement (Bohr)')
-#     plt.savefig(f'Projections_pwater/ptetramer_non_imp_samp_ts_10_{Nw}_walkers_{j}')
-#     plt.close()
-# ang2bohr = 1.e-10/5.291772106712e-11
+def ch_dist(coords):
+    N = len(coords)
+    rch = np.zeros((N, 5))
+    for i in range(5):
+        rch[:, i] = np.sqrt((coords[:, i + 1, 0] - coords[:, 0, 0]) ** 2 +
+                            (coords[:, i + 1, 1] - coords[:, 0, 1]) ** 2 +
+                            (coords[:, i + 1, 2] - coords[:, 0, 2]) ** 2)
+    return rch
 
-# tetramer = [[-0.31106354,  -0.91215572,  -0.20184621],
-#             [0.95094197,   0.18695800,  -0.20259538],
-#             [-0.63272209,   0.72926470,  -0.20069859],
-#             [0.00253217,   0.00164013,  -0.47227522],
-#             [-1.96589559,   2.46292466,  -0.54312627],
-#             [-2.13630186,   1.99106023,   0.90604777],
-#             [-1.55099190,   1.94067311,   0.14704161],
-#             [-1.18003749,  -2.92157144,  -0.54090532],
-#             [-0.65410291,  -2.84939169,   0.89772271],
-#             [-0.91203521,  -2.30896272,   0.14764850],
-#             [2.79828182,   0.87002791,   0.89281564],
-#             [3.12620054,   0.43432898,  -0.54032031],
-#             [2.46079102,   0.36718848,   0.14815394]]
 
-# coords = np.array([tetramer]*3)*ang2bohr
+bins = 60
+new_amps = np.zeros((2, bins, 20))
+walk = [5000, 5000]
+walk_leg = ['5000', '5000']
+samp = ['imp_sampled_analytic_5H_ts_1', 'HH_to_rCHrCD_5H_GSW2']
+for trial, w, s in zip(range(len(walk)), walk, samp):
+    for i in range(20):
+        wvfn1 = np.load(f'Trial_wvfn_testing/results/{s}/' +
+                        f'{s}_{w}_' +
+                        f'Walkers_Test_{5}.npz')
+        coords = wvfn1['coords'][i]
+        coords1 = coords
+        if s == 'Non_imp_sampled':
+            des = wvfn1['weights'][i]
+        else:
+            des = wvfn1['des'][i]
+        weights1 = des
+        # ang1 = angles(coords1)
+        dists = ch_dist(coords)[:, 2]
+        amp1, xx = np.histogram(dists, weights=weights1, bins=bins, range=(1.2, 3.2), density=True)
+        bins1 = (xx[1:] + xx[:-1]) / 2.
+        new_amps[trial, :, i] = amp1
+avg = np.average(new_amps, axis=2)
+std = np.std(new_amps, axis=2)
+samp = ['Guided (harmonic)', r'Guided (DVR wave function)']
+colors = ['red', 'blue']
+order = [0, 1]
+# sub = [-1, 0, 1, 2]
+for i in order:
+    plt.plot(bins1, avg[i], color='black', linewidth=3)
+    plt.plot(bins1, avg[i], color=colors[i], linewidth=2.5, label=fr'{samp[i]} N$_{{\rmw}}$ = {walk_leg[i]}')
+    # std_x = [110, 120, 130]
+    # plt.errorbar(std_x[0] - sub[i], avg[i, 20 - sub[i]], yerr=std[i, 20 - sub[i]], elinewidth=3.5, color='black',
+    #              capsize=6.5, capthick=3.5)
+    # plt.errorbar(std_x[1] - sub[i], avg[i, 30 - sub[i]], yerr=std[i, 30 - sub[i]], elinewidth=3.5, color='black',
+    #              capsize=6.5, capthick=3.5)
+    # plt.errorbar(std_x[2] - sub[i], avg[i, 40 - sub[i]], yerr=std[i, 40 - sub[i]], elinewidth=3.5, color='black',
+    #              capsize=6.5, capthick=3.5)
+    # plt.errorbar(std_x[0]-sub[i], avg[i, 20-sub[i]], yerr=std[i, 20-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+    # plt.errorbar(std_x[1]-sub[i], avg[i, 30-sub[i]], yerr=std[i, 30-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+    # plt.errorbar(std_x[2]-sub[i], avg[i, 40-sub[i]], yerr=std[i, 40-sub[i]], elinewidth=2.5, color=colors[i], capsize=5, capthick=2.5)
+    # plt.plot(110, 0.12, label='Averages')
 
-# from ProtWaterPES import Potential
-
-# pot = Potential(13)
-# v = pot.get_potential(coords[:-40000])
-# a = 4
-# pot = Potential(coords.shape[1])
-# v1 = pot.get_potential(coords)
-# coord_rot = rotateBackToFrame(coords, 7, 10, 13)
-# v2 = pot.get_potential(coord_rot)
-# print(coord_rot)
-# coord = coord_rot
-# coord[:, 0:4, 2] *= -1
-# v3 = pot.get_potential(coord)
-# print(v1)
-# print(v2)
-# print(v3)
+leg = plt.legend(loc='upper left', fontsize=14)
+leg.get_frame().set_edgecolor('white')
+plt.ylim(-0.005, 3)
+plt.tick_params(labelbottom=True, labeltop=False, labelleft=True, labelright=False,
+                bottom=True, top=False, left=True, right=False, labelsize=14)
+plt.xlabel(r'$\rmr_{\rmCH}$', fontsize=22)
+plt.ylabel(r'$\rmP(\rmr_{\rmCH})$', fontsize=22)
+plt.tight_layout()
+plt.show()
 
 

@@ -80,7 +80,7 @@ def let_do_some_plotting():
     # axes.legend(loc='lower right')
     fig.savefig('Local_energy_powerpoint_potential_1.png')
     colors = ['red', 'orange', 'indigo']
-    labels = [r'E$_L^{(\rm{CH}^{\rm{5}})}$', r'E$_L^{(\rm{CH}^{\rm{2}})}$', r'E$_L^{(\rm{CH}^{\rm{avg}})}$']
+    labels = [r'E$_{\rm{L}}^{(\rm{CH}^{\rm{(5)}})}$', r'E$_{\rm{L}}^{(\rm{CH}^{\rm{(2)}})}$', r'E$_{\rm{L}}^{(\rm{CH}^{\rm{(avg)}})}$']
     line = ['--', 'solid', 'dotted']
     for i in range(3):
         interp = interpolate.splrep(grid, psi[i, :], s=0)

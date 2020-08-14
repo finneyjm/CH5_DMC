@@ -40,7 +40,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
         imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, multicore=True,
         trial_wvfn=None, rand_samp=True, system='CH5', imp_samp_equilibration=True,
         imp_samp_equilibration_time=5000, equilibrations_dtau=10, threshold=None, max_thresh=None,
-        weighting='continuous'):
+        weighting='continuous', analytic_rch=None):
     interp_exp = None
     if propagation is None:
         propagation = int(250/dtau)
@@ -72,7 +72,11 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                     interp_exp = hh_relate
                 else:
                     interp_exp = interpolate.splrep(hh_relate[0, :], hh_relate[1, :], s=0)
-                if len(trial_wvfn) == 5:
+
+                if analytic_rch is not None:
+                    for CH in range(bonds):
+                        psi.interp.append(trial_wvfn[CH])
+                elif len(trial_wvfn) == 5:
                     for CH in range(bonds):
                         if len(trial_wvfn[0]) == 2:
                             if np.max(trial_wvfn[CH, 1, :]) < 0.02:
@@ -90,7 +94,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                                 shift = x[np.argmax(trial_wvfn[CH, :])]
                             x -= shift
                             psi.interp.append(interpolate.splrep(x, trial_wvfn[CH, :], s=0))
-                if len(trial_wvfn) == 2:
+                elif len(trial_wvfn) == 2:
                     if np.max(trial_wvfn[1, :]) < 0.02:
                         shift = trial_wvfn[0, np.argmin(trial_wvfn[1, :])]
                     else:
@@ -139,7 +143,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
             if imp_samp_type == 'dev_indep':
                 Fqx, psi.drdx = di.drift(psi.zmat, psi.coords, psi.interp)
             elif imp_samp_type == 'dev_dep':
-                Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore=multicore, interp_exp=interp_exp)
+                Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore=multicore, interp_exp=interp_exp, analytic_rch=analytic_rch)
             elif imp_samp_type == 'fd':
                 Fqx, psi.psit = dd.drift(psi.zmat, psi.coords, psi.interp, imp_samp_type, multicore=multicore)
 
@@ -153,7 +157,7 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                 coords, weights, time, Eref_array, sum_weights, accept, des = dd.simulation_time(psi, alpha, sigmaCH, Fqx,
                                                                                                  imp_samp_type, time_steps,
                                                                                                  dtau, equilibration, wait_time,
-                                                                                                 propagation, multicore, interp_exp)
+                                                                                                 propagation, multicore, interp_exp, analytic_rch=analytic_rch)
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, accept=accept, des=des)
         else:

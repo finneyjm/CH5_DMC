@@ -4,8 +4,8 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 # DMC parameters
-dtau = 5.
-N_0 = 10000
+dtau = 10.
+N_0 = 1000
 time_total = 10000.
 alpha = 1./(2.*dtau)
 
@@ -18,7 +18,7 @@ m_red = (m_O*m_H)/(m_O+m_H)
 har2wave = 219474.6
 
 # parameters for the potential and for the analytic wavefuntion
-De = 0.02
+De = 0.1896
 sigmaOH = np.sqrt(dtau/m_red)
 omega = 3600./har2wave
 mw = m_red * omega
@@ -61,8 +61,8 @@ def Weighting(V, Vref, Psi):
     # Conditions to prevent one walker from obtaining all the weight
     threshold = 1. / float(N_0)
     death = np.argwhere(Psi.weights < threshold)
-    if len(death) >= 1:
-            print('%s walkers dead' %len(death))
+    # if len(death) >= 1:
+    #         print('%s walkers dead' %len(death))
     for i in death:  # iterate over the list of dead walkers
         ind = np.argmax(Psi.weights)  # find the walker with with most weight
         Biggo_weight = float(Psi.weights[ind])
@@ -111,7 +111,8 @@ def run(propagation):
     DW = False  # a parameter that will implement descendant weighting when True
     Psi_dtau = 0  #
     for i in range(int(time_total)):
-        print(i)
+        if (i + 1) % 500 == 0:
+            print(i)
         if DW is False:
             prop = float(propagation)
 
@@ -142,10 +143,12 @@ def run(propagation):
             Psi_tau.d += d_values
     return Eref
 
-
-Eref = run(100)
-print(np.mean(Eref[400:])*har2wave)
-plt.figure()
-plt.plot(Eref[400:]*har2wave)
-plt.savefig('Non_imp_samp_morse.png')
+b = np.zeros(5)
+for i in range(5):
+    e = run(100)
+    b[i] = np.mean(e[5000:])*har2wave
+print(f'Energy = {np.mean(b)}  {np.std(b)}')
+# plt.figure()
+# plt.plot(Eref[400:]*har2wave)
+# plt.savefig('Non_imp_samp_morse.png')
 

@@ -1,37 +1,16 @@
 import numpy as np
 
-wvfns = np.zeros((5, 5000))
-for i in range(5):
-    wvfns[i] = np.load(f'min_wvfns/GSW_min_CD_{i+1}.npy')
-x = np.linspace(0.4, 6., 5000)
+CH_wvfn = np.load('min_wvfns/GSW_min_CH_2.npy')
+CD_wvfn = np.load('min_wvfns/GSW_min_CD_2.npy')
 
-min_average = np.average(wvfns, axis=0)
-np.save('min_wvfns/Min_CD_average', np.vstack((x, min_average)))
+OH_wvfn = np.load('wvfns/free_oh_wvfn.npy')
 
-wvfns_H = np.zeros((5, 5000))
-for i in range(5):
-    wvfns_H[i] = np.load(f'min_wvfns/GSW_min_CH_{i+1}.npy')
-x = np.linspace(0.4, 6., 5000)
+x = np.linspace(0.4, 6, 5000)
+np.savetxt('ch_stretch_wvfn', np.hstack((x, CH_wvfn)))
+np.savetxt('cd_stretch_wvfn', np.hstack((x, CD_wvfn)))
+np.savetxt('oh_stretch_wvfn', OH_wvfn)
 
-min_average_H = np.average(wvfns_H, axis=0)
-np.save('min_wvfns/Min_CH_average', np.vstack((x, min_average_H)))
-
-import matplotlib.pyplot as plt
-for i in range(5):
-    plt.plot(x, wvfns[i], label=f'GSW CD {i+1}')
-plt.plot(x, min_average, label='average CD')
-
-
-# for i in range(5):
-#     plt.plot(x, wvfns_H[i], label=f'GSW CH {i+1}')
-# plt.plot(x, min_average_H, label='average CH')
-
-plt.xlim(1.5, 3)
-plt.legend()
-plt.savefig('CD_min_wvfns_and_average')
-plt.show()
-plt.close()
-
+# np.savetxt('x', x)
 
 
 
