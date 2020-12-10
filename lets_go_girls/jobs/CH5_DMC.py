@@ -40,7 +40,8 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
         imp_samp=False, imp_samp_type='dev_indep', hh_relate=None, multicore=True,
         trial_wvfn=None, rand_samp=True, system='CH5', imp_samp_equilibration=True,
         imp_samp_equilibration_time=5000, equilibrations_dtau=10, threshold=None, max_thresh=None,
-        weighting='continuous', analytic_rch=None):
+        weighting='continuous', analytic_rch=None, restart=False):
+
     interp_exp = None
     if propagation is None:
         propagation = int(250/dtau)
@@ -138,6 +139,13 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                 sigmaCH[i] = np.array([[sigmaD] * 3])
             else:
                 raise JacobIsDumb("We don't serve that kind of atom in these here parts")
+        if restart:
+            end = 24 + len(str(N_0))
+            respawn = np.load(f'../../results/{output[:-end]}/{output[:-end]}{str(N_0)}{output[-15:]}.npz')
+            psi.coords = respawn['coords'][-1]
+            psi.weights = respawn['weights'][-1]
+            equilibration = 0.
+
 
         if imp_samp is True:
             if imp_samp_type == 'dev_indep':
@@ -197,6 +205,15 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                 sigmaOH[i] = np.array([[sigmaO] * 3])
             else:
                 raise JacobIsDumb("We don't serve that kind of atom in these here parts")
+
+        if restart:
+            end = 24 + len(str(N_0))
+            respawn = np.load(f'../../results/{output[:-end]}/{output[:-end]}{str(N_0)}{output[-15:]}.npz')
+            psi.coords = respawn['coords'][-1]
+            psi.weights = respawn['weights'][-1]
+            Eref = respawn['Eref'][-1]
+            imp_samp_equilibration = False
+            equilibration = 0.
 
         if imp_samp is True:
             if imp_samp_equilibration:
@@ -268,6 +285,15 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
             else:
                 raise JacobIsDumb("We don't serve that kind of atom in these here parts")
 
+        if restart:
+            end = 24 + len(str(N_0))
+            respawn = np.load(f'../../results/{output[:-end]}/{output[:-end]}{str(N_0)}{output[-15:]}.npz')
+            psi.coords = respawn['coords'][-1]
+            psi.weights = respawn['weights'][-1]
+            Eref = respawn['Eref'][-1]
+            imp_samp_equilibration = False
+            equilibration = 0.
+
         if imp_samp is True:
             if imp_samp_equilibration:
                 _, _, _, Eref, _, _ = pni.simulation_time(psi, sigmaOH, imp_samp_equilibration_time,
@@ -287,6 +313,62 @@ def run(N_0, time_steps, dtau, equilibration, wait_time, output, propagation=Non
                                                                                              wait_time, propagation,
                                                                                              threshold, max_thresh,
                                                                                              multicore, Eref)
+
+            np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
+                     sum_weights=sum_weights, accept=accept, des=des)
+        else:
+            coords, weights, time, Eref_array, sum_weights, des = pni.simulation_time(psi, sigmaOH, time_steps, dtau,
+                                                                                      equilibration, wait_time,
+                                                                                      propagation,
+                                                                                      multicore, threshold, max_thresh,
+                                                                                      weighting)
+            np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
+                     sum_weights=sum_weights, des=des)
+
+    elif system == 'H2O' or system == 'water':
+        coords = np.flip(np.load('../../jobs/Prot_water_params/water_coords.npy'), axis=0)
+
+        if imp_samp is True:
+            if trial_wvfn is None:
+                raise JacobHasNoFile('Please supply a trial wavefunction if you wanna do importance sampling')
+            psi = pi.Walkers(N_0, atoms, coords)
+            psi.interp_reg_oh = trial_wvfn['reg_oh']
+            psi.interp_ang = trial_wvfn['ang']
+        else:
+            psi = pni.Walkers(N_0, atoms, coords)
+
+        alpha = 1. / (2. * dtau)
+        sigmaH = np.sqrt(dtau / m_H)
+        sigmaO = np.sqrt(dtau / m_O)
+        sigmaD = np.sqrt(dtau / m_D)
+        sigmaOH = np.zeros((len(atoms), 3))
+        for i in range(len(atoms)):
+            if psi.atoms[i].upper() == 'H':
+                sigmaOH[i] = np.array([[sigmaH] * 3])
+            elif psi.atoms[i].upper() == 'D':
+                sigmaOH[i] = np.array([[sigmaD] * 3])
+            elif psi.atoms[i].upper() == 'O':
+                sigmaOH[i] = np.array([[sigmaO] * 3])
+            else:
+                raise JacobIsDumb("We don't serve that kind of atom in these here parts")
+
+        if restart:
+            end = 24 + len(str(N_0))
+            respawn = np.load(f'../../results/{output[:-end]}/{output[:-end]}{str(N_0)}{output[-15:]}.npz')
+            psi.coords = respawn['coords'][-1]
+            psi.weights = respawn['weights'][-1]
+            Eref = respawn['Eref'][-1]
+            equilibration = 0.
+
+        if imp_samp is True:
+            Fqx, psi.psit = pi.drift(psi.coords, psi.atoms, int((len(atoms)-1)/3), psi.interp_reg_oh, psi.interp_hbond,
+                                     psi.interp_OO_shift, psi.interp_OO_scale, psi.interp_ang, multicore)
+
+            coords, weights, time, Eref_array, sum_weights, accept, des = pi.simulation_time(psi, alpha, sigmaOH, Fqx,
+                                                                                             time_steps, dtau, equilibration,
+                                                                                             wait_time, propagation,
+                                                                                             threshold, max_thresh,
+                                                                                             multicore)
 
             np.savez(output, coords=coords, weights=weights, time=time, Eref=Eref_array,
                      sum_weights=sum_weights, accept=accept, des=des)

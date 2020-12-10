@@ -119,7 +119,7 @@ def rch_harm_osc(x, shift, interp):
 
     freq /= har2wave
     alpha = freq / m
-    return (alpha / np.pi) ** (1 / 4) * np.exp(-alpha * (x - shift) ** 2 / 2)
+    return (alpha / np.pi) ** (1 / 4) * np.exp(-alpha * (x - shift) ** 2 / 2)/30.
 
 
 def hh_relate_fit(x, *args):

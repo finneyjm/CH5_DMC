@@ -72,6 +72,10 @@ def get_da_psi(coords, atoms, num_waters, interp_reg_oh, interp_hbond, interp_OO
         hbond_oh = dists(coords, num_waters, 'hbond_OH')
         hbond_oo = dists(coords, num_waters, 'hbond_OO')
         angs = angles(coords, reg_oh, num_waters)
+    elif num_waters == 0:
+        hbond_oh = None
+        hbond_oo = None
+        angs = angles(coords, reg_oh, num_waters)
     else:
         hbond_oh = None
         hbond_oo = None
@@ -101,18 +105,26 @@ def psi_t_extra(coords, atoms, num_waters, interp_reg_oh, interp_hbond=None, int
             hbond_oh = dists(coords, num_waters, 'hbond_OH')
             hbond_oo = dists(coords, num_waters, 'hbond_OO')
             angs = angles(coords, reg_oh, num_waters)
+        elif num_waters == 0:
+            angs = angles(coords, reg_oh, num_waters)
 
     if num_waters > 1:
         shift = np.zeros((len(coords), int(num_waters-1)))
         scale = np.zeros((len(coords), int(num_waters-1)))
     if num_waters == 2:
         psi = np.zeros((len(coords), 7))
+    elif num_waters == 0:
+        psi = np.zeros((len(coords), 3))
     else:
         psi = np.zeros((len(coords), int(num_waters*3)))
 
     if num_waters == 1:
         for i in range(3):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
+    elif num_waters == 0:
+        for i in range(2):
+            psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
+        psi[:, 2] = angle_function(angs, interp_ang, atoms[1:3])
     elif num_waters == 2: 
         for i in range(4):
             psi[:, i] = interpolate.splev(reg_oh[:, i], interp_reg_oh, der=0)
@@ -227,6 +239,17 @@ def angles(coords, dists, num_waters):
 
         return np.vstack((ang1, ang2)).T
 
+    elif num_waters == 0:
+        v1 = (coords[:, 0] - coords[:, 2]) / np.broadcast_to(dists[:, 0, None], (len(dists), 3))
+        v2 = (coords[:, 1] - coords[:, 2]) / np.broadcast_to(dists[:, 1, None], (len(dists), 3))
+
+        v1_new = np.reshape(v1, (v1.shape[0], 1, v1.shape[1]))
+        v2_new = np.reshape(v2, (v2.shape[0], v2.shape[1], 1))
+
+        ang1 = np.arccos(np.matmul(v1_new, v2_new).squeeze())
+
+        return ang1.T
+
     elif num_waters == 3:
         v1 = (coords[:, 4] - coords[:, 6])/np.broadcast_to(dists[:, 1, None], (len(dists), 3))
         v2 = (coords[:, 5] - coords[:, 6])/np.broadcast_to(dists[:, 2, None], (len(dists), 3))
@@ -268,6 +291,8 @@ def angles(coords, dists, num_waters):
 def dists(coords, num_waters, dist_type):
     if num_waters == 1:
         bonds = [[4, 1], [4, 2], [4, 3]]
+    elif num_waters == 0:
+        bonds = [[3, 1], [3, 2]]
     elif num_waters == 2:
         if dist_type == 'OH':
             bonds = [[4, 2], [4, 3], [7, 6], [7, 5]]
@@ -436,6 +461,7 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
     prop = float(propagation)
     wait = float(wait_time)
     Eref_array = np.zeros(time_steps)
+    import matplotlib.pyplot as plt
 
     for i in range(int(time_steps)):
         if DW is False:
@@ -443,6 +469,7 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
             wait -= 1.
         else:
             prop -= 1.
+
 
         if i == 0:
             if multicore is True:

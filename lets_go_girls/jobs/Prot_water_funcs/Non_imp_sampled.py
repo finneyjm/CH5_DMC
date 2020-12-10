@@ -111,10 +111,10 @@ def Discrete_weighting(Vref, Psi, DW, dtau):
 
 # Calculates the descendant weight for the walkers before descendant weighting
 def descendants(Psi, weighting, N_0=None):
+    N_0 = len(Psi.coords)
     if weighting == 'discrete':
         d = np.bincount(Psi.walkers)
     else:
-        N_0 = len(Psi.coords)
         d = np.bincount(Psi.walkers, weights=Psi.weights)
     while len(d) < N_0:
         d = np.append(d, 0.)
@@ -192,7 +192,12 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
         time[i] = i + 1
         sum_weights[i] = np.sum(psi.weights)
 
+
+
         if (i+1) % 500 == 0:
+            import matplotlib.pyplot as plt
+            plt.plot(Vref_array * har2wave)
+            plt.show()
             print(f'time step {i+1} Energy = {Vref_array[i]}')
             if i > 500:
                 print(f'Average E ref = {np.mean(Vref_array[500:])}')

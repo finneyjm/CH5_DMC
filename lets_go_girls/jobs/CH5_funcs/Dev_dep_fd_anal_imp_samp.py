@@ -12,9 +12,9 @@ massCD = 3143.820873920939
 ch_stretch = np.load('../params/min_wvfns/GSW_min_CH_2.npy')
 x = np.linspace(0.4, 6., 5000)
 shift = x[np.argmax(ch_stretch)]
-# x -= shift
-interp = interpolate.splrep(x, ch_stretch, s=0)
-
+# interp = interpolate.splrep(x, ch_stretch, s=0)
+np.save('../params/min_wvfns/new_GSW_min_CH_2.npy', np.vstack((x-shift, ch_stretch)))
+x -= shift
 
 CH = np.array((freqCH, massCH))
 CD = np.array((freqCD, massCD))
@@ -32,11 +32,11 @@ def rch_harm_osc(x, shift, interp):
 
 plt.plot(x, ch_stretch, label='DVR')
 
-plt.plot(x, rch_harm_osc(x, np.zeros(5000) + shift, CH)/30, label='harmonic')
-y = rch_harm_osc(x, np.zeros(5000)+shift, CH)/30
+plt.plot(x, rch_harm_osc(x, np.zeros(5000), CH)/30, label='harmonic')
+y = rch_harm_osc(x, np.zeros(5000), CH)/30
 np.save('../params/min_wvfns/GSW_min_CH_2_harm', y)
 plt.legend()
-plt.xlim(1.2, 3.2)
+# plt.xlim(1.2, 3.2)
 plt.show()
 
 # np.save('../params/min_wvfns/rch_params_GSW2', CH)

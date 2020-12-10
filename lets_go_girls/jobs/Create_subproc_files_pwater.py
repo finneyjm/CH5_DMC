@@ -1,9 +1,9 @@
 # walkers = [[100, 200, 500, 1000, 2000], [10000, 5000], [20000]]
-walkers = [[20]]
+walkers = [[20000]]
 # size = ['small', 'med', 'large']
 size = ['med']
-system = 'pdimer'
-type_of_sim = 'full_imp_samp'
+system = 'water'
+type_of_sim = 'imp_samp'
 # thresh = ['half', 'one', 'five', 'ten', 'twenty']
 # for i in thresh:
 for a, b in zip(walkers, size):

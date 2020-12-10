@@ -1,5 +1,5 @@
 import numpy as np
 
 
-a= np.load('hydronium_oh_wvfn.npy')
+a= np.load('free_oh_wvfn.npy')
 asdf

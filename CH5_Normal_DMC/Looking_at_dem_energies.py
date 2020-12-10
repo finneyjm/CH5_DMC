@@ -24,11 +24,16 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
         energies_imp2 = np.zeros((N_i+1, trials_i))
     elif extra is True:
         energies_imp = np.zeros((N_i, trials_i))
-        energies_imp2 = np.zeros((5, trials_i))
+
     else:
         energies_imp = np.zeros((N_i, trials_i))
         energies_imp2 = np.zeros((N_i, trials_i))
-    energies_imp3 = np.zeros((N_i, trials_i))
+    if extra:
+        walk = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000]
+        energies_imp3 = np.zeros((len(walk), trials_i))
+        energies_imp2 = np.zeros((len(walk), trials_i))
+    else:
+        energies_imp3 = np.zeros((N_i, trials_i))
     energies_non = np.zeros((N_n, trials_ni))
 
     for j in range(trials_ni):
@@ -37,7 +42,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
                 Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled{ni[isotop]}/' +
                                  f'Non_imp_sampled{ni[isotop]}_{non_imp_samp_walkers[i]}_' +
                                  f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
-                energies_non[i, j] += np.mean(Energy[500:10000])
+                energies_non[i, j] += np.mean(Energy[5000:])
             elif system == 'dimer':
                 Energy = np.load(f'Trial_wvfn_testing/results/Non_imp_sampled_pdimer/' +
                                   f'Non_imp_sampled_pdimer_{non_imp_samp_walkers[i]}_' +
@@ -71,7 +76,7 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
                 Energy = np.load(f'Trial_wvfn_testing/results/HH_to_rCHrCD_{isotop}H_GSW2/' +
                                  f'HH_to_rCHrCD_{isotop}H_GSW2_{imp_samp_walkers[i]}_' +
                                  f'Walkers_Test_{j+1}.npz')['Eref']*har2wave
-                energies_imp[i, j] += np.mean(Energy[500:10000])
+                energies_imp[i, j] += np.mean(Energy[5000:])
 
                 # Energy = np.load(f'Trial_wvfn_testing/results/Average_fd/' +
                 #                  f'Average_fd_{imp_samp_walkers[i]}_Walkers' +
@@ -129,9 +134,12 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
                 energies_imp[i, j] = np.mean(Energy[5000:]) - a
 
     if extra is True:
-        walk = [1000, 2000, 3000, 4000, 5000]
         for i in range(len(walk)):
             for j in range(trials_i):
+                Energy = np.load(f'Trial_wvfn_testing/results/imp_sampled_discrete_analytic_5H_ts_1/' +
+                                 f'imp_sampled_discrete_analytic_5H_ts_1_{walk[i]}_' +
+                                 f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
+                energies_imp3[i, j] = np.mean(Energy[avg_beg:avg_end])
                 Energy = np.load(f'Trial_wvfn_testing/results/imp_sampled_analytic_5H_ts_1/' +
                                  f'imp_sampled_analytic_5H_ts_1_{walk[i]}_' +
                                  f'Walkers_Test_{j + 1}.npz')['Eref'] * har2wave
@@ -215,10 +223,14 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     print('std non importance sampling ' + str(std_non))
 
     #trimer w tetramer params
-    walk = [2000, 5000, 10000, 15000, 20000]
+    if system == 'trimer' or system == 'tetramer':
+        walk = [2000, 5000, 10000, 15000, 20000]
+    if extra:
+        energies_imp3 = energies_imp3[:len(walk)]
     avg = np.mean(energies_imp3, axis=1)
     std = np.std(energies_imp3, axis=1)
-    print(energies_imp2)
+    print(avg)
+    print(std)
 
     fig, axes = plt.subplots()
     if system == 'CH5':
@@ -240,21 +252,21 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
         axes.plot(np.linspace(5000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='orange',
                   linestyle='dotted', linewidth=2)
 
-    elif system == 'trimer':
-        axes.errorbar(np.linspace(30000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, yerr=[std_imp[-1]] * 5000,
-                      color='blue', alpha=0.01)
-        axes.plot(np.linspace(30000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='black',
-                  linestyle='dotted', linewidth=2)
-        axes.plot(np.linspace(30000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='blue',
-                  linestyle='dotted', linewidth=2)
+    # elif system == 'trimer':
+        # axes.errorbar(np.linspace(30000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, yerr=[std_imp[-1]] * 5000,
+        #               color='blue', alpha=0.01)
+        # axes.plot(np.linspace(30000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='black',
+        #           linestyle='dotted', linewidth=2)
+        # axes.plot(np.linspace(30000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='blue',
+        #           linestyle='dotted', linewidth=2)
 
-    elif system == 'tetramer':
-        axes.errorbar(np.linspace(40000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, yerr=[std_imp[-1]] * 5000,
-                      color='purple', alpha=0.01)
-        axes.plot(np.linspace(40000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='black',
-                  linestyle='dotted', linewidth=2)
-        axes.plot(np.linspace(40000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='purple',
-                  linestyle='dotted', linewidth=2)
+    # elif system == 'tetramer':
+    #     axes.errorbar(np.linspace(40000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, yerr=[std_imp[-1]] * 5000,
+    #                   color='purple', alpha=0.01)
+    #     axes.plot(np.linspace(40000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='black',
+    #               linestyle='dotted', linewidth=2)
+    #     axes.plot(np.linspace(40000, non_imp_samp_walkers[-1], 5000), [avg_imp[-1]] * 5000, color='purple',
+    #               linestyle='dotted', linewidth=2)
 
 
     axes.errorbar(non_imp_samp_walkers, avg_non, yerr=std_non, marker='s', markerfacecolor='none', color='red', label=r'Unguided $\Delta\tau$ = 1')
@@ -262,29 +274,30 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
     if system == 'trimer' or system == 'tetramer':
         axes.errorbar(imp_samp_walkers, avg_imp2, yerr=std_imp2, color='orange', label='Guided (water)', marker='v')
 
-    if system == 'trimer':
-        axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='blue', label=r'Guided (H$^+($H$_2$O)$_3$)', marker='o')
-    if system == 'tetramer':
-        axes.errorbar(np.append(imp_samp_walkers, (40000)), avg_imp, yerr=std_imp, color='purple',
-                      label=r'Guided (H$^+($H$_2$O)$_4$)', marker='o')
+    # if system == 'trimer':
+        # axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='blue', label=r'Guided (H$^+($H$_2$O)$_3$)', marker='o')
+    # if system == 'tetramer':
+    #     axes.errorbar(np.append(imp_samp_walkers, (40000)), avg_imp, yerr=std_imp, color='purple',
+    #                   label=r'Guided (H$^+($H$_2$O)$_4$)', marker='o')
     if system == 'monomer' or system == 'dimer':
         axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='orange', label='Guided (water)', marker='v')
 
     if system == 'CH5':
         axes.errorbar(imp_samp_walkers, avg_imp, yerr=std_imp, color='blue', label='Guided', marker='o')
         if extra:
-            walk = [1000, 2000, 3000, 4000, 5000]
+            # walk = [1000, 2000, 3000, 4000, 5000]
             axes.errorbar(walk, avg_imp2, yerr=std_imp2, color='orange', label='Guided (harmonic)', marker='o')
+            axes.errorbar(walk, avg, yerr=std, color='purple', label='Guided (discrete harmonic)', marker='o')
 
 
-    if system == 'trimer':
-        axes.errorbar(walk, avg, yerr=std, color='purple', label=r'Guided (H$^+($H$_2$O)$_4$)', marker='o')
-    if system == 'tetramer':
-        axes.errorbar(walk, avg, yerr=std, color='blue', label=r'Guided (H$^+($H$_2$O)$_3$)', marker='o')
-
-        axes.errorbar(walkers,  avg_non_2,
-                      yerr=std_non_2, marker='s', markerfacecolor='none', color='magenta',
-                      label=r'Unguided $\Delta\tau$ = 10')
+    # if system == 'trimer':
+    #     axes.errorbar(walk, avg, yerr=std, color='purple', label=r'Guided (H$^+($H$_2$O)$_4$)', marker='o')
+    # if system == 'tetramer':
+    #     axes.errorbar(walk, avg, yerr=std, color='blue', label=r'Guided (H$^+($H$_2$O)$_3$)', marker='o')
+    #
+    #     axes.errorbar(walkers,  avg_non_2,
+    #                   yerr=std_non_2, marker='s', markerfacecolor='none', color='magenta',
+    #                   label=r'Unguided $\Delta\tau$ = 10')
 
 
     axes.set_xlabel(r'N$_{\rmw}$', fontsize=28)
@@ -302,8 +315,8 @@ def lets_get_some_energies(non_imp_samp_walkers, imp_samp_walkers, trials_ni, tr
         axes.set_ylim(17970, 18070)
     if system == 'dimer':
         axes.set_ylim(12350, 12450)
-    # leg = plt.legend(loc='upper right', fontsize=20)
-    # leg.get_frame().set_edgecolor('white')
+    leg = plt.legend(loc='upper right', fontsize=12)
+    leg.get_frame().set_edgecolor('white')
     plt.tight_layout()
 
 
@@ -328,7 +341,7 @@ walkers99 = [50, 100, 200, 500, 2000, 5000]
 # walkers4 = [100, 200, 500, 1000, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
 #             5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 20000]
 # for i in range(6):
-lets_get_some_energies(walkers10, walkers10, 5, 5, 5, system='CH5', extra=True)
+lets_get_some_energies(walkers74, walkers89, 5, 5, 5, system='tetramer', extra=False)
 plt.show()
 plt.close()
 

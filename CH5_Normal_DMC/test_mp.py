@@ -94,8 +94,8 @@ def quad_fit(x, *args):
     return a*x**3 + b*x**2 + c*x + d
 
 
-params = [0.02388915, 6.29098812, 2.0149631]
-fitted_params, _ = scipy.optimize.curve_fit(exp_fit, new_hh, zmat[0, 1, 1]-new_rch, p0=params)
+params = [0.02388915/ang2bohr, 6.29098812*ang2bohr, 2.0149631/ang2bohr]
+fitted_params, _ = scipy.optimize.curve_fit(exp_fit, new_hh/ang2bohr, (zmat[0, 1, 1]-new_rch)/ang2bohr, p0=params)
 print(fitted_params)
 params2 = [1, 1, 1, 1]
 fitted_params2, _ = scipy.optimize.curve_fit(quad_fit, new_hh, new_rch, p0=params2)
@@ -110,10 +110,10 @@ g = np.linspace(0, 1., num=5000)
 # plt.scatter(np.std(hh_c2v[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat_c2v[0, :, 1]/ang2bohr, s=100, marker='D', color='orange', label=r'$C_{2v}$ SP')
 # plt.plot(g/ang2bohr, zmat[0, 1, 1]/ang2bohr - exp_fit(g, *fitted_params)/ang2bohr, color='k', linestyle='--', label='Fit')
 
-plt.scatter(np.std(hh_cs[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr- zmat_cs[0, :, 1]/ang2bohr, s=100, marker='o', facecolors='none', edgecolors='green', label=r'$C_s$ SP')
+plt.scatter(np.std(hh_cs[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr - zmat_cs[0, :, 1]/ang2bohr, s=100, marker='o', facecolors='none', edgecolors='green', label=r'$C_s$ SP')
 plt.scatter(np.std(hh_c2v[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr-zmat_c2v[0, :, 1]/ang2bohr, s=100, marker='D', color='orange', label=r'$C_{2v}$ SP')
 plt.scatter(np.std(hh[0], axis=1)/ang2bohr, zmat[0, 1, 1]/ang2bohr-zmat[0, :, 1]/ang2bohr, s=100, label='C$_s$ Min')
-plt.plot(g/ang2bohr, exp_fit(g, *fitted_params)/ang2bohr, color='k', linestyle='--', label='Fit')
+plt.plot(g/ang2bohr, exp_fit(g/ang2bohr, *fitted_params), color='k', linestyle='--', label='Fit')
 # plt.plot(g, quad_fit(g, *fitted_params2), label='quadratic fit')
 # plt.legend(loc='lower left', fontsize=16)
 plt.xlabel(r'$\sigma$ ($\rm\AA$)', fontsize=22)

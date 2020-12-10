@@ -32,6 +32,36 @@ har2wave = 219474.6
 ang2bohr = (1.e-10)/(5.291772106712e-11)
 
 
+struct1 = np.array([[0.000036437, 0.000261250, 0.000020549],
+                [0.069682320, 1.105532624, 0.000022669],
+                [0.945749639, -0.732895078, -0.000067944],
+                [1.182074924, 0.187991209, 0.000009145],
+                [-0.436525904, -0.333258609, -0.939243426],
+                [-0.436588351, -0.333182565, 0.939259008]])*ang2bohr
+
+struct2 = np.array([[-0.000298856, -0.000017412, -0.000141136],
+                [1.022099482, 0.000046092, -0.361081497],
+                [0.000552766, 0.471961633, 1.102712489],
+                [-0.000044126, -0.471802245, 1.102854612],
+                [-0.606229037, -0.878215253, -0.263411220],
+                [-0.606365863, 0.878027160, -0.263097351]])*ang2bohr
+
+struct3 = np.array([[-0.000110479, 0.000019746, 0.204885798],
+                    [0.000032256, 0.000040871, -0.957945282],
+                    [0.950920625, -0.000050787, 0.731398902],
+                    [-0.950992179, -0.000020046, 0.731563788],
+                    [0.000089457, -1.002878334, -0.339811499],
+                    [0.000060320, 1.002888551, -0.339901698]])*ang2bohr
+
+min_en = CH5pot.mycalcpot(np.array([coords_initial_min]*3), 3)*har2wave
+a = CH5pot.mycalcpot(np.array([struct1]*3), 3)*har2wave
+cs_en = CH5pot.mycalcpot(np.array([coords_initial_cs]*3), 3)*har2wave
+b = CH5pot.mycalcpot(np.array([struct2]*3), 3)*har2wave
+c2v_en = CH5pot.mycalcpot(np.array([coords_initial_c2v]*3), 3)*har2wave
+c = CH5pot.mycalcpot(np.array([struct3]*3), 3)*har2wave
+
+
+
 def grid(a, b, N, CH, coords_initial):
     spacing = np.linspace(a, b, num=N)
     if CH == 1:
@@ -102,7 +132,7 @@ def run(CH, coords, mass):
 
 print(m_red)
 print(m_red_D)
-# g, eig, V = run(2, coords_initial_min, m_red_D)
+g, eig, V = run(2, coords_initial_min, m_red_D)
 # dx = (6-0.4)/5000
 #
 # ind = np.argmin(V)

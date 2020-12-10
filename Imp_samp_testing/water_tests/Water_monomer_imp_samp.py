@@ -117,10 +117,12 @@ def Kinetic(Psi, Fqx):
 
 
 def Potential(Psi):
-    V = wm.PatrickShinglePotential(Psi.coords, 4)
+    V = wm.PatrickShinglePotential(Psi.coords)
     Psi.V = np.array(V)
     return Psi
 
+a = np.array([coords_initial]*4)
+print(wm.PatrickShinglePotential(np.flip(a, axis=1)))
 
 def local_kinetic(Psi):
     psi = psi_t(Psi.zmat)
@@ -229,15 +231,23 @@ def run(propagation, test_number):
 
 
 # tests = [100, 200, 500, 1000, 2000, 5000, 10000]
+# N_0 = 2000
+# eref = run(250, 1)
+import matplotlib.pyplot as plt
+for i in range(10):
+    eref = np.load(f'energies/Imp_samp_water_energy_1000_walkers_{i+1}.npy')
+    plt.plot(eref[0], eref[1]*har2wave)
+    plt.show()
+    plt.close()
 # for j in range(5):
 #     for i in range(7):
 #         N_0 = tests[i]
 #         run(250, j+6)
 #         print(f'{tests[i]} Walker Test {j+1} is done!')
-for i in range(10):
-    N_0 = 20000
-    run(250, i+1)
-    print(f'{N_0} Walker Test {i+1} is done!')
+# for i in range(10):
+#     N_0 = 20000
+#     run(250, i+1)
+#     print(f'{N_0} Walker Test {i+1} is done!')
 # N_0 = 10000
 # eref, time_list = tm.time_me(run, 0, 'testtesttest')
 # tm.print_time_list(run, time_list)

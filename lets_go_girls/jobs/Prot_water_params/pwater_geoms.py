@@ -102,6 +102,11 @@ monomer2 = [[-0.00032173,  -1.66883417,  -0.56979199],
             [0.86680697,  -0.36416991,  -0.02964338],
             [-0.86669085,  -0.36370215,  -0.02981743],
             [-0.00008682,  -0.91448211,   0.02996010]]
+
+water = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
+                           [0.957840000000000, 0.000000000000000, 0.000000000000000],
+                           [-0.23995350000000, 0.927297000000000, 0.000000000000000]])*ang2bohr
+print(np.flip(np.array(water), axis=0))
 import numpy as np
 r = 1.84099353909
 beta = np.deg2rad(73.16737677908)
@@ -125,6 +130,7 @@ np.save('dimer_coords', np.array(dimer2))
 print(dimer2)
 np.save('monomer_coords', np.array(monomer)*ang2bohr)
 np.save('monomer_coords_from_Anne', np.array(monomer2)*ang2bohr)
+np.save('water_coords', np.array(water))
 
 a = np.loadtxt('roh_morse.dat', usecols=(0, 3))
 

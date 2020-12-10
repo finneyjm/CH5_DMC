@@ -22,7 +22,5 @@ def exportCoords(cds, fn):  # for partridge schwinke
 
 def PatrickShinglePotential(walkerSet):
     import PSchwenk.h2o_pot as h2o_pot
-#     print(walkerSet.T.shape)
     V = np.array(h2o_pot.calc_hoh_pot(np.flip(walkerSet, axis=1), len(walkerSet)))
-
     return V

@@ -34,6 +34,24 @@ class Potential:
                 self._pot = h3o.pot_calc
             finally:
                 os.chdir(cur_dir)
+        elif self._natm == 3:
+            try:
+                where_u_at = os.path.join(
+                    os.path.dirname(__file__),
+                    "PSchwenk"
+                )
+                # os.chdir('..')
+                os.chdir(where_u_at)
+                sys.path.insert(0, where_u_at)
+
+                try:
+                    import h2o_pot
+                except ImportError:
+                    self.compile_potential()
+                self._pot = h2o_pot.calc_hoh_pot
+            finally:
+                os.chdir(cur_dir)
+
         else:
             try:
                 where_u_at = os.path.join(
@@ -69,6 +87,8 @@ class Potential:
         if self._natm == 4:
             coords = np.flip(coords, 1)
             pot = self._pot(coords, len(coords), self._natm)
+        elif self._natm == 3:
+            pot = self._pot(coords, len(coords))
         elif len(coords) == 21:
             coord = coords.reshape(1, 7, 3)
             # print(coords.shape)

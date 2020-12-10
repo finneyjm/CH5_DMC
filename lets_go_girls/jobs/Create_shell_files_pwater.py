@@ -45,9 +45,9 @@ type_of_sim = 'full_imp_samp_water'
 #         myfile.write('DIFF=$(echo "$END - $START" | bc)\n')
 #         myfile.write(f'echo "{system}_{type_of_sim}_{b} took: $DIFF"')
 
-size = ['small']
-s = ['s']
-system = 'pmonomer'
+size = ['large']
+s = ['l']
+system = 'water'
 
 type_of_sim = 'non_imp_samp_ts_10'
 
@@ -61,19 +61,25 @@ for i in range(5):
             myfile.write('## Which queue should we use?\n\n')
             # if b == 's' or b == 'm':
             if i > 3:
-                myfile.write('#SBATCH --partition=ilahie\n\n')
-                myfile.write('#SBATCH --account=ilahie\n\n')
+                myfile.write('#SBATCH --partition=ckpt\n\n')
+                myfile.write('#SBATCH --account=chem-ckpt\n\n')
                 myfile.write('## Number of cores\n\n')
                 myfile.write('#SBATCH --tasks=28\n\n')
 
             elif i < 1:
-                myfile.write('#SBATCH --partition=ilahie\n\n')
-                myfile.write('#SBATCH --account=ilahie\n\n')
+                myfile.write('#SBATCH --partition=ckpt\n\n')
+                myfile.write('#SBATCH --account=chem-ckpt\n\n')
+                myfile.write('## Number of cores\n\n')
+                myfile.write('#SBATCH --tasks=28\n\n')
+
+            elif i == 3:
+                myfile.write('#SBATCH --partition=ckpt\n\n')
+                myfile.write('#SBATCH --account=chem-ckpt\n\n')
                 myfile.write('## Number of cores\n\n')
                 myfile.write('#SBATCH --tasks=28\n\n')
             else:
-                myfile.write('#SBATCH --partition=chem\n\n')
-                myfile.write('#SBATCH --account=chem\n\n')
+                myfile.write('#SBATCH --partition=ckpt\n\n')
+                myfile.write('#SBATCH --account=chem-ckpt\n\n')
                 myfile.write('## Number of cores\n\n')
                 myfile.write('#SBATCH --tasks=28\n\n')
             myfile.write('## Number of nodes\n\n')
@@ -85,7 +91,7 @@ for i in range(5):
             elif b == 'm':
                 myfile.write('#SBATCH --time=0-12:00:00\n\n')
             elif b == 'l':
-                myfile.write('#SBATCH --time=4-00:00:00\n\n')
+                myfile.write('#SBATCH --time=0-04:00:00\n\n')
             elif b == 'b':
                 myfile.write('#SBATCH --time=10-00:00:00\n\n')
             elif b == 'vb':
@@ -108,7 +114,7 @@ for i in range(5):
                 # myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_2000_walkers_test_{i+1}\n')
                 myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_25000_walkers_test_{i+1}\n')
             elif b == 'l':
-                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_20000_walkers_test_{i+1}\n')
+                myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_10000_walkers_test_{i+1}\n')
             elif b == 'b':
                 myfile.write(f'python runDMC.py params_{system}_{type_of_sim}_75000_walkers_test_{i + 1}\n')
             elif b == 'vb':

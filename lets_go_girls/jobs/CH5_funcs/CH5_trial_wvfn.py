@@ -2,11 +2,11 @@ import numpy as np
 from scipy import interpolate
 
 hh_relate = np.load('../params/sigma_hh_to_rch_exp_relationship_params.npy')
-ch_stretch = np.load('../params/min_wvfns/GSW_min_CH_2.npy')
-x = np.linspace(0.4, 6., 5000)
-shift = x[np.argmax(ch_stretch)]
-x -= shift
-interp = interpolate.splrep(x, ch_stretch, s=0)
+ch_stretch = np.load('../params/min_wvfns/new_GSW_min_CH_2.npy')
+# x = np.linspace(0.4, 6., 5000)
+# shift = x[np.argmax(ch_stretch)]
+# x -= shift
+interp = interpolate.splrep(ch_stretch[0], ch_stretch[1], s=0)
 
 
 def hh_relate_fit(x, *args):

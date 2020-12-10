@@ -1,16 +1,18 @@
-walkers = [10, 20, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 75000, 100000]
-# walkers = [100000]
+# walkers = [10, 20, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 75000, 100000]
+walkers = [10000]
 # walkers = [6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500]
 # walkers = [5000]
 # walkers = [50000]
 # bro_str = ['5', '10']
 # bro = [5, 10]
-atoms = ['H', 'H', 'H', 'O']
+# atoms = ['H', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O', 'H', 'H', 'O']
+atoms = ['H', 'H', 'O']
 ts = 10
 thresh = None
-thresh_num = 0.1
-system = 'pmonomer'
-type_of_sim = f'non_imp_samp_ts_10_full'
+thresh_num = 0.01
+system = 'water'
+type_of_sim = f'non_imp_samp_ts_10'
+restart = False
 max_thresh = None
 imp_samp = False
 weighting = None
@@ -130,13 +132,14 @@ for i in range(5):
             myfile.write('pars = {\n')
             myfile.write(f'    "N_0": {walkers[x]},\n')
             myfile.write(f'    "system": "{system}",\n')
-            myfile.write('    "time_steps": 18000,\n')
+            myfile.write('    "time_steps": 20000,\n')
             myfile.write(f'    "dtau": {ts},\n')
             myfile.write('    "multicore": True,\n')
             myfile.write('    "equilibration": 5000,\n')
             myfile.write('    "wait_time": 500,\n')
             myfile.write(f'    "output": "{system}_{type_of_sim}_{walkers[x]}_Walkers_Test_{i+1}",\n')
             myfile.write('    "atoms": atoms,\n')
+            myfile.write(f'    "restart": {restart},\n')
             if imp_samp:
                 myfile.write('    "imp_samp": True,\n')
                 myfile.write('    "trial_wvfn": trial_wvfn,\n')
