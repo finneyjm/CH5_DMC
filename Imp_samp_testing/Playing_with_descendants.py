@@ -86,7 +86,9 @@ print(np.sum(wvfn[1]/a))
 print(c)
 
 print(f'dipole = {np.dot(wvfn[1]/np.sum(wvfn[1]), asdf*coords)}')
+print(f'dipole = {np.dot(wvfn[1], asdf*coords)/np.sum(wvfn[1])}')
 print(f'q^2 = {np.dot(wvfn[1]/np.sum(wvfn[1]), asdf*coords**2)}')
+print(f'q^2 = {np.dot(wvfn[1], asdf*coords**2)/np.sum(wvfn[1])}')
 print(f'q^2 = {np.dot(wvfn[1]/np.sum(wvfn[1]), asdf**2*coords**2)}')
 
 

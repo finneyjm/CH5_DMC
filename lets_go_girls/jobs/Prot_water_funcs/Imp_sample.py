@@ -447,7 +447,8 @@ def Weighting(Eref, Psi, Fqx, dtau, DW, threshold, max_thresh):
 
 
 def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
-                    equilibration, wait_time, propagation, threshold, max_thresh, multicore=True, Eref=None):
+                    equilibration, wait_time, propagation, threshold, max_thresh, multicore=True, Eref=None,
+                    system=None):
     DW = False
     weighting = 'continuous'
     num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
@@ -507,7 +508,7 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
             DW = False
             des[num] = descendants(psi, weighting)
             num += 1
-
+    np.save(f'non_imp_samp_dtau_{dtau}_{system}', psi.V)
     return coords, weights, time, Eref_array, sum_weights, accept, des
 
 

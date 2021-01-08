@@ -142,7 +142,8 @@ def Parr_Potential(Psi):
 
 
 def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
-                    propagation, multicore, threshold, max_thresh, weighting='continuous', output='before_output_patch'):
+                    propagation, multicore, threshold, max_thresh, weighting='continuous', output='before_output_patch',
+                    system=None):
     DW = False
     time = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
@@ -224,7 +225,7 @@ def simulation_time(psi, sigmaCH, time_steps, dtau, equilibration, wait_time,
             else:
                 des[num] = descendants(psi, weighting)
             num += 1
-
+    np.save(f'nonny_imp_samp_dtau_{dtau}_{system}', psi.V)
     return coords, weights, time, Vref_array, sum_weights, des
 
 

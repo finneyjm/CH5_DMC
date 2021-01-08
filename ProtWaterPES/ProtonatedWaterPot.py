@@ -2,14 +2,13 @@ import os, sys
 import numpy as np
 
 
-
 class Potential:
 
     has_been_loaded = False
 
     def __init__(self, natm):
         if self.has_been_loaded:
-            raise Exception("Can't load this Bowman potential twice")
+            raise Exception("Can't load this potential twice")
         self._natm = natm
         # self._dimer = bare_dimer
         self.load_potential()
@@ -22,7 +21,6 @@ class Potential:
                     os.path.dirname(__file__),
                     "Hydronium_PES"
                 )
-                # os.chdir('..')
                 os.chdir(where_u_at)
                 sys.path.insert(0, where_u_at)
 
@@ -34,13 +32,29 @@ class Potential:
                 self._pot = h3o.pot_calc
             finally:
                 os.chdir(cur_dir)
+        elif self._natm == 5:
+            try:
+                where_u_at = os.path.join(
+                    os.path.dirname(__file__),
+                    "H3O2"
+                )
+                os.chdir(where_u_at)
+                sys.path.insert(0, where_u_at)
+
+                try:
+                    import h3o2pot
+                except ImportError:
+                    self.compile_potential()
+                h3o2pot.init_param()
+                self._pot = h3o2pot.h3o2pot
+            finally:
+                os.chdir(cur_dir)
         elif self._natm == 3:
             try:
                 where_u_at = os.path.join(
                     os.path.dirname(__file__),
                     "PSchwenk"
                 )
-                # os.chdir('..')
                 os.chdir(where_u_at)
                 sys.path.insert(0, where_u_at)
 
@@ -89,6 +103,10 @@ class Potential:
             pot = self._pot(coords, len(coords), self._natm)
         elif self._natm == 3:
             pot = self._pot(coords, len(coords))
+        elif self._natm == 5:
+            # coords = coords.reshape((1, 5, 3))
+            # pot = self._pot(coords)
+            pot = self._pot(np.transpose(coords, (1, 2, 0)))
         elif len(coords) == 21:
             coord = coords.reshape(1, 7, 3)
             # print(coords.shape)
@@ -127,5 +145,51 @@ class Potential:
         os.chdir("..")
         import subprocess
         subprocess.call(["bash", "build.sh"])
+
+
+class Dipole:
+
+    dip_has_been_loaded = False
+
+    def __init__(self, natm):
+        if self.dip_has_been_loaded:
+            raise Exception("Can't load this dipole twice")
+        self._natm = natm
+        # self._dimer = bare_dimer
+        self.load_dipole()
+
+    def init_dipole(self):
+        cur_dir = os.getcwd()
+        try:
+            where_u_at = os.path.join(
+                os.path.dirname(__file__),
+                "H3O2"
+            )
+            os.chdir(where_u_at)
+            sys.path.insert(0, where_u_at)
+
+            import h3o2dip
+            h3o2dip.init_param()
+            self._dip = h3o2dip.h3o2dip
+        finally:
+            os.chdir(cur_dir)
+
+    def get_dipole(self, coords):
+        """Assumes coords in (nwalkers, natm, 3)
+
+        :param coords:
+        :type coords:
+        :return:
+        :rtype:
+        """
+
+        dip = self._dip(np.transpose(coords, (1, 2, 0)))
+
+        return dip.T  # do the real thing
+
+    def load_dipole(self):
+        self.init_dipole()
+        cls = type(self)
+        cls.has_been_loaded = True
 
 
