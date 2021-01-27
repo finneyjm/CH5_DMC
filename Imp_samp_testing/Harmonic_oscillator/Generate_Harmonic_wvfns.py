@@ -86,9 +86,9 @@ import matplotlib.pyplot as plt
 g, wvfn, harm_pot = run()
 np.save('Anharmonic_trial_wvfn_ground_150_wvnum', np.vstack((g, wvfn[:, 0])))
 np.save('Anharmonic_trial_wvfn_150_wvnum', np.vstack((g, -wvfn[:, 1])))
-print(np.dot(wvfn[:, 1], g**2*wvfn[:, 0]))
-print(np.dot(wvfn[:, 0], g*wvfn[:, 1]))
-print(np.dot(wvfn[:, 1], g**2*wvfn[:, 1]))
+print(f'<1|g^2|0> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 0])}')
+print(f'dipole = {np.dot(wvfn[:, 0], g*wvfn[:, 1])}')
+print(f'<1|g^2|1> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 1])}')
 x = g-0.039
 x=g
 

@@ -16,10 +16,14 @@ m_red = (m_O*m_H)/(m_O+m_H)
 har2wave = 219474.6
 
 # parameters for the potential and for the analytic wavefuntion
-De = 0.1896
+omega = 3600./har2wave
+
+# wexe = 150./har2wave
+wexe = 5/har2wave
+De = omega**2/4/wexe
 sigmaOH = np.sqrt(dtau/m_red)
 omega = 3600/har2wave
-mw = m_red * omega
+mw = m_red * 3600/har2wave
 A = np.sqrt(omega**2 * m_red/(2*De))
 
 
@@ -155,6 +159,12 @@ def run(propagation, initial_loc, initial_shift, weights, DW):
     for i in range(int(propagation)):
         if (i+1) % 50 == 0:
             print(i)
+        # import matplotlib.pyplot as plt
+        # amp, xx = np.histogram(Psi.coords[1, 0], weights=weights[0, 0], range=(-1, 1), density=True, bins=75)
+        # bin = (xx[1:] + xx[:-1]) / 2.
+        #
+        # plt.plot(bin, amp)
+        # plt.show()
 
         Psi, Fqx, accept = Kinetic(psi, Fqx, DW)
         teff = accept * dtau
@@ -173,59 +183,47 @@ def run(propagation, initial_loc, initial_shift, weights, DW):
         Eref_array = np.append(Eref_array, Eref)
 
     d_values = descendants(Psi)
-    return d_values
+    return Psi.coords, Psi.weights
 
 wvfn = np.load('getting_coords.npy')
-navg = 5000
-tau_prime = 750
 
-excite_d = np.zeros((navg, len(wvfn[1, :])))
-for i in range(navg):
-    excite_d[i] = run(tau_prime, wvfn[0, :], 0.039, wvfn[1, :], False)
+x = np.linspace(-1, 1, 5000)
+psi = Walkers(1000, x, 0.039)
+psi = potential(psi)
+psi = E_loc(psi, False)
+f = drift(x, 0.039, False)
 
-ground_d = np.zeros((navg, len(wvfn[1, :])))
-for i in range(navg):
-    ground_d[i] = run(tau_prime, wvfn[0, :], 0.039, wvfn[1, :], True)
-#
-np.save('excited_d_values', excite_d)
-np.save('ground_d_values', ground_d)
-
-excite_d = np.average(np.load('excited_d_values.npy'), axis=0)
-ground_d = np.average(np.load('ground_d_values.npy'), axis=0)
-coords = wvfn[0]
-
-
-amp1, xx1 = np.histogram(coords, weights=excite_d, bins=75)
-bins1 = (xx1[1:] + xx1[:-1]) / 2.
 import matplotlib.pyplot as plt
+fig, ax1 = plt.subplots()
+ax1.plot(x, psi.El*har2wave, color='blue')
+ax1.set_ylabel(r'Energy cm$^{-1}$', color='blue', fontsize=16)
+ax1.set_xlabel(r'x Bohr', fontsize=16)
+ax1.tick_params(axis='x', labelsize=12)
+ax1.tick_params(axis='y', labelcolor='blue', labelsize=12)
 
-plt.plot(bins1, amp1, label='excited descendant weights')
+ax2 = ax1.twinx()
 
-amp2, xx2 = np.histogram(coords, weights=ground_d, bins=75)
-bins2 = (xx2[1:] + xx2[:-1]) / 2.
+ax2.plot(x, f, color='red')
+ax2.set_ylabel(r'Drift Hartree*Bohr$^2$', color='red', fontsize=16)
+ax2.tick_params(axis='y', labelcolor='red', labelsize=12)
+ax2.set_ylim(-2000, 2000)
 
-plt.plot(bins2, amp2, label='ground descendant weights')
-
-amp3, xx3 = np.histogram(coords, weights=wvfn[1], bins=75)
-bins3 = (xx3[1:] + xx3[:-1]) / 2.
-plt.plot(bins3, amp3, label='ground state initial weights')
-plt.legend()
-plt.xlabel(r'$\Delta \rmr_{OH}$')
+# plt.tight_layout()
 plt.show()
 
+# ground_coords = np.zeros((1, 5, 10000))
+# ground_weights = np.zeros((1, 5, 10000))
+# for i in range(5):
+#     coords, weights = run(20000, wvfn[0], 0.039, wvfn[1], True)
+#     ground_coords[:, i] = coords
+#     ground_weights[:, i] = weights
 
-a = np.sum(excite_d*coords)
-b = np.sum(ground_d)
-something = np.sum(excite_d)
-something_else = np.sum(wvfn[1])
-c = np.sum(excite_d**2/ground_d)
-d = np.sqrt(c*b)
-e = a/d
-print(a)
-print(b)
-print(something)
-print(something_else)
-print(c)
-print(d)
-print(e)
-
+# excite_coords = np.zeros((1, 5, 10000))
+# excite_weights = np.zeros((1, 5, 10000))
+# for i in range(5):
+#     coords, weights = run(20000, wvfn[0], 0.039, wvfn[1], False)
+#     excite_coords[:, i] = coords
+#     excite_weights[:, i] = weights
+#
+# # np.save('ground_state_wvfn', np.vstack((ground_weights, ground_coords)))
+# np.save('excited_state_wvfn', np.vstack((excite_weights, excite_coords)))

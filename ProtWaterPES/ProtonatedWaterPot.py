@@ -126,7 +126,7 @@ class Potential:
             death = np.argwhere(pot < (ptetramer-one_wvnum))
         # elif self._natm == 7:
         #     death = np.argwhere(pot < (pdimer-one_wvnum))
-        elif self._natm == 4:
+        elif self._natm == 4 or self._natm == 5:
             death = np.argwhere(pot < -one_wvnum)
         else:
             death = []

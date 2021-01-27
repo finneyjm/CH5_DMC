@@ -1,6 +1,7 @@
 import numpy as np
 # import h3o2dip_77
 from ProtWaterPES import *
+from Coordinerds.CoordinateSystems import *
 
 
 har2wave = 219474.6
@@ -53,7 +54,7 @@ print(get_pot(a)*har2wave)
 # print(get_dip(a))
 
 struct = np.array([
-    [2.06730145, 0., 0.],
+    [2.06730145, 0.1, 0.],
     [0., 0., 0.],
     [-0.38632011, -1.6897269,   0.54637778],
     [4.69798083, 0., 0.],
@@ -62,14 +63,29 @@ struct = np.array([
 
 def min_func(a):
     x = np.array([struct]*1)
-    x[0, 0, 0] = a[0]
-    x[0, 2, :] = a[1:4]
-    x[0, 3, 0] = a[4]
-    x[0, 4, :] = a[5:]
+    # x[0, 0, 0] = a[0]/2
+    # x[0, 0, 1] = a[1]
+    # x[0, 0, 2] = a[2]
+    x[0, 3, 0] = a[0]
+    coords = np.array(x)
+    coords = coords[:, (1, 3, 0, 2, 4)]
+
+    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
+                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
+                                                                                   [2, 0, 1, 0], [3, 0, 2, 1],
+                                                                                   [4, 1, 2, 0]])).coords
+    zmat[:, 2, 1] = a[1]
+    zmat[:, 3, 1] = a[1]
+    zmat[:, 1, 1] = a[0]/2
+    zmat[:, 1, 3] = a[2]
+    new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+    x = new_coords[:, (2, 0, 3, 1, 4)]
+    print(x)
+
     return get_pot(x)
 
 
-a = [2.07245631, -0.38770362, -1.69021664,  0.54406404,  4.6917776,   5.1574045,  0.81079259,  1.56336252]
+a = [4.61678487, 1.81894038, 0.01648]
 from scipy import optimize
 pot1 = min_func(a)
 print(pot1*har2wave)
