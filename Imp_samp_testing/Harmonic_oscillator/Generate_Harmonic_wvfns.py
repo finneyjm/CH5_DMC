@@ -29,16 +29,23 @@ m_red = (m_O*m_H)/(m_O+m_H)
 mw = m_red * omega
 A = np.sqrt(omega**2 * m_red/(2*De))
 
+m_O = 15.994915 / (Avo_num*me*1000)
+m_H = 1.007825 / (Avo_num*me*1000)
+m_OH = (m_H*m_O)/(m_H+m_O)
+omega_asym = 3070.648654929466/har2wave
+mw = m_OH*omega_asym
+
 
 def Potential(grid):
-    # V = np.zeros(len(grid))
-    # for i in range(len(grid)):
-    #     if grid[i] < .1:
-    #         V[i] = 1./2. * m_red * harm_freq**2 * (grid[i] - re)**2
-    #     else:
-    #         V[i] = 500000000000.
-    # return np.diag(V)
-    return np.diag(De * (1. - np.exp(-A * grid)) ** 2)
+    V = np.zeros(len(grid))
+    for i in range(len(grid)):
+        # if grid[i] < (-5000):
+            # V[i] = 1./2. * m_red * harm_freq**2 * (grid[i] - re)**2
+        V[i] = 1./2. * m_OH * omega_asym**2 * (grid[i] - re)**2
+        # else:
+        #     V[i] = 500000000000.
+    return np.diag(V)
+    # return np.diag(De * (1. - np.exp(-A * grid)) ** 2)
     # return np.diag(np.load('Potential_CH_stretch2.npy'))
 
 
@@ -69,7 +76,7 @@ def Energy(T, V):
 
 
 def run():
-    grid = np.linspace(-1, 1., 2000)
+    grid = np.linspace(-1, 1, 3000)
     V = Potential(grid)
     T = Kinetic_Calc(grid)
     En, Eig = Energy(T, V)
@@ -84,8 +91,8 @@ def run():
 
 import matplotlib.pyplot as plt
 g, wvfn, harm_pot = run()
-np.save('Anharmonic_trial_wvfn_ground_150_wvnum', np.vstack((g, wvfn[:, 0])))
-np.save('Anharmonic_trial_wvfn_150_wvnum', np.vstack((g, -wvfn[:, 1])))
+# np.save('Anharmonic_trial_wvfn_ground_150_wvnum', np.vstack((g, wvfn[:, 0])))
+# np.save('Anharmonic_trial_wvfn_150_wvnum', np.vstack((g, -wvfn[:, 1])))
 print(f'<1|g^2|0> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 0])}')
 print(f'dipole = {np.dot(wvfn[:, 0], g*wvfn[:, 1])}')
 print(f'<1|g^2|1> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 1])}')

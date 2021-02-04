@@ -24,7 +24,10 @@ ang2bohr = 1.e-10/5.291772106712e-11
 omega_asym = 3070.648654929466/har2wave
 omega_asym_D = 2235.4632530938925/har2wave
 
-struct = np.array([
+omega_sym = 2704.021674298211/har2wave
+omega_sym_D = 1968.55510602268/har2wave
+
+new_struct = np.array([
     [2.06095307, 0.05378083, 0.],
     [0., 0., 0.],
     [-0.32643038, -1.70972841, 0.52193868],
@@ -38,66 +41,114 @@ sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
 two_d_wvfns = np.load('small_grid_2d_h3o2.npz')['wvfns']
 big_Roo_grid = np.linspace(4.4, 5.0, 2000)
 big_sp_grid = np.linspace(-0.75, 0.75, 2000)
+X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 
 interp_ground = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 0].reshape((len(Roo_grid), len(sp_grid))), s=0)
-z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground)
-z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1)
-z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2)
-z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1)
-z_ground_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=2)
-z_ground_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1, dy=1)
+z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
+z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1).T
+z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2).T
+z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1).T
+z_ground_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=2).T
+z_ground_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1, dy=1).T
 
 ground_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_no_der)
-ground_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx1)
-ground_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx2)
-ground_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dy1)
-ground_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dy2)
-ground_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx1_dy1)
+ground_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx1/z_ground_no_der)
+ground_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx2/z_ground_no_der)
+ground_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dy1/z_ground_no_der)
+ground_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dy2/z_ground_no_der)
+ground_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx1_dy1/z_ground_no_der)
 
-interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 1].reshape((len(Roo_grid), len(sp_grid))), s=0)
-z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh)
-z_excite_xh_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1)
-z_excite_xh_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=2)
-z_excite_xh_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=1)
-z_excite_xh_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=2)
-z_excite_xh_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1, dy=1)
+# import matplotlib.pyplot as plt
+# from matplotlib import colors
+# fig, ax = plt.subplots(1)
+# # images = [
+# #     ax[0, 0].imshow(ground_no_der(big_sp_grid, big_Roo_grid).T, cmap='cool'),
+# #     ax[0, 1].imshow(ground_dx1_dy1(big_sp_grid, big_Roo_grid).T, cmap='cool'),
+# #     ax[1, 0].imshow(ground_dy1(big_sp_grid, big_Roo_grid).T*ground_dx1(big_sp_grid, big_Roo_grid).T, cmap='cool'),
+# #     ax[1, 1].imshow(ground_dx1_dy1(big_sp_grid, big_Roo_grid)-ground_dy1(big_sp_grid, big_Roo_grid)*ground_dx1(big_sp_grid, big_Roo_grid), cmap='cool')
+# # ]
+#
+# images = [ax.imshow(ground_dx1_dy1(big_sp_grid, big_Roo_grid)-ground_dy1(big_sp_grid, big_Roo_grid)*ground_dx1(big_sp_grid, big_Roo_grid), cmap='cool')]
+#
+# vmin = min(image.get_array().min() for image in images)
+# vmax = max(image.get_array().max() for image in images)
+# norm = colors.Normalize(vmin=vmin, vmax=vmax)
+# for im in images:
+#     im.set_norm(norm)
+#
+# fig.colorbar(images[0], ax=ax, orientation='horizontal', fraction=.1)
+#
+#
+# def update(changed_image):
+#     for im in images:
+#         if (changed_image.get_cmap() != im.get_cmap()
+#                 or changed_image.get_clim() != im.get_clim()):
+#             im.set_cmap(changed_image.get_cmap())
+#             im.set_clim(changed_image.get_clim())
+#
+#
+# for im in images:
+#     im.callbacksSM.connect('changed', update)
+#
+# plt.show()
 
-excite_xh_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_no_der)
-excite_xh_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx1)
-excite_xh_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx2)
-excite_xh_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dy1)
-excite_xh_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dy2)
-excite_xh_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx1_dy1)
 
-interp_excite_roo = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid))), s=0)
-z_excite_roo_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo)
-z_excite_roo_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dx=1)
-z_excite_roo_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dx=2)
-z_excite_roo_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dy=1)
-z_excite_roo_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dy=2)
-z_excite_roo_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dx=1, dy=1)
+# interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 1].reshape((len(Roo_grid), len(sp_grid))), s=0)
+# z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh)
+# z_excite_xh_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1)
+# z_excite_xh_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=2)
+# z_excite_xh_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=1)
+# z_excite_xh_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=2)
+# z_excite_xh_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1, dy=1)
+#
+# excite_xh_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_no_der)
+# excite_xh_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx1)
+# excite_xh_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx2)
+# excite_xh_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dy1)
+# excite_xh_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dy2)
+# excite_xh_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx1_dy1)
+#
+# interp_excite_roo = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid))), s=0)
+# z_excite_roo_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo)
+# z_excite_roo_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dx=1)
+# z_excite_roo_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dx=2)
+# z_excite_roo_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dy=1)
+# z_excite_roo_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dy=2)
+# z_excite_roo_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo, dx=1, dy=1)
+#
+# excite_roo_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_no_der)
+# excite_roo_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dx1)
+# excite_roo_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dx2)
+# excite_roo_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dy1)
+# excite_roo_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dy2)
+# excite_roo_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dx1_dy1)
+#
+# interp_excite_both = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 3].reshape((len(Roo_grid), len(sp_grid))), s=0)
+# z_excite_both_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both)
+# z_excite_both_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dx=1)
+# z_excite_both_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dx=2)
+# z_excite_both_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dy=1)
+# z_excite_both_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dy=2)
+# z_excite_both_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dx=1, dy=1)
+#
+# excite_both_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_no_der)
+# excite_both_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dx1)
+# excite_both_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dx2)
+# excite_both_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dy1)
+# excite_both_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dy2)
+# excite_both_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dx1_dy1)
 
-excite_roo_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_no_der)
-excite_roo_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dx1)
-excite_roo_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dx2)
-excite_roo_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dy1)
-excite_roo_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dy2)
-excite_roo_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_roo_dx1_dy1)
-
-interp_excite_both = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 3].reshape((len(Roo_grid), len(sp_grid))), s=0)
-z_excite_both_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both)
-z_excite_both_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dx=1)
-z_excite_both_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dx=2)
-z_excite_both_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dy=1)
-z_excite_both_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dy=2)
-z_excite_both_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_both, dx=1, dy=1)
-
-excite_both_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_no_der)
-excite_both_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dx1)
-excite_both_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dx2)
-excite_both_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dy1)
-excite_both_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dy2)
-excite_both_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_both_dx1_dy1)
+# new_struct = np.array([
+#     [0.000000000000000, 0.000000000000000, 0.000000000000000],
+#     [-2.304566686034061, 0.000000000000000, 0.000000000000000],
+#     [-2.740400260927908, 1.0814221449986587E-016, -1.766154718409233],
+#     [2.304566686034061, 0.000000000000000, 0.000000000000000],
+#     [2.740400260927908, 1.0814221449986587E-016, 1.766154718409233]
+# ])
+# new_struct[:, 0] = new_struct[:, 0] + 2.304566686034061
+# new_struct[-1, 0] = 2.73
+# new_struct[0, 0] = 0.01
+# new_struct[3, 0] = 4.6
 
 
 # Creates the walkers with all of their attributes
@@ -116,11 +167,11 @@ class Walkers(object):
         self.shift = initial_shifts
 
 
-def psi_t(coords, excite, shift):
+def psi_t_alt(coords, excite, shift):
     psi = np.zeros((len(coords), 2))
     dists = all_dists(coords)
     mw_h = m_OH * omega_asym
-    dists[:, 0] = dists[:, 0] - shift
+    dists[:, 0] = dists[:, 0] - shift[0]
     if excite == 'all':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
@@ -152,25 +203,61 @@ def psi_t(coords, excite, shift):
     return psi
 
 
-def dpsidx(coords, excite, shift):
+def psi_t(coords, excite, shift):
+    psi = np.zeros((len(coords), 2))
     dists = all_dists(coords)
-    daroox = daroodx(coords, dists[:, 1:4])
+    mw_h = m_OH * omega_asym
+    mw_H = m_OH * omega_sym
+    dists[:, 0] = dists[:, 0] - shift[0]
+    dists[:, -3] = dists[:, -3] - shift[1]
+    if excite == 'both':
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
+                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
+        psi[:, 1] = (mw_H / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_H * dists[:, -3] ** 2)) * \
+                    (2 * mw_H) ** (1 / 2) * dists[:, -3]
+    elif excite == 'a':
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
+                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
+        psi[:, 1] = (mw_H / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_H * dists[:, -3] ** 2))
+    elif excite == 's':
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
+        psi[:, 1] = (mw_H / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_H * dists[:, -3] ** 2)) * \
+                    (2 * mw_H) ** (1 / 2) * dists[:, -3]
+    else:
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
+        psi[:, 1] = (mw_H / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_H * dists[:, -3] ** 2))
+    return psi
+    # return np.ones((len(coords), 2))
+
+
+def dpsidx_alt(coords, excite, shift):
+    dists = all_dists(coords)
+    dists[:, 0] = dists[:, 0] - shift[0]
+    daroox = daroodx(coords, dists[:, [1, 2, -2]])
     dspx = dspdx(coords)
     dr = np.concatenate((daroox, dspx[..., None]), axis=-1)
-    collect = dpsidasp(coords, excite, dists, shift)
+    collect = dpsidasp(coords, excite, dists)
     return np.matmul(dr, collect[:, None, :, None]).squeeze()
 
 
-def d2psidx2(coords, excite, shift):
+def dpsidx(coords, excite, shift):
     dists = all_dists(coords)
-    daroox = daroodx(coords, dists[:, 1:4])
+    dr = dasdx(coords, dists[:, [1, 2]])
+    collect = dpsidas(coords, excite, dists[:, [0, -3]]-shift)
+    return np.matmul(dr, collect[:, None, :, None]).squeeze()
+
+
+def d2psidx2_alt(coords, excite, shift):
+    dists = all_dists(coords)
+    dists[:, 0] = dists[:, 0] - shift[0]
+    daroox = daroodx(coords, dists[:, [1, 2, -2]])
     dspx = dspdx(coords)
     dr1 = np.concatenate((daroox, dspx[..., None]), axis=-1)
-    daroox2 = daroodx2(coords, dists[:, 1:4])
+    daroox2 = daroodx2(coords, dists[:, [1, 2, -2]])
     dspx2 = d2spdx2(coords, dists[:, -1])
     dr2 = np.concatenate((daroox2, dspx2[..., None]), axis=-1)
-    first_dir = dpsidasp(coords, excite, dists, shift)
-    second_dir = d2psidasp(coords, excite, dists, shift)
+    first_dir = dpsidasp(coords, excite, dists)
+    second_dir = d2psidasp(coords, excite, dists)
     part1 = np.matmul(dr2, first_dir[:, None, :, None]).squeeze()
     part2 = np.matmul(dr1**2, second_dir[:, None, 0:3, None]).squeeze()
     part3 = dr1[..., 1]*dr1[..., 2]*np.broadcast_to(second_dir[:, -1, None, None], (len(dr1), 5, 3))
@@ -179,16 +266,27 @@ def d2psidx2(coords, excite, shift):
     return part1 + part2 + part3 + 2*part4
 
 
-def dpsidasp(coords, excite, dists, shift):
+def d2psidx2(coords, excite, shift):
+    dists = all_dists(coords)
+    dr1 = dasdx(coords, dists[:, [1, 2]])
+    dr2 = d2asdx2(coords, dists[:, [1, 2]])
+    first_dir = dpsidas(coords, excite, dists[:, [0, -3]]-shift)
+    second_dir = d2psidas(coords, excite, dists[:, [0, -3]]-shift)
+    part1 = np.matmul(dr2, first_dir[:, None, :, None]).squeeze()
+    part2 = np.matmul(dr1**2, second_dir[:, None, 0:3, None]).squeeze()
+    part3 = np.matmul(dr1*dr1[..., [1, 0]], first_dir[:, None, :, None]*first_dir[:, None, [1, 0], None]).squeeze()
+    return part1 + part2 + 2*part3
+
+
+def dpsidasp(coords, excite, dists):
     collect = np.zeros((len(coords), 3))
     mw_h = m_OH * omega_asym
-    dists[:, 0] = dists[:, 0] - shift
     if excite == 'all':
         collect[:, 0] = (1 - mw_h*dists[:, 0]**2)/dists[:, 0]
         collect[:, 2] = excite_both_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_both_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'sp & roo':
-        collect[:, 0] = -mw_h*dists[:, 1]
+        collect[:, 0] = -mw_h*dists[:, 0]
         collect[:, 2] = excite_both_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_both_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'sp & a':
@@ -196,7 +294,7 @@ def dpsidasp(coords, excite, dists, shift):
         collect[:, 2] = excite_xh_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_xh_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'sp':
-        collect[:, 0] = -mw_h*dists[:, 1]
+        collect[:, 0] = -mw_h*dists[:, 0]
         collect[:, 2] = excite_xh_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_xh_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'roo & a':
@@ -204,7 +302,7 @@ def dpsidasp(coords, excite, dists, shift):
         collect[:, 2] = excite_roo_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_roo_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'roo':
-        collect[:, 0] = -mw_h*dists[:, 1]
+        collect[:, 0] = -mw_h*dists[:, 0]
         collect[:, 2] = excite_roo_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_roo_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'a':
@@ -212,57 +310,96 @@ def dpsidasp(coords, excite, dists, shift):
         collect[:, 2] = ground_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = ground_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     else:
-        collect[:, 0] = -mw_h*dists[:, 1]
+        collect[:, 0] = -mw_h*dists[:, 0]
         collect[:, 2] = ground_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = ground_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     return collect
 
 
-def d2psidasp(coords, excite, dists, shift):
+def dpsidas(coords, excite, dists):
+    collect = np.zeros((len(coords), 2))
+    mw_h = m_OH * omega_asym
+    mw_H = m_OH * omega_sym
+    if excite == 'both':
+        collect[:, 0] = (1 - mw_h * dists[:, 0] ** 2) / dists[:, 0]
+        collect[:, 1] = (1 - mw_H * dists[:, 1] ** 2) / dists[:, 1]
+    elif excite == 'a':
+        collect[:, 0] = (1 - mw_h * dists[:, 0] ** 2) / dists[:, 0]
+        collect[:, 1] = -mw_H*dists[:, 1]
+    elif excite == 's':
+        collect[:, 0] = -mw_h*dists[:, 0]
+        collect[:, 1] = (1 - mw_H * dists[:, 1] ** 2) / dists[:, 1]
+    else:
+        collect[:, 0] = -mw_h * dists[:, 0]
+        collect[:, 1] = -mw_H * dists[:, 1]
+    return collect
+    # return np.zeros((len(coords), 2))
+
+
+def d2psidasp(coords, excite, dists):
     collect = np.zeros((len(coords), 4))
     mw_h = m_OH * omega_asym
-    dists[:, 0] = dists[:, 0] - shift
     if excite == 'all':
-        collect[:, 0] = mw_h*(mw_h*dists[:, 1]**2 - 3)
+        collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
         collect[:, 2] = excite_both_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_both_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = excite_both_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'sp & roo':
-        collect[:, 0] = mw_h**2*dists[:, 1]**2 - mw_h
+        collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
         collect[:, 2] = excite_both_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_both_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = excite_both_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'sp & a':
-        collect[:, 0] = mw_h*(mw_h*dists[:, 1]**2 - 3)
+        collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
         collect[:, 2] = excite_xh_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_xh_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = excite_xh_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'sp':
-        collect[:, 0] = mw_h**2*dists[:, 1]**2 - mw_h
+        collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
         collect[:, 2] = excite_xh_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_xh_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = excite_xh_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'roo & a':
-        collect[:, 0] = mw_h*(mw_h*dists[:, 1]**2 - 3)
+        collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
         collect[:, 2] = excite_roo_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_roo_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = excite_roo_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'roo':
-        collect[:, 0] = mw_h**2*dists[:, 1]**2 - mw_h
+        collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
         collect[:, 2] = excite_roo_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = excite_roo_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = excite_roo_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     elif excite == 'a':
-        collect[:, 0] = mw_h*(mw_h*dists[:, 1]**2 - 3)
+        collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
         collect[:, 2] = ground_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = ground_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = ground_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     else:
-        collect[:, 0] = mw_h**2*dists[:, 1]**2 - mw_h
+        collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
         collect[:, 2] = ground_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 1] = ground_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
         collect[:, 3] = ground_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     return collect
+
+
+def d2psidas(coords, excite, dists):
+    collect = np.zeros((len(coords), 2))
+    mw_h = m_OH * omega_asym
+    mw_H = m_OH * omega_sym
+    if excite == 'both':
+        collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
+        collect[:, 1] = mw_H*(mw_H*dists[:, 1]**2 - 3)
+    elif excite == 'a':
+        collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
+        collect[:, 1] = mw_H**2*dists[:, 1]**2 - mw_H
+    elif excite == 's':
+        collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
+        collect[:, 1] = mw_H*(mw_H*dists[:, 1]**2 - 3)
+    else:
+        collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
+        collect[:, 1] = mw_H**2*dists[:, 1]**2 - mw_H
+    return collect
+    # return np.zeros((len(coords), 2))
 
 
 def all_dists(coords):
@@ -271,9 +408,10 @@ def all_dists(coords):
     cd2 = coords[:, tuple(x[1] for x in np.array(bonds))]
     dis = np.linalg.norm(cd2 - cd1, axis=2)
     a_oh = 1/np.sqrt(2)*(dis[:, 0]-dis[:, 1])
+    s_oh = 1/np.sqrt(2)*(dis[:, 0]+dis[:, 1])
     mid = dis[:, 2]/2
     sp = mid - dis[:, -1]*np.cos(roh_roo_angle(coords, dis[:, -2], dis[:, -1]))
-    return np.vstack((a_oh, dis[:, 0], dis[:, 1], dis[:, -2], sp)).T
+    return np.vstack((a_oh, dis[:, 0], dis[:, 1], s_oh, dis[:, -2], sp)).T
 
 
 def sp_calc_for_fd(coords):
@@ -337,20 +475,61 @@ def d2spdx2(coords, sp):
 def daroodx(coords, dists):
     chain = np.zeros((len(coords), 5, 3, 2))
     for bond in range(2):
-        chain[:, 2*bond + 1, :, 0] = 1/np.sqrt(2)*((coords[:, 2*bond + 1] - coords[:, 2*bond + 2]) / dists[:, bond, None])
-        chain[:, 2*bond + 2, :, 0] = 1/np.sqrt(2)*((coords[:, 2*bond + 2] - coords[:, 2*bond + 1]) / dists[:, bond, None])
+        chain[:, 2*bond + 1, :, 0] = (-1)**bond*1/np.sqrt(2)*(
+                (coords[:, 2*bond + 1] - coords[:, 2*bond + 2]) / dists[:, bond, None])
+        chain[:, 2*bond + 2, :, 0] = (-1)**bond*1/np.sqrt(2)*(
+                (coords[:, 2*bond + 2] - coords[:, 2*bond + 1]) / dists[:, bond, None])
     chain[:, 1, :, 1] = ((coords[:, 1] - coords[:, 3]) / dists[:, -1, None])
     chain[:, 3, :, 1] = ((coords[:, 3] - coords[:, 1]) / dists[:, -1, None])
+    return chain
+
+
+def dasdx(coords, dists):
+    chain = np.zeros((len(coords), 5, 3, 2))
+    # for bond in range(2):
+    for bond in range(2):
+        chain[:, 2*bond + 1, :, 0] = (-1) ** bond * 1 / np.sqrt(2) * (
+                    (coords[:, 2 * bond + 1] - coords[:, 2 * bond + 2]) / dists[:, bond, None])
+        chain[:, 2*bond + 2, :, 0] = (-1) ** bond * 1 / np.sqrt(2) * (
+                    (coords[:, 2 * bond + 2] - coords[:, 2 * bond + 1]) / dists[:, bond, None])
+    for bond in range(2):
+        chain[:, 2*bond + 1, :, 1] = 1 / np.sqrt(2) * (
+                (coords[:, 2 * bond + 1] - coords[:, 2 * bond + 2]) / dists[:, bond, None])
+        chain[:, 2*bond + 2, :, 1] = 1 / np.sqrt(2) * (
+                (coords[:, 2 * bond + 2] - coords[:, 2 * bond + 1]) / dists[:, bond, None])
     return chain
 
 
 def daroodx2(coords, dists):
     chain = np.zeros((len(coords), 5, 3, 2))
     for bond in range(2):
-        chain[:, 2*bond + 1, :, 0] = 1/np.sqrt(2)*(1./dists[:, bond, None] - (coords[:, 2*bond + 1]-coords[:, 2*bond + 2])**2/dists[:, bond, None]**3)
-        chain[:, 2*bond + 2, :, 0] = 1/np.sqrt(2)*(1./dists[:, bond, None] - (coords[:, 2*bond + 2]-coords[:, 2*bond + 1])**2/dists[:, bond, None]**3)
+        chain[:, 2*bond + 1, :, 0] = (-1)**bond*1/np.sqrt(2)*(1./dists[:, bond, None] - (coords[:, 2*bond + 1]-coords[:, 2*bond + 2])**2/dists[:, bond, None]**3)
+        chain[:, 2*bond + 2, :, 0] = (-1)**bond*1/np.sqrt(2)*(1./dists[:, bond, None] - (coords[:, 2*bond + 1]-coords[:, 2*bond + 2])**2/dists[:, bond, None]**3)
     chain[:, 1, :, 1] = (1./dists[:, -1, None] - (coords[:, 1]-coords[:, 3])**2/dists[:, -1, None]**3)
     chain[:, 3, :, 1] = (1./dists[:, -1, None] - (coords[:, 1]-coords[:, 3])**2/dists[:, -1, None]**3)
+    return chain
+
+
+def d2asdx2(coords, dists):
+    chain = np.zeros((len(coords), 5, 3, 2))
+    for bond in range(2):
+        chain[:, 2 * bond + 1, :, 0] = (-1) ** bond * 1 / np.sqrt(2) * (
+                    1. / dists[:, bond, None] - (coords[:, 2 * bond + 1] - coords[:, 2 * bond + 2]) ** 2 / dists[:,
+                                                                                                           bond,
+                                                                                                           None] ** 3)
+        chain[:, 2 * bond + 2, :, 0] = (-1) ** bond * 1 / np.sqrt(2) * (
+                    1. / dists[:, bond, None] - (coords[:, 2 * bond + 1] - coords[:, 2 * bond + 2]) ** 2 / dists[:,
+                                                                                                           bond,
+                                                                                                           None] ** 3)
+    for bond in range(2):
+        chain[:, 2 * bond + 1, :, 1] = 1 / np.sqrt(2) * (
+                    1. / dists[:, bond, None] - (coords[:, 2 * bond + 1] - coords[:, 2 * bond + 2]) ** 2 / dists[:,
+                                                                                                           bond,
+                                                                                                           None] ** 3)
+        chain[:, 2 * bond + 2, :, 1] = 1 / np.sqrt(2) * (
+                    1. / dists[:, bond, None] - (coords[:, 2 * bond + 1] - coords[:, 2 * bond + 2]) ** 2 / dists[:,
+                                                                                                           bond,
+                                                                                                           None] ** 3)
     return chain
 
 
@@ -493,85 +672,208 @@ def descendants(Psi):
     return d
 
 
-def run(N_0, time_steps, propagation, excite, initial_struct, initial_shifts, shift_rate):
+def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_struct, initial_shifts, shift_rate):
     DW = False
     psi = Walkers(N_0, initial_struct, excite, initial_shifts)
     Fqx = parrelel_drift(psi.coords, psi.excite, psi.shift)
-    Psi, Fqx, acceptance = Kinetic(psi, Fqx)
-    Psi = pot(Psi)
-    Psi = E_loc(Psi)
-    time = np.array([])
-    weights = np.array([])
-    accept = np.array([])
-    Eref_array = np.array([])
-    Eref = E_ref_calc(Psi)
-    Eref_array = np.append(Eref_array, Eref)
-    new_psi = Weighting(Eref, Psi, DW, Fqx)
-    time = np.append(time, 1)
-    weights = np.append(weights, np.sum(new_psi.weights))
-    accept =np.append(accept, acceptance)
+    num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
+    time = np.zeros(time_steps)
+    sum_weights = np.zeros(time_steps)
+    accept = np.zeros(time_steps)
+    coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
+    weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    des = np.zeros(np.append(num_o_collections, psi.weights.shape))
 
-    Psi_tau = 0
-    shift = np.zeros((time_steps + 1, 3))
-    shift[0] = Psi.shift
+    num = 0
+    prop = float(propagation)
+    wait = float(wait_time)
+    Eref_array = np.zeros(time_steps)
+
+    shift = np.zeros((time_steps + 1, len(psi.shift)))
+    shift[0] = psi.shift
+    shift_rate = np.array(shift_rate)
+    psi.shift = np.array(psi.shift)
     for i in range(int(time_steps)):
         if i % 1000 == 0:
             print(i)
 
-        Psi, Fqx, acceptance = Kinetic(new_psi, Fqx)
-        Psi = pot(Psi)
-        Psi = E_loc(Psi)
-        shift[i + 1] = Psi.shift
-
-        if i >= 5000:
-            Psi.shift = Psi.shift + shift_rate
-
         if DW is False:
             prop = float(propagation)
-        elif DW is True:
+            wait -= 1.
+        else:
             prop -= 1.
-            if Psi_tau == 0:
-                Psi_tau = copy.deepcopy(Psi)
-        new_psi = Weighting(Eref, Psi, DW, Fqx)
 
-        Eref = E_ref_calc(new_psi)
+        if i == 0:
+            psi = pot(psi)
+            psi = E_loc(psi)
+            Eref = E_ref_calc(psi)
 
-        Eref_array = np.append(Eref_array, Eref)
-        time = np.append(time, 2 + i)
-        weights = np.append(weights, np.sum(new_psi.weights))
-        accept = np.append(accept, acceptance)
+        psi, Fqx, acceptance = Kinetic(psi, Fqx)
+        shift[i + 1] = psi.shift
+        psi = pot(psi)
+        psi = E_loc(psi)
 
-        if i >= (time_steps - 1. - float(propagation)) and prop > 0.:
+        psi = Weighting(Eref, psi, DW, Fqx)
+        Eref = E_ref_calc(psi)
+
+        Eref_array[i] = Eref
+        time[i] = i + 1
+        sum_weights[i] = np.sum(psi.weights)
+        accept[i] = acceptance
+
+        if i >= 5000:
+            psi.shift = psi.shift + shift_rate
+
+        if i >= int(equilibration) - 1 and wait <= 0. < prop:
             DW = True
-        elif i >= (time_steps - 1. - float(propagation)) and prop == 0.:
-            d_values = descendants(new_psi)
-    return Eref_array, weights, shift, d_values, Psi_tau.coords
+            wait = float(wait_time)
+            Psi_tau = copy.deepcopy(psi)
+            coords[num] = Psi_tau.coords
+            weights[num] = Psi_tau.weights
+        elif prop == 0:
+            DW = False
+            des[num] = descendants(psi)
+            num += 1
+
+    return coords, weights, time, Eref_array, sum_weights, accept, des
 
 
 pool = mp.Pool(mp.cpu_count()-1)
-
-new_struct = np.array([
-    [0.000000000000000, 0.000000000000000, 0.000000000000000],
-    [-2.304566686034061, 0.000000000000000, 0.000000000000000],
-    [-2.740400260927908, 1.0814221449986587E-016, -1.766154718409233],
-    [2.304566686034061, 0.000000000000000, 0.000000000000000],
-    [2.740400260927908, 1.0814221449986587E-016, 1.766154718409233]
-])
-new_struct[:, 0] = new_struct[:, 0] + 2.304566686034061
-import matplotlib.pyplot as plt
-psi = Walkers(50, new_struct, None, [0])
-psi.coords[:, 0, 0] = np.linspace(1.8, 2.8, 50)
-psi = pot(psi)
-psi = E_loc(psi)
-plt.plot(psi.coords[:, 0, 0], psi.El*har2wave, label='Local Energy')
-plt.plot(psi.coords[:, 0, 0], psi.El*har2wave-psi.V*har2wave, label='Local Kinetic Energy')
-plt.plot(psi.coords[:, 0, 0], psi.V*har2wave, label='Potential Energy')
-plt.legend()
-plt.show()
-
-
-# eref, weights, shift, d, coords = run(1000, 5000, 250, None, new_struct, [0], [0])
-# plt.plot(eref*har2wave)
 #
-# np.save('h3o2_test_ground_eref', eref)
+
+import matplotlib.pyplot as plt
+# psi = Walkers(500, new_struct, None, [0, 2.5721982410729867])
+# psi.coords[:, 0, 0] = np.linspace(1.8, 2.8, 500)
+# # psi.coords[:, 3, 0] = np.linspace(4.5, 4.9, 500)
+# wvfn = np.sum(np.sum(dpsidx(psi.coords, psi.excite, psi.shift), axis=-1), axis=-1)
+# psi = pot(psi)
+# psi = E_loc(psi)
+# sp = sp_calc_for_fd(psi.coords)
+# # plt.plot(wvfn[:, 0])
+# plt.plot(sp, psi.El*har2wave)
+# plt.plot(sp, psi.V*har2wave)
+# plt.ylim(-1000, 5000)
+# # plt.legend()
 # plt.show()
+#
+#
+test_structure = np.array([
+        [ 2.75704662,  0.05115356, -0.2381117 ],
+        [ 0.24088235, -0.09677082,  0.09615192],
+        [-0.07502706, -1.66894299, -0.69579001],
+        [ 5.02836896, -0.06798562, -0.30434529],
+        [ 5.84391277,  0.14767547,  1.4669121 ],
+])
+
+test_structure2 = np.array([
+        [ 2.75704662,  0.05115356, -0.2381117 ],
+        [ 0.24088235, -0.09677082,  0.09615192],
+        [-0.09502706, -1.86894299, -0.69579001],
+        [ 5.02836896, -0.06798562, -0.30434529],
+        [ 5.24391277,  0.14767547,  1.4669121 ],
+])
+
+# for i in range(5):
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         5000, 20000, 250, 500, 500, None, test_structure2, [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'ground_state_h3o2_{i+6}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
+#
+# for i in range(5):
+coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        5000, 20000, 250, 500, 500, 'a', test_structure2, [0, 2.5721982410729867], [0, 0]
+    )
+np.savez(f'asym_excite_state_h3o2_right_{4}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
+
+# eref, weights, shift, d, coords = run(1000, 5000, 250, None, test_structure, [0, 2.5721982410729867], [0, 0])
+# # plt.plot(eref*har2wave)
+# print(coords[np.argmax(d)])
+# np.save('h3o2_test_ground_eref', eref)
+# eref = np.load('h3o2_test_ground_eref.npy')*har2wave
+# plt.plot(eref)
+# print(np.mean(eref[500:]))
+# plt.show()
+# plt.show()
+
+
+def dpsidx_fd(coords):
+    chain = np.zeros((len(coords), 5, 3, 4))
+    dx = 1e-3  #Bohr
+    coeffs = np.array([1/12, -2/3, 2/3, -1/12])/dx
+    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
+    for atom in atoms:
+        for xyz in range(3):
+            coords[:, atom, xyz] -= 2*dx
+            chain[:, atom, xyz, 0] = np.prod(psi_t(coords, None, [0]), axis=-1)
+            coords[:, atom, xyz] += dx
+            chain[:, atom, xyz, 1] = np.prod(psi_t(coords, None, [0]), axis=-1)
+            coords[:, atom, xyz] += 2*dx
+            chain[:, atom, xyz, 2] = np.prod(psi_t(coords, None, [0]), axis=-1)
+            coords[:, atom, xyz] += dx
+            chain[:, atom, xyz, 3] = np.prod(psi_t(coords, None, [0]), axis=-1)
+            coords[:, atom, xyz] -= 2*dx
+    return np.dot(chain, coeffs)
+
+
+def dadx_fd(coords):
+    chain = np.zeros((len(coords), 5, 3, 4))
+    dx = 1e-3  # Bohr
+    coeffs = np.array([1 / 12, -2 / 3, 2 / 3, -1 / 12]) / dx
+    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
+    for atom in atoms:
+        for xyz in range(3):
+            coords[:, atom, xyz] -= 2 * dx
+            chain[:, atom, xyz, 0] = all_dists(coords)[:, 0]
+            coords[:, atom, xyz] += dx
+            chain[:, atom, xyz, 1] = all_dists(coords)[:, 0]
+            coords[:, atom, xyz] += 2 * dx
+            chain[:, atom, xyz, 2] = all_dists(coords)[:, 0]
+            coords[:, atom, xyz] += dx
+            chain[:, atom, xyz, 3] = all_dists(coords)[:, 0]
+            coords[:, atom, xyz] -= 2 * dx
+    return np.dot(chain, coeffs)
+
+
+def d2aroodx2_fd(coords):
+    chain = np.zeros((len(coords), 2, 5, 3, 5))
+    aroo = all_dists(coords)[:, [0, -2]]
+    chain[:, :, :, :, 2] = np.broadcast_to(aroo[..., None, None], (len(coords), 2, 5, 3))
+    dx = 1e-3  # Bohr
+    coeffs = np.array([-1 / 12, 4 / 3, -5 / 2, 4 / 3, -1 / 12]) / (dx ** 2)
+    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
+    for atom in atoms:
+        for xyz in range(3):
+            coords[:, atom, xyz] -= 2 * dx
+            chain[:, :, atom, xyz, 0] = all_dists(coords)[:, [0, -2]]
+            coords[:, atom, xyz] += dx
+            chain[:, :, atom, xyz, 1] = all_dists(coords)[:, [0, -2]]
+            coords[:, atom, xyz] += 2 * dx
+            chain[:, :, atom, xyz, 3] = all_dists(coords)[:, [0, -2]]
+            coords[:, atom, xyz] += dx
+            chain[:, :, atom, xyz, 4] = all_dists(coords)[:, [0, -2]]
+            coords[:, atom, xyz] -= 2 * dx
+    return np.dot(chain, coeffs)
+
+
+# coords = np.array([new_struct]*2)
+# psi = np.prod(psi_t(coords, None, [0, 3.6376376376376376]), axis=-1)
+# dpsi = dpsidx(coords, None, [0, 3.6376376376376376])
+# dpsi_fd = dpsidx_fd(coords)/np.broadcast_to(psi[:, None, None], (2, 5, 3))
+# aroo = all_dists(coords)[:, [1, 2, -2]]
+# d2aroo = daroodx2(coords, aroo)
+# d2aroo_fd = d2aroodx2_fd(coords)
+# droo_fd = droodx_fd(coords)
+# da_fd = dadx_fd(coords)
+# daroo = daroodx(coords, all_dists(coords)[:, 1:4])
+
+# print(np.average(daroo[:, :, :, 0]-da_fd))
+# print(np.average(droo_fd-daroo[:, :, :, 1]))
+# print(daroo[..., 1])
+# print(da_fd)
+
+# print(dpsi)
+# print(dpsi_fd)
+
+# print(psi)

@@ -508,7 +508,7 @@ def simulation_time(psi, alpha, sigma, Fqx, time_steps, dtau,
             DW = False
             des[num] = descendants(psi, weighting)
             num += 1
-    np.save(f'non_imp_samp_dtau_{dtau}_{system}', psi.V)
+    # np.save(f'non_imp_samp_dtau_{dtau}_{system}', psi.V)
     return coords, weights, time, Eref_array, sum_weights, accept, des
 
 

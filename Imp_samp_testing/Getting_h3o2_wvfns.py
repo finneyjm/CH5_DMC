@@ -14,7 +14,7 @@ struct = np.array([
 ])
 
 struct = np.array([
-    [0.000000000000000, 0.000000000000000, 0.000000000000000],
+    [0.000000000000000, 0.000000000000001, 0.000000000000000],
     [-2.303263755760085, 0.000000000000000, 0.000000000000000],
     [-2.720583162407882, 1.129745554266140, -1.363735721982301],
     [2.303263755760085, 0.000000000000000, 0.000000000000000],
@@ -59,6 +59,24 @@ def asym_grid(coords, r1, a):
     zmat = np.array([zmat]*N).reshape((N, 4, 6))
     zmat[:, 2, 1] = r1
     zmat[:, 3, 1] = r1 - a
+    new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+    coords = new_coords[:, (2, 0, 3, 1, 4)]
+    return coords
+
+
+def sym_grid(coords, r1, s):
+    coords = np.array([coords]*1)
+    coords = coords[:, (1, 3, 0, 2, 4)]
+    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
+                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
+                                                                                   [2, 0, 1, 0], [3, 0, 1, 2],
+                                                                                   [4, 1, 0, 2]])).coords
+    N = len(r1)
+    zmat = np.array([zmat]*N).reshape((N, 4, 6))
+    # zmat[:, -1, -1] = 1e-10
+    # zmat[:, -2, -1] = 1e-10
+    zmat[:, 2, 1] = r1
+    zmat[:, 3, 1] = s-r1
     new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
     coords = new_coords[:, (2, 0, 3, 1, 4)]
     return coords
@@ -131,6 +149,10 @@ def run(mass, stretch, grid, r1=None):
         if r1 is None:
             r1 = np.linspace(0.5, 3.0, len(grid))
         coords = asym_grid(struct, r1, grid)
+    elif stretch == 'symmetric':
+        if r1 is None:
+            r1 = np.linspace(0.5, 3.0, len(grid))
+        coords = sym_grid(struct, r1, grid)
     elif stretch == 'shared proton':
         coords = shared_prot_grid(struct, grid)
     else:
@@ -148,9 +170,11 @@ def run(mass, stretch, grid, r1=None):
 grid1 = np.linspace(-2.5, 2.5, 1000)
 grid2 = np.linspace(-1., 1., 1000)
 grid3 = np.linspace(4.2, 5.2, 1000)
-# en1, eig1, V1 = run(m_red, 'asymmetric', grid1)
+grid4 = np.linspace(1, 6, 1000)
+en1, eig1, V1 = run(m_red, 'asymmetric', grid1)
 # en2, eig2, V2 = run(m_red_sp, 'shared proton', grid2)
 # en3, eig3, V3 = run(m_red_OO, 'oo', grid3)
+en4, eig4, V4 = run(m_red, 'symmetric', grid4)
 import matplotlib.pyplot as plt
 # np.save('asymmetric_energies.npy', en1)
 # np.save('asymmetric_wvfns.npy', eig1)
@@ -161,15 +185,19 @@ import matplotlib.pyplot as plt
 # np.save('oo_energies.npy', en3)
 # np.save('oo_wvfns.npy', eig3)
 # np.save('oo_pot.npy', V3)
+np.save('symmetric_energies.npy', en4)
+np.save('symmetric_wvfns.npy', eig4)
+np.save('symmetric_pot.npy', V4)
 
-en1 = np.load('asymmetric_energies.npy')
-eig1 = np.load('asymmetric_wvfns.npy')
-V = np.load('asymmetric_pot.npy')
+en4 = np.load('symmetric_energies.npy')
+eig4 = np.load('symmetric_wvfns.npy')
+V = np.load('symmetric_pot.npy')
 dx = 5.0/1000
 ind = np.argmin(V)
 second_der = ((1/90*V[ind-3] - 3/20*V[ind-2] + 3/2*V[ind-1] - 49/18*V[ind] + 3/2*V[ind+1] - 3/20*V[ind+2] + 1/90*V[ind+3])/dx**2)
 print(np.sqrt(second_der/m_red)*har2wave)
 print(np.sqrt(second_der/m_red_D)*har2wave)
+
 omega = np.sqrt(second_der/m_red)
 omegaD = np.sqrt(second_der/m_red_D)
 mw = m_red*omega
@@ -181,25 +209,27 @@ def Harmonic_wvfn(x, state):
     else:
         return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2))
 
-# en2 = np.load('shared_prot_energies.npy')
-# eig2 = np.load('shared_prot_wvfns.npy')
-# V2 = np.load('shared_prot_pot.npy')
-# plt.plot(1/np.sqrt(2)*grid1, eig1[:, 0]/np.max(eig1[:, 0])*2400 + en1[0]*har2wave, label=r'$\Phi_0$')
+en2 = np.load('shared_prot_energies.npy')
+eig2 = np.load('shared_prot_wvfns.npy')
+V2 = np.load('shared_prot_pot.npy')
+print(grid4[ind]*1/np.sqrt(2))
+grid4 -= grid4[ind]
+plt.plot(1/np.sqrt(2)*grid4, eig4[:, 0]/np.max(eig4[:, 0])*2400 + en4[0]*har2wave, label=r'$\Phi_0$')
 # plt.plot(1/np.sqrt(2)*grid1, eig1[:, 1]/np.max(eig1[:, 1])*2400 + en1[1]*har2wave, label=r'$\Phi_1$')
-plt.plot(1/np.sqrt(2)*grid1, 1/2*m_red*omega**2*grid1**2*har2wave, label='Harmonic Potential')
+plt.plot(1/np.sqrt(2)*grid4, 1/2*m_red*omega**2*grid4**2*har2wave, label='Harmonic Potential')
 # plt.plot(1/np.sqrt(2)*grid1, V*har2wave-np.min(V)*har2wave, label='Anharmonic Potential')
-plt.plot(1/np.sqrt(2)*grid1, Harmonic_wvfn(grid1, 0)/np.max(Harmonic_wvfn(grid1, 0))*1500 + en1[0]*har2wave, label=r'$\Psi_0$')
+plt.plot(1/np.sqrt(2)*grid4, Harmonic_wvfn(grid4, 0)/np.max(Harmonic_wvfn(grid4, 0))*2400 + en4[0]*har2wave, label=r'$\Psi_0$')
 # plt.plot(1/np.sqrt(2)*grid1, -1*Harmonic_wvfn(grid1, 1)/np.max(-1*Harmonic_wvfn(grid1, 1))*1500 + en1[1]*har2wave, label=r'$\Psi_0$')
 plt.ylim(0, 10000)
-plt.xlim(-0.8, 0.8)
+# plt.xlim(-0.8, 0.8)
 # plt.xlabel(r'Asymmetric Stretch (Bohr)', fontsize=16)
 # plt.ylabel(r'Energy cm$^{-1}$', fontsize=16)
 # plt.legend()
 plt.tight_layout()
 plt.show()
-# plt.plot(1/np.sqrt(2)*grid2/ang2bohr, eig2[:, 0]*5000 + en2[0]*har2wave)
-# plt.plot(1/np.sqrt(2)*grid2/ang2bohr, eig2[:, 1]*5000 + en2[1]*har2wave)
-# plt.plot(1/np.sqrt(2)*grid2/ang2bohr, V2*har2wave)
+# plt.plot(grid2/ang2bohr, eig2[:, 0]*5000 + en2[0]*har2wave)
+# plt.plot(grid2/ang2bohr, eig2[:, 1]*5000 + en2[1]*har2wave)
+# plt.plot(grid2/ang2bohr, V2*har2wave)
 # plt.xlabel(r'XH $\rm\AA$')
 # plt.ylim(0, 3000)
 # # plt.xlim(-1, 1)
@@ -211,3 +241,49 @@ plt.show()
 # plt.ylim(0, 3000)
 # plt.xlim(4.2/ang2bohr, 5.2/ang2bohr)
 # plt.show()
+
+en4 = np.load('asymmetric_energies.npy')
+eig4 = np.load('asymmetric_wvfns.npy')
+V = np.load('asymmetric_pot.npy')
+dx = 5.0/1000
+ind = np.argmin(V)
+second_der = ((1/90*V[ind-3] - 3/20*V[ind-2] + 3/2*V[ind-1] - 49/18*V[ind] + 3/2*V[ind+1] - 3/20*V[ind+2] + 1/90*V[ind+3])/dx**2)
+print(np.sqrt(second_der/m_red)*har2wave)
+print(np.sqrt(second_der/m_red_D)*har2wave)
+omega = np.sqrt(second_der/m_red)
+omegaD = np.sqrt(second_der/m_red_D)
+mw = m_red*omega
+print(1/np.sqrt(2)*grid1[np.argmin(eig4[:, 1]**2)])
+
+plt.plot(1/np.sqrt(2)*grid1, eig4[:, 1]**2/np.max(eig4[:, 1]**2)*1500 + en1[1]*har2wave, label='PHI')
+plt.plot(1/np.sqrt(2)*grid1, 1/2*m_red*omega**2*grid1**2*har2wave, label='Harmonic Potential')
+plt.plot(1/np.sqrt(2)*grid1, Harmonic_wvfn(grid1, 0)/np.max(Harmonic_wvfn(grid1, 0))*1500 + en1[0]*har2wave, label=r'$\Psi_0$')
+plt.ylim(0, 10000)
+plt.tight_layout()
+plt.show()
+
+
+def sp_calc_for_fd(coords):
+    bonds = [[1, 3], [1, 0]]
+    cd1 = coords[:, tuple(x[0] for x in np.array(bonds))]
+    cd2 = coords[:, tuple(x[1] for x in np.array(bonds))]
+    dis = np.linalg.norm(cd2 - cd1, axis=2)
+    mid = dis[:, 0] / 2
+    sp = mid - dis[:, -1] * np.cos(roh_roo_angle(coords, dis[:, -2], dis[:, -1]))
+    return sp
+
+
+def roh_roo_angle(coords, roo_dist, roh_dist):
+    v1 = (coords[:, 1]-coords[:, 3])/np.broadcast_to(roo_dist[:, None], (len(roo_dist), 3))
+    v2 = (coords[:, 1]-coords[:, 0])/np.broadcast_to(roh_dist[:, None], (len(roh_dist), 3))
+    v1_new = np.reshape(v1, (v1.shape[0], 1, v1.shape[1]))
+    v2_new = np.reshape(v2, (v2.shape[0], v2.shape[1], 1))
+    aang = np.arccos(np.matmul(v1_new, v2_new).squeeze())
+    return aang
+
+
+# coords = shared_prot_grid(struct, grid2)
+# sp = sp_calc_for_fd(coords)
+# print(np.average(grid2-sp))
+
+
