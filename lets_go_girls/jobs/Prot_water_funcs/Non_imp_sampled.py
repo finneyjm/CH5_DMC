@@ -92,14 +92,21 @@ def Weighting(Vref, Psi, DW, dtau, threshold, max_thresh):
 def Discrete_weighting(Vref, Psi, DW, dtau):
     probs = np.nan_to_num(np.exp(-(Psi.V - Vref) * dtau))
     check = np.random.random(len(Psi.coords))
-    death = np.logical_or((1-probs) < check, Psi.V < Vref)
+    death = np.argwhere((1-probs) < (1-check))
     Psi.coords = Psi.coords[death]
     Psi.V = Psi.V[death]
     check = check[death]
     probs = probs[death]
     if DW:
         Psi.walkers = Psi.walkers[death]
-    birth = np.logical_and((probs-1) > check, Psi.V < Vref)
+    int_probs = probs.astype(int)
+    zeros = np.argwhere(int_probs == 0)
+    int_probs[zeros] = 1
+    birth = np.argwhere((probs-int_probs) > check)
+    extra_birth = np.argwhere((probs.astype(int)-1) >= 1).squeeze()
+    for i in range(len(extra_birth)):
+        extra_birth = np.append(extra_birth, np.array([extra_birth[i]]*(int_probs[extra_birth[i]]-2))).astype(int)
+    birth = np.append(birth, extra_birth).astype(int)
     Psi.coords = np.concatenate((Psi.coords, Psi.coords[birth]))
     Psi.V = np.concatenate((Psi.V, Psi.V[birth]))
     if DW:
@@ -110,7 +117,7 @@ def Discrete_weighting(Vref, Psi, DW, dtau):
 
 
 # Calculates the descendant weight for the walkers before descendant weighting
-def descendants(Psi, weighting, N_0=None):
+def descendants(Psi, weighting):
     N_0 = len(Psi.coords)
     if weighting == 'discrete':
         d = np.bincount(Psi.walkers)

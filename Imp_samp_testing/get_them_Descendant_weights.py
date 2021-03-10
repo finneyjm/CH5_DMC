@@ -19,7 +19,7 @@ har2wave = 219474.6
 omega = 3600./har2wave
 
 # wexe = 150./har2wave
-wexe = 5/har2wave
+wexe = 75/har2wave
 De = omega**2/4/wexe
 sigmaOH = np.sqrt(dtau/m_red)
 omega = 3600/har2wave
@@ -31,41 +31,43 @@ A = np.sqrt(omega**2 * m_red/(2*De))
 class Walkers(object):
     walkers = 0
 
-    def __init__(self, walkers, initial_loc, initial_shift):
+    def __init__(self, walkers, initial_loc, initial_shift, initial_weights):
         self.walkers = np.linspace(0, walkers-1, num=walkers)
         self.coords = initial_loc
-        self.weights = np.zeros(walkers) + 1.
+        self.weights = initial_weights
         self.d = np.zeros(walkers)
         self.weights_i = np.zeros(walkers) + 1.
         self.V = np.zeros(walkers)
         self.El = np.zeros(walkers)
         self.shift = initial_shift
 
+
 # function that plugs in the coordinates of the walkers and gets back the values of the trial wavefunction
 def psi_t(coords, shift, DW):
     coords = coords - shift
-    if DW:
+    if DW is None:
         return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))
     else:
         return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * coords ** 2)) * (2 * mw) ** (1 / 2) * coords
 
+
 # Calculation of the drift term
 def drift(coords, shift, DW):
     coords = coords - shift
-    if DW:
+    if DW is None:
         return -mw*coords*2
     else:
         return 2*(1-mw*coords**2)/coords
 
 
-
 # Calculates the second derivative of the trial wavefunction for the kinetic energy of the local energy
 def sec_dir(coords, shift, DW):
     coords = coords - shift
-    if DW:
+    if DW is None:
         return mw**2*coords**2 - mw
     else:
         return mw*(mw*coords**2 - 3)
+
 
 # Metropolis step to determine the ratio of Green's functions
 def metropolis(x, y, Fqx, Fqy, shift, DW):
@@ -144,72 +146,120 @@ def descendants(Psi):
     return Psi.d
 
 
-def run(propagation, initial_loc, initial_shift, weights, DW):
-    psi = Walkers(N_0, initial_loc, initial_shift)
-    psi.weights = weights
-    Fqx = drift(psi.coords, psi.shift, DW)
-    tau = np.zeros(propagation+1)
-    Psi = potential(psi)
-    Psi = E_loc(Psi, DW)
-    Eref_array = np.array([])
-    Eref = E_ref_calc(Psi, alpha)
-    Eref_array = np.append(Eref_array, Eref)
-    psi = Weighting(Eref, Psi, dtau)
+def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_struct, initial_shifts, shift_rate, initial_weights):
+    DW = False
+    psi = Walkers(N_0, initial_struct, initial_shifts, initial_weights)
+    Fqx = drift(psi.coords, psi.shift, excite)
+    num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
+    time = np.zeros(time_steps)
+    sum_weights = np.zeros(time_steps)
+    accept = np.zeros(time_steps)
+    coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
+    weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    des = np.zeros(np.append(num_o_collections, psi.weights.shape))
 
-    for i in range(int(propagation)):
-        if (i+1) % 50 == 0:
+    num = 0
+    prop = float(propagation)
+    wait = float(wait_time)
+    Eref_array = np.zeros(time_steps)
+
+    shift = np.zeros((time_steps + 1))
+    shift[0] = psi.shift
+    shift_rate = np.array(shift_rate)
+    psi.shift = np.array(psi.shift)
+    for i in range(int(time_steps)):
+        if i % 1000 == 0:
             print(i)
-        # import matplotlib.pyplot as plt
-        # amp, xx = np.histogram(Psi.coords[1, 0], weights=weights[0, 0], range=(-1, 1), density=True, bins=75)
-        # bin = (xx[1:] + xx[:-1]) / 2.
-        #
-        # plt.plot(bin, amp)
-        # plt.show()
 
-        Psi, Fqx, accept = Kinetic(psi, Fqx, DW)
-        teff = accept * dtau
-        tau[i+1] = teff + tau[i]
-        if accept <= 0.95:
-            print(np.max(Psi.V)*har2wave)
-            ind = np.argmax(Psi.V)
-            print(Psi.coords[ind])
-        Psi = potential(Psi)
-        Psi = E_loc(Psi, DW)
+        if DW is False:
+            prop = float(propagation)
+            wait -= 1.
+        else:
+            prop -= 1.
 
-        Psi = Weighting(Eref, Psi, teff)
+        if i == 0:
+            psi = potential(psi)
+            psi = E_loc(psi, excite)
+            Eref = E_ref_calc(psi, alpha)
 
-        Eref = E_ref_calc(Psi, alpha)
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, excite)
+        shift[i + 1] = psi.shift
+        psi = potential(psi)
+        psi = E_loc(psi, excite)
 
-        Eref_array = np.append(Eref_array, Eref)
+        psi = Weighting(Eref, psi, dtau)
+        Eref = E_ref_calc(psi, alpha)
 
-    d_values = descendants(Psi)
-    return Psi.coords, Psi.weights
+        Eref_array[i] = Eref
+        time[i] = i + 1
+        sum_weights[i] = np.sum(psi.weights)
+        accept[i] = acceptance
+
+        if i >= 5000:
+            psi.shift = psi.shift + shift_rate
+
+        if i >= int(equilibration) - 1 and wait <= 0. < prop:
+            DW = True
+            wait = float(wait_time)
+            Psi_tau = copy.deepcopy(psi)
+            coords[num] = Psi_tau.coords
+            weights[num] = Psi_tau.weights
+        elif prop == 0:
+            DW = False
+            des[num] = descendants(psi)
+            num += 1
+
+    return coords, weights, time, Eref_array, sum_weights, accept, des
+
 
 wvfn = np.load('getting_coords.npy')
+wvfn_coords_right = np.abs(wvfn[0] + 0.039)
+wvfn_coords_left = np.abs(wvfn[0]*-1)
 
-x = np.linspace(-1, 1, 5000)
-psi = Walkers(1000, x, 0.039)
-psi = potential(psi)
-psi = E_loc(psi, False)
-f = drift(x, 0.039, False)
+for i in range(5):
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        10000, 20000, 250, 500, 500, None, wvfn[0], 0.039, 0, wvfn[1]
+    )
+    np.savez(f'ground_state_morse_{i+5}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
 
-import matplotlib.pyplot as plt
-fig, ax1 = plt.subplots()
-ax1.plot(x, psi.El*har2wave, color='blue')
-ax1.set_ylabel(r'Energy cm$^{-1}$', color='blue', fontsize=16)
-ax1.set_xlabel(r'x Bohr', fontsize=16)
-ax1.tick_params(axis='x', labelsize=12)
-ax1.tick_params(axis='y', labelcolor='blue', labelsize=12)
+for i in range(5):
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        10000, 20000, 250, 500, 500, 'excite', wvfn_coords_left, 0.039, 0, wvfn[1]
+    )
+    np.savez(f'excite_state_morse_left_{i}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
 
-ax2 = ax1.twinx()
+for i in range(5):
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        10000, 20000, 250, 500, 500, 'excite', wvfn_coords_right, 0.039, 0, wvfn[1]
+    )
+    np.savez(f'excite_state_morse_right_{i}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
 
-ax2.plot(x, f, color='red')
-ax2.set_ylabel(r'Drift Hartree*Bohr$^2$', color='red', fontsize=16)
-ax2.tick_params(axis='y', labelcolor='red', labelsize=12)
-ax2.set_ylim(-2000, 2000)
-
-# plt.tight_layout()
-plt.show()
+# x = np.linspace(-1, 1, 5000)
+# psi = Walkers(1000, x, 0.039)
+# psi = potential(psi)
+# psi = E_loc(psi, False)
+# f = drift(x, 0.039, False)
+#
+# import matplotlib.pyplot as plt
+# fig, ax1 = plt.subplots()
+# ax1.plot(x, psi.El*har2wave, color='blue')
+# ax1.set_ylabel(r'Energy cm$^{-1}$', color='blue', fontsize=16)
+# ax1.set_xlabel(r'x Bohr', fontsize=16)
+# ax1.tick_params(axis='x', labelsize=12)
+# ax1.tick_params(axis='y', labelcolor='blue', labelsize=12)
+#
+# ax2 = ax1.twinx()
+#
+# ax2.plot(x, f, color='red')
+# ax2.set_ylabel(r'Drift Hartree*Bohr$^2$', color='red', fontsize=16)
+# ax2.tick_params(axis='y', labelcolor='red', labelsize=12)
+# ax2.set_ylim(-2000, 2000)
+#
+# # plt.tight_layout()
+# plt.show()
 
 # ground_coords = np.zeros((1, 5, 10000))
 # ground_weights = np.zeros((1, 5, 10000))

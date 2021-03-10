@@ -13,7 +13,7 @@ harm_freq = 3600/har2wave
 re=0.
 omega = 3600./har2wave
 
-wexe = 500./har2wave
+wexe = 75./har2wave
 De = omega**2/4/wexe
 # De = 0.1897
 # De = 0.037
@@ -32,20 +32,20 @@ A = np.sqrt(omega**2 * m_red/(2*De))
 m_O = 15.994915 / (Avo_num*me*1000)
 m_H = 1.007825 / (Avo_num*me*1000)
 m_OH = (m_H*m_O)/(m_H+m_O)
-omega_asym = 3070.648654929466/har2wave
-mw = m_OH*omega_asym
+# omega_asym = 3070.648654929466/har2wave
+# mw = m_OH*omega_asym
 
 
 def Potential(grid):
     V = np.zeros(len(grid))
-    for i in range(len(grid)):
+    # for i in range(len(grid)):
         # if grid[i] < (-5000):
             # V[i] = 1./2. * m_red * harm_freq**2 * (grid[i] - re)**2
-        V[i] = 1./2. * m_OH * omega_asym**2 * (grid[i] - re)**2
+        # V[i] = 1./2. * m_OH * omega_asym**2 * (grid[i] - re)**2
         # else:
         #     V[i] = 500000000000.
-    return np.diag(V)
-    # return np.diag(De * (1. - np.exp(-A * grid)) ** 2)
+    # return np.diag(V)
+    return np.diag(De * (1. - np.exp(-A * grid)) ** 2)
     # return np.diag(np.load('Potential_CH_stretch2.npy'))
 
 
@@ -76,7 +76,7 @@ def Energy(T, V):
 
 
 def run():
-    grid = np.linspace(-1, 1, 3000)
+    grid = np.linspace(-1, 1, 2000)
     V = Potential(grid)
     T = Kinetic_Calc(grid)
     En, Eig = Energy(T, V)
@@ -91,12 +91,12 @@ def run():
 
 import matplotlib.pyplot as plt
 g, wvfn, harm_pot = run()
-# np.save('Anharmonic_trial_wvfn_ground_150_wvnum', np.vstack((g, wvfn[:, 0])))
-# np.save('Anharmonic_trial_wvfn_150_wvnum', np.vstack((g, -wvfn[:, 1])))
+np.save('Anharmonic_trial_wvfn_ground_150_wvnum', np.vstack((g, wvfn[:, 0])))
+np.save('Anharmonic_trial_wvfn_150_wvnum', np.vstack((g, -wvfn[:, 1])))
 print(f'<1|g^2|0> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 0])}')
 print(f'dipole = {np.dot(wvfn[:, 0], g*wvfn[:, 1])}')
 print(f'<1|g^2|1> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 1])}')
-x = g-0.039
+# x = g-0.039
 x=g
 
 a = (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * x ** 2)) * (2 * mw) ** (1 / 2) * x
@@ -105,18 +105,19 @@ a /= (ma/np.max(wvfn[:, 1]))
 
 # plt.plot(g/ang2bohr, 0.5*m_red*(3600/har2wave)**2*g**2*har2wave, label='Harmonic Potential Energy')
 
-# plt.plot(g/ang2bohr, -a*50000+5400, label='Harmonic Excited State')
+plt.plot(g/ang2bohr, -a*50000+5400, label='Harmonic Excited State', linewidth=3)
 
 # plt.plot(g, wvfn[:, 0]**2)
-# plt.plot(g/ang2bohr, wvfn[:, 0]*50000 + 3601, label='Anharmonic Excited State')
-# plt.plot(g/ang2bohr, harm_pot*har2wave, label='Anharmonic Potential Energy')
-# plt.legend(loc='upper center')
-# plt.xlim(-0.5, 0.5)
-# plt.ylim(0, 20000)
-# plt.xlabel(r'q ($\rm\AA$)', fontsize=14)
-# plt.ylabel(r'Energy cm$^{-1}$', fontsize=14)
-# plt.tight_layout()
-# plt.show()
+plt.plot(g/ang2bohr, wvfn[:, 1]*50000 + 5231, label='Anharmonic Excited State', linewidth=3)
+plt.plot(g/ang2bohr, harm_pot*har2wave, label='Anharmonic Potential Energy', linewidth=3)
+plt.legend(loc='upper center', fontsize=20)
+plt.xlim(-0.5, 0.5)
+plt.ylim(0, 20000)
+plt.xlabel(r'q ($\rm\AA$)', fontsize=28)
+plt.ylabel(r'Energy cm$^{-1}$', fontsize=28)
+plt.tick_params(axis='both', labelsize=18)
+plt.tight_layout()
+plt.show()
 
 
 

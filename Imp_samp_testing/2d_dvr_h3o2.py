@@ -107,6 +107,7 @@ def pot(coords, grid1, grid2):
     full_coords = shared_prot_grid(roo_coords, gridz[0])
     print('finished making the grid, now to start the potential')
     pot = get_pot(full_coords)
+    pot[pot > 12000/har2wave] = 12000/har2wave
     print('finished evaluating the potential')
     import scipy.sparse as sp
     return sp.diags([pot], [0]), pot.reshape((len(grid1), len(grid2)))
@@ -192,12 +193,18 @@ def run(grid1, grid2, mass1, mass2):
 
 num_points1 = 350
 num_points2 = 350
+small_grid_points = 100
+xh_a = -1.5
+xh_b = 1.5
+roo_a = 3.9
+roo_b = 5.8
 # en, eig, V = run(np.linspace(-1, 1, num=num_points1), np.linspace(-1, 1, num=num_points2), m_red, m_red)
-en, eig, V = run(np.linspace(-1, 1, num=50), np.linspace(4.2, 5.2, num=50), m_red_sp, m_red_OO)
-np.savez('small_grid_2d_h3o2', energies=en, wvfns=eig, pot=V)
+en, eig, V = run(np.linspace(xh_a, xh_b, num=small_grid_points), np.linspace(roo_a, roo_b, num=small_grid_points), m_red_sp, m_red_OO)
+# np.savez('small_grid_2d_h3o2', energies=en, wvfns=eig, pot=V)
+np.savez('small_grid_2d_h3o2_bigger_grid', energies=en, wvfns=eig, pot=V)
 # np.savez('test_2d_HO', energies=en, wvfns=eig, pot=V)
 two_d = np.load('first_2d_h3o2.npz')
-small_grid = np.load('small_grid_2d_h3o2.npz')
+small_grid = np.load('small_grid_2d_h3o2_bigger_grid.npz')
 # two_d = np.load('test_2d_HO.npz')
 energies = two_d['energies']*har2wave
 small_energies = small_grid['energies']*har2wave
@@ -219,13 +226,15 @@ print(f'energies = {small_energies[0]}')
 print(f'energies = {small_energies[1]}')
 print(f'energies = {small_energies[2]}')
 print(f'energies = {small_energies[3]}')
+print(f'energies = {small_energies[6]}')
+print(f'freq 6 = {small_energies[6]-small_energies[0]}')
 
 
 wvfns = two_d['wvfns']
 V = two_d['pot']*har2wave
 import matplotlib.pyplot as plt
-sp = np.linspace(-1, 1, num=num_points1)/ang2bohr
-Roo = np.linspace(4.2, 5.2, num=num_points2)/ang2bohr
+sp = np.linspace(xh_a, xh_b, num=num_points1)/ang2bohr
+Roo = np.linspace(roo_a, roo_b, num=num_points2)/ang2bohr
 X, Y = np.meshgrid(sp, Roo)
 
 # fig, ax = plt.subplots()
@@ -245,34 +254,64 @@ X, Y = np.meshgrid(sp, Roo)
 wvfns2 = small_grid['wvfns']
 V2 = small_grid['pot']*har2wave
 # import matplotlib.pyplot as plt
-sp = np.linspace(-1, 1, num=50)/ang2bohr
-Roo = np.linspace(4.2, 5.2, num=50)/ang2bohr
+sp = np.linspace(xh_a, xh_b, num=small_grid_points)/ang2bohr
+Roo = np.linspace(roo_a, roo_b, num=small_grid_points)/ang2bohr
 X, Y = np.meshgrid(sp, Roo)
 
 
 fig, ax = plt.subplots()
-tcc = ax.contourf(X, Y, V2, vmin=0, vmax=10000)
+# ind = np.argwhere(V2 > 15000)
+V2[V2 > 15000] = 15000
+tcc = ax.contourf(X, Y, V2)
 fig.colorbar(tcc)
 ax.set_ylabel(r'R$_{\rm{OO}} \AA$')
 ax.set_xlabel(r'sp $\AA$')
 plt.show()
 
-fig, ax = plt.subplots(2, 2)
-tcc = ax[0, 0].contourf(X, Y, wvfns2[:, 0].reshape(50, 50))
+fig, ax = plt.subplots()
+tcc = ax.contourf(X, Y, wvfns2[:, 0].reshape(small_grid_points, small_grid_points))
+ax.set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
+ax.set_xlabel(r'XH $\rm\AA$', fontsize=16)
+plt.tight_layout()
+fig.colorbar(tcc)
+plt.show()
+
+fig, ax = plt.subplots(3, 3)
+tcc = ax[0, 0].contourf(X, Y, wvfns2[:, 0].reshape(small_grid_points, small_grid_points))
 ax[0, 0].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
 ax[0, 0].set_xlabel(r'XH $\rm\AA$', fontsize=16)
 
-tcc = ax[0, 1].contourf(X, Y, wvfns2[:, 1].reshape(50, 50))
+tcc = ax[0, 1].contourf(X, Y, wvfns2[:, 1].reshape(small_grid_points, small_grid_points))
 ax[0, 1].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
 ax[0, 1].set_xlabel(r'XH $\rm\AA$', fontsize=16)
 
-tcc = ax[1, 0].contourf(X, Y, wvfns2[:, 2].reshape(50, 50))
+tcc = ax[0, 2].contourf(X, Y, wvfns2[:, 2].reshape(small_grid_points, small_grid_points))
+ax[0, 2].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
+ax[0, 2].set_xlabel(r'XH $\rm\AA$', fontsize=16)
+
+tcc = ax[1, 0].contourf(X, Y, wvfns2[:, 3].reshape(small_grid_points, small_grid_points))
 ax[1, 0].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
 ax[1, 0].set_xlabel(r'XH $\rm\AA$', fontsize=16)
 
-tcc = ax[1, 1].contourf(X, Y, wvfns2[:, 3].reshape(50, 50))
+tcc = ax[1, 1].contourf(X, Y, wvfns2[:, 4].reshape(small_grid_points, small_grid_points))
 ax[1, 1].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
 ax[1, 1].set_xlabel(r'XH $\rm\AA$', fontsize=16)
+
+tcc = ax[1, 2].contourf(X, Y, wvfns2[:, 5].reshape(small_grid_points, small_grid_points))
+ax[1, 2].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
+ax[1, 2].set_xlabel(r'XH $\rm\AA$', fontsize=16)
+
+tcc = ax[2, 0].contourf(X, Y, wvfns2[:, 6].reshape(small_grid_points, small_grid_points))
+ax[2, 0].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
+ax[2, 0].set_xlabel(r'XH $\rm\AA$', fontsize=16)
+
+tcc = ax[2, 1].contourf(X, Y, wvfns2[:, 7].reshape(small_grid_points, small_grid_points))
+ax[2, 1].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
+ax[2, 1].set_xlabel(r'XH $\rm\AA$', fontsize=16)
+
+tcc = ax[2, 2].contourf(X, Y, wvfns2[:, 8].reshape(small_grid_points, small_grid_points))
+ax[2, 2].set_ylabel(r'R$_{\rm{OO}}$ $\rm\AA$', fontsize=16)
+ax[2, 2].set_xlabel(r'XH $\rm\AA$', fontsize=16)
 plt.tight_layout()
 fig.colorbar(tcc)
 plt.show()

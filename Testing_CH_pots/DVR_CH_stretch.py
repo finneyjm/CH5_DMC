@@ -118,7 +118,7 @@ def Energy(T, V):
 
 
 def run(CH, coords, mass):
-    g = grid(0.4, 6., 5000, CH, coords)
+    g = grid(1, 4., 900, CH, coords)
     V = Potential(g)
     T = Kinetic_Calc(g, mass)
     En, Eig = Energy(T, V)
@@ -130,9 +130,40 @@ def run(CH, coords, mass):
 
 
 
-print(m_red)
-print(m_red_D)
-g, eig, V = run(2, coords_initial_min, m_red_D)
+# print(m_red)
+# print(m_red_D)
+entos_wvfn = np.load('CH5_GSW_3.npy')
+entos_pot = np.load('CH5_CH_3_pot.npy')
+g, eig, V = run(3, coords_initial_min, m_red)
+import matplotlib.pyplot as plt
+entos_norm = np.max(entos_wvfn[1])/np.linalg.norm(eig)
+bowman_norm = np.max(eig)/np.linalg.norm(eig)
+
+diff = (entos_wvfn[1]/entos_norm - eig/bowman_norm)
+entos_pot[1] -= -40.652825169
+diff_pot = entos_pot[1]-V
+percent_diff_pot = diff_pot/V*100
+
+plt.plot(g/ang2bohr, V*har2wave, label='Bowman')
+plt.plot(g/ang2bohr, entos_pot[1]*har2wave, label='Entos')
+# plt.plot(entos_wvfn[0]/ang2bohr, entos_wvfn[1]/entos_norm, label='Entos wave function')
+# plt.plot(g/ang2bohr, diff_pot*har2wave, label='Entos pot - Bowman pot')
+# plt.plot(g/ang2bohr, eig/bowman_norm, label='Bowman wave function')
+# plt.plot(g/ang2bohr, diff, label='Difference')
+plt.xlabel(r'r$_{\rmCH}$ $\rm\AA$', fontsize=16)
+plt.ylabel(r'Energy cm$^{-1}$', fontsize=16)
+plt.tick_params(axis='both', labelsize=18)
+# plt.ylabel(r'Entos wave function - Bowman wave function')
+plt.legend(fontsize=14)
+plt.tight_layout()
+plt.show()
+plt.plot(g/ang2bohr, diff_pot*har2wave)
+plt.xlabel(r'r$_{\rmCH}$ $\rm\AA$', fontsize=16)
+plt.ylabel('Absolute Difference of \nEntos Energy from \nBowman Energy', fontsize=16)
+plt.tick_params(axis='both', labelsize=18)
+# plt.ylim(-4, 4)
+plt.show()
+
 # dx = (6-0.4)/5000
 #
 # ind = np.argmin(V)

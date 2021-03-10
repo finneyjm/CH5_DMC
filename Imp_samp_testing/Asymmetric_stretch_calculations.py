@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from ProtWaterPES import Dipole
+import multiprocessing as mp
+
 
 har2wave = 219474.6
 
@@ -23,6 +26,28 @@ def roh_roo_angle(coords, roo_dist, roh_dist):
     v2_new = np.reshape(v2, (v2.shape[0], v2.shape[1], 1))
     aang = np.arccos(np.matmul(v1_new, v2_new).squeeze())
     return aang
+
+
+class DipHolder:
+    dip = None
+    @classmethod
+    def get_dip(cls, coords):
+        if cls.dip is None:
+            cls.dip = Dipole(coords.shape[1])
+        return cls.dip.get_dipole(coords)
+
+
+get_dip = DipHolder.get_dip
+
+
+def dip(coords):
+    coords = np.array_split(coords, mp.cpu_count()-1)
+    V = pool.map(get_dip, coords)
+    dips = np.concatenate(V)
+    return dips
+
+
+pool = mp.Pool(mp.cpu_count()-1)
 
 
 ground_coords = np.zeros((10, 27, 5000, 5, 3))
@@ -88,8 +113,10 @@ print(np.sqrt(std_zpe**2 + std_excite_energy**2))
 ground_coords = np.reshape(ground_coords, (10, 135000, 5, 3))
 ground_weights = np.reshape(ground_weights, (10, 135000))
 ground_dists = np.zeros((10, 135000))
+ground_dips = np.zeros((10, 135000, 3))
 for i in range(10):
     ground_dists[i] = all_dists(ground_coords[i])[:, 0]
+    ground_dips[i] = dip(ground_coords[i])
     # amp, xx = np.histogram(ground_dists[i], weights=ground_weights[i], bins=75, range=(-0.7, 0.7), density=True)
     # bin = (xx[1:] + xx[:-1]) / 2.
     # plt.plot(bin, amp)
@@ -97,8 +124,10 @@ for i in range(10):
 excite_neg_coords = np.reshape(excite_neg_coords, (5, 135000, 5, 3))
 excite_neg_weights = np.reshape(excite_neg_weights, (5, 135000))
 excite_neg_dists = np.zeros((5, 135000))
+excite_neg_dips = np.zeros((5, 135000, 3))
 for i in range(5):
     excite_neg_dists[i] = all_dists(excite_neg_coords[i])[:, 0]
+    excite_neg_dips[i] = dip(excite_neg_coords[i])
 #     amp, xx = np.histogram(excite_neg_dists[i], weights=excite_neg_weights[i], bins=75, range=(-0.5, 0.5), density=True)
 #     bin = (xx[1:] + xx[:-1])/2
 #     plt.plot(bin, amp)
@@ -106,8 +135,10 @@ for i in range(5):
 excite_pos_coords = np.reshape(excite_pos_coords, (5, 135000, 5, 3))
 excite_pos_weights = np.reshape(excite_pos_weights, (5, 135000))
 excite_pos_dists = np.zeros((5, 135000))
+excite_pos_dips = np.zeros((5, 135000, 3))
 for i in range(5):
     excite_pos_dists[i] = all_dists(excite_pos_coords[i])[:, 0]
+    excite_pos_dips[i] = dip(excite_pos_coords[i])
 #     amp, xx = np.histogram(np.hstack((excite_pos_dists[i], excite_neg_dists[i])), weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75, range=(-0.7, 0.7), density=True)
 #     bin = (xx[1:] + xx[:-1])/2
 #     plt.plot(bin, amp)
@@ -135,7 +166,8 @@ def Harmonic_wvfn(x, state):
 term1 = np.zeros(10)
 for i in range(10):
     frac = Harmonic_wvfn(ground_dists[i], 1)/Harmonic_wvfn(ground_dists[i], 0)
-    term1[i] = np.dot(ground_weights[i], frac*ground_dists[i])/np.sum(ground_weights[i])
+    for j in range(3):
+        term1[i] += np.dot(ground_weights[i], frac*ground_dips[i, :, j])/np.sum(ground_weights[i])
 std_term1 = np.std(term1)
 term1 = np.average(term1)
 
@@ -150,12 +182,15 @@ print(std_term1_sq_freq*conversion)
 
 term2 = np.zeros(5)
 combine_dists = np.zeros((5, 135000*2))
+combine_dips = np.zeros((5, 135000*2, 3))
 combine_weights = np.zeros(combine_dists.shape)
 for i in range(5):
     combine_dists[i] = np.hstack((excite_neg_dists[i], excite_pos_dists[i]))
     combine_weights[i] = np.hstack((excite_neg_weights[i], excite_pos_weights[i]))
+    combine_dips[i] = np.vstack((excite_neg_dips[i], excite_pos_dips[i]))
     frac = Harmonic_wvfn(combine_dists[i], 0)/Harmonic_wvfn(combine_dists[i], 1)
-    term2[i] = np.dot(combine_weights[i], frac*combine_dists[i])/np.sum(combine_weights[i])
+    for j in range(3):
+        term2[i] += np.dot(combine_weights[i], frac*combine_dips[i, :, j])/np.sum(combine_weights[i])
 
 std_term2 = np.std(term2)
 term2 = np.average(term2)
@@ -166,7 +201,8 @@ print(conversion*term2**2*freq)
 print(std_term2_sq_freq*conversion)
 
 
-term3 = 0.14379963852224506
+# term3 = 0.14379963852224506
+term3 = 0.012096049401493813
 std_term3 = 0.0
 std_term3_sq = 0.0
 std_term3_sq_freq = term3**2*freq*np.sqrt((std_term3_sq/term3**2)**2 + (std_freq/freq)**2)
