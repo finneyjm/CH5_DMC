@@ -2,9 +2,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ProtWaterPES import Dipole
 import multiprocessing as mp
+from Imp_samp_testing import EckartsSpinz
 
 
 har2wave = 219474.6
+
+ref = np.array([
+  [0.000000000000,  0.000000000000,  0.000000000000],
+  [-0.230116220494,  0.000000000000,  0.125220273614],
+  [-0.283231720891, 0.000000000000,  -0.161464401883],
+  [0.230116220494, 0.000000000000, -0.125220273614],
+  [0.283231720891,  0.000000000000, 0.161464401883],
+])
+
+me = 9.10938356e-31
+Avo_num = 6.0221367e23
+m_O = 15.994915 / (Avo_num*me*1000)
+m_H = 1.007825 / (Avo_num*me*1000)
+m_D = 2.01410177812 / (Avo_num*me*1000)
+
+mass = np.array([m_H, m_O, m_H, m_O, m_H])
 
 
 def all_dists(coords):
@@ -109,41 +126,46 @@ print(average_excite_energy-average_zpe)
 print(np.sqrt(std_zpe**2 + std_excite_energy**2))
 
 
-
 ground_coords = np.reshape(ground_coords, (10, 135000, 5, 3))
 ground_weights = np.reshape(ground_weights, (10, 135000))
 ground_dists = np.zeros((10, 135000))
 ground_dips = np.zeros((10, 135000, 3))
 for i in range(10):
+    eck = EckartsSpinz(ref, ground_coords[i], mass, planar=True)
+    ground_coords[i] = eck.get_rotated_coords()
     ground_dists[i] = all_dists(ground_coords[i])[:, 0]
     ground_dips[i] = dip(ground_coords[i])
-    # amp, xx = np.histogram(ground_dists[i], weights=ground_weights[i], bins=75, range=(-0.7, 0.7), density=True)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp)
+    amp, xx = np.histogram(ground_dists[i], weights=ground_weights[i], bins=75, range=(-0.7, 0.7), density=True)
+    bin = (xx[1:] + xx[:-1]) / 2.
+    plt.plot(bin, amp)
 
 excite_neg_coords = np.reshape(excite_neg_coords, (5, 135000, 5, 3))
 excite_neg_weights = np.reshape(excite_neg_weights, (5, 135000))
 excite_neg_dists = np.zeros((5, 135000))
 excite_neg_dips = np.zeros((5, 135000, 3))
 for i in range(5):
+    eck = EckartsSpinz(ref, excite_neg_coords[i], mass, planar=True)
+    excite_neg_coords[i] = eck.get_rotated_coords()
     excite_neg_dists[i] = all_dists(excite_neg_coords[i])[:, 0]
     excite_neg_dips[i] = dip(excite_neg_coords[i])
-#     amp, xx = np.histogram(excite_neg_dists[i], weights=excite_neg_weights[i], bins=75, range=(-0.5, 0.5), density=True)
-#     bin = (xx[1:] + xx[:-1])/2
-#     plt.plot(bin, amp)
+    # amp, xx = np.histogram(excite_neg_dists[i], weights=excite_neg_weights[i], bins=75, range=(-0.5, 0.5), density=True)
+    # bin = (xx[1:] + xx[:-1])/2
+    # plt.plot(bin, amp)
 
 excite_pos_coords = np.reshape(excite_pos_coords, (5, 135000, 5, 3))
 excite_pos_weights = np.reshape(excite_pos_weights, (5, 135000))
 excite_pos_dists = np.zeros((5, 135000))
 excite_pos_dips = np.zeros((5, 135000, 3))
 for i in range(5):
+    eck = EckartsSpinz(ref, excite_pos_coords[i], mass, planar=True)
+    excite_pos_coords[i] = eck.get_rotated_coords()
     excite_pos_dists[i] = all_dists(excite_pos_coords[i])[:, 0]
     excite_pos_dips[i] = dip(excite_pos_coords[i])
-#     amp, xx = np.histogram(np.hstack((excite_pos_dists[i], excite_neg_dists[i])), weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75, range=(-0.7, 0.7), density=True)
-#     bin = (xx[1:] + xx[:-1])/2
-#     plt.plot(bin, amp)
-# plt.xlabel('a (Bohr)')
-# plt.show()
+    amp, xx = np.histogram(np.hstack((excite_pos_dists[i], excite_neg_dists[i])), weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75, range=(-0.7, 0.7), density=True)
+    bin = (xx[1:] + xx[:-1])/2
+    plt.plot(bin, amp)
+plt.xlabel('a (Bohr)')
+plt.show()
 
 me = 9.10938356e-31
 Avo_num = 6.0221367e23

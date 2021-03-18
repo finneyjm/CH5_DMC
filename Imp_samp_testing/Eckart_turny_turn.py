@@ -41,11 +41,11 @@ class EckartsSpinz:
         mass_weight_ref = self.masses[:, None]*self.reference
         self.little_fs = np.matmul(np.transpose(self.coords, (0, 2, 1)), mass_weight_ref)  # generates the F vectors
                                                                                            # from equation 3.1
-        self._indz = np.argwhere(np.sum(self.reference, axis=0) > 5e-15).T[0]  # This is a check to make sure we are
-                                                                               # or aren't planar
+        self._indz = np.where(np.around(self.little_fs, 4).any(axis=1))[1][:2]  # This is a check to make sure we are
+                                                                                # or aren't planar
         if self.planar is not None:
             self._missing_ind = np.setdiff1d(np.arange(3), self._indz)
-            if len(self._missing_ind[0]) < 1:
+            if len(self._missing_ind) < 1:
                 print("this bad boy isn't planar according to my algorithm. Please supply a reference geometry that "
                       "is on a 2d plane please")
                 raise ValueError
