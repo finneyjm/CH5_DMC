@@ -40,23 +40,25 @@ class EckartsSpinz:
         '''
         mass_weight_ref = self.masses[:, None]*self.reference
         self.little_fs = np.matmul(np.transpose(self.coords, (0, 2, 1)), mass_weight_ref)  # generates the F vectors
-                                                                                           # from equation 3.1
-        self._indz = np.where(np.around(self.little_fs, 4).any(axis=1))[1][:2]  # This is a check to make sure we are
+                                                                                            # from equation 3.1
+        self._indz = np.where(np.around(self.little_fs, 4).any(axis=1))[1][:3]  # This is a check to make sure we are
                                                                                 # or aren't planar
+        self._missing_ind = np.setdiff1d(np.arange(3), self._indz)
+
         if self.planar is not None:
-            self._missing_ind = np.setdiff1d(np.arange(3), self._indz)
             if len(self._missing_ind) < 1:
                 print("this bad boy isn't planar according to my algorithm. Please supply a reference geometry that "
                       "is on a 2d plane please")
                 raise ValueError
+            self._indz = self._indz[:2]
             self.little_fs = self.little_fs[:, self._indz, :]
         else:
-            if len(self._indz) < 3:
+            if len(self._missing_ind) > 0:
                 print("This bad boy is a planar structure. Please pass the planar flag so the algorithm "
                       "can work properly")
                 raise ValueError
         self.biggo_fs = np.matmul(self.little_fs, self.little_fs.transpose((0, 2, 1)))  # calculates the F matrix
-                                                                                        # from equations 3.4b and 3.4e
+        # from equations 3.4b and 3.4e
 
     def get_eigs(self):
         '''
@@ -78,6 +80,10 @@ class EckartsSpinz:
                                                    # used in equations 3.4a and 3.4d to get our f unit vectors
         if self.planar is None:
             self.f_vecs = np.matmul(self.little_fs, big_F_m1o2)
+            mas = np.where(np.around(np.linalg.det(self.f_vecs)) == -1)
+            if len(mas[0]) != 0:
+                print("well, something's wrong")
+                raise ValueError
         else:
             self.f_vecs[:, :, self._indz] = np.matmul(self.little_fs.transpose((0, 2, 1)), big_F_m1o2)
             if self._missing_ind[0] == 1:  # f_3 is equal to f_z cross f_x
@@ -86,6 +92,10 @@ class EckartsSpinz:
             else:  # this is the more general formula to obtain f_3
                 self.f_vecs[:, :, self._missing_ind[0]] = np.cross(self.f_vecs[:, :, self._indz[0]],
                                                                     self.f_vecs[:, :, self._indz[1]])
+            mas = np.where(np.around(np.linalg.det(self.f_vecs)) == -1)
+            if len(mas[0]) != 0:
+                print("well, something's wrong")
+                raise ValueError
 
     def get_rotated_coords(self):
         '''
@@ -95,7 +105,9 @@ class EckartsSpinz:
         :rtype: np array
         '''
         self.get_transformed_fs()
-        return self.coords@self.f_vecs
+        transform = self.f_vecs@np.transpose(self.coords, (0, 2, 1))
+        # return self.coords@self.f_vecs
+        return transform.transpose((0, 2, 1))
 
     def return_f_vecs(self):
         '''

@@ -273,11 +273,11 @@ mesh = np.meshgrid(Roo, XH)
 
 
 grid1 = np.linspace(-2.5, 2.5, 2000)
-grid2 = np.linspace(-1., 1., 1000)
-grid3 = np.linspace(4.2, 5.2, 30)
-grid4 = np.linspace(1, 6, 1000)
-en1, eig1, V1 = run(m_red, linear_struct, 'asymmetric', grid1)
-equil_roo_roh_x = linear_struct[3, 0] - linear_struct[4, 0]
+# grid2 = np.linspace(-1., 1., 1000)
+# grid3 = np.linspace(4.2, 5.2, 30)
+# grid4 = np.linspace(1, 6, 1000)
+# en1, eig1, V1 = run(m_red, linear_struct, 'asymmetric', grid1)
+# equil_roo_roh_x = linear_struct[3, 0] - linear_struct[4, 0]
 
 # for i in range(len(grid3)):
 #     Roo = grid3[i]
@@ -288,13 +288,13 @@ equil_roo_roh_x = linear_struct[3, 0] - linear_struct[4, 0]
 #     np.save(f'shared_prot_energies_Roo_{i+1}.npy', en2)
 #     np.save(f'shared_prot_wvfns_Roo_{i+1}.npy', eig2)
 #     np.save(f'shared_prot_pot_Roo_{i+1}.npy', V2)
-
-import matplotlib.pyplot as plt
-for i in range(len(grid3)):
-    eig = np.load(f'shared_prot_wvfns_Roo_{i+1}.npy')
-    plt.plot(grid2/ang2bohr, eig[:, 0], label=f'Roo = {grid3[i]/ang2bohr}')
-plt.legend()
-plt.show()
+#
+# import matplotlib.pyplot as plt
+# for i in range(len(grid3)):
+#     eig = np.load(f'shared_prot_wvfns_Roo_{i+1}.npy')
+#     plt.plot(grid2/ang2bohr, eig[:, 0], label=f'Roo = {grid3[i]/ang2bohr}')
+# plt.legend()
+# plt.show()
 
 
 # en3, eig3, V3 = run(m_red_OO, linear_struct, 'oo', grid3)
@@ -375,11 +375,13 @@ plt.show()
 # mw = m_red*omega
 #
 #
-# def Harmonic_wvfn2(x, state):
-#     if state == 1:
-#         return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2)) * (2 * mw) ** (1 / 2) * (x)
-#     else:
-#         return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2))
+def Harmonic_wvfn2(x, state):
+    omega_asym = 3070.648654929466 / har2wave
+    mw = m_red * omega_asym
+    if state == 1:
+        return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2)) * (2 * mw) ** (1 / 2) * (x)
+    else:
+        return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2))
 #
 #
 # print(1/np.sqrt(2)*grid1[np.argmin(eig4[:, 1]**2)])
@@ -391,13 +393,42 @@ plt.show()
 # plt.tight_layout()
 # plt.show()
 #
-# coords = asym_grid(struct, np.linspace(0.5, 3.0, len(grid1)), grid1)
-# energies, wvfns, V = run(m_red, 'harmonic asymmetric', grid1)
-# dips = dip(coords)
-# thingy = 0
+coords = asym_grid(linear_struct, np.linspace(0.5, 3.0, len(grid1)), grid1)
+energies, wvfns, V = run(m_red, linear_struct, 'harmonic asymmetric', grid1)
+from Imp_samp_testing import EckartsSpinz
+from Imp_samp_testing import MomentOfSpinz
+mass = np.array([m_H, m_O, m_H, m_O, m_H])
+MOM = MomentOfSpinz(linear_struct, mass)
+ref = MOM.coord_spinz()
+eck = EckartsSpinz(ref, coords, mass, planar=True)
+coords = eck.get_rotated_coords()
+MOM2 = MomentOfSpinz(coords, mass)
+eigvals = MOM2.gimme_dat_eigval()
+harm = Harmonic_wvfn2(grid1, 0)
+print(np.max(harm)/np.max(wvfns[:, 0]))
+
+import matplotlib.pyplot as plt
+# plt.plot(grid1, 1/(2*eigvals[:, 0]))
+# plt.plot(grid1, 1/(2*eigvals[:, 1]))
+# plt.plot(grid1, 1/(2*eigvals[:, 2]))
+# plt.show()
+# plt.plot(grid1, Harmonic_wvfn2(grid1, 0))
+# plt.plot(grid1, wvfns[:, 0]*20)
+# plt.show()
+
+
+
+dips = dip(coords)/0.3934303
+# print(dips)
+thingy = np.zeros(3)
+for i in range(3):
+    thingy[i] = np.dot((wvfns[:, 1]), dips[:, i]*(wvfns[:, 0]))
+print(thingy)
+print(np.linalg.norm(thingy)/20/20)
+# thingy = np.zeros(3)
 # for i in range(3):
-#     thingy += np.dot(wvfns[:, 0], dips[:, i] * wvfns[:, 1])
-# print(thingy)
+#     thingy[i] += np.dot(wvfns[:, 0], dips[:, i]**2 * wvfns[:, 1])
+# print(np.linalg.norm(thingy))
 #
 #
 # def sp_calc_for_fd(coords):

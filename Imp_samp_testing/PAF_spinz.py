@@ -34,6 +34,15 @@ class MomentOfSpinz:
         self.eval_evec()
         return self._eval
 
+    def gimme_both(self):
+        self.eval_evec()
+        return self._eval, self._evec
+
     def coord_spinz(self):
         self.eval_evec()
-        return self.coords@self._evec
+        if len(self.coords.shape) == 2:
+            transform = self._evec.T@self.coords.T
+            return transform.T
+        else:
+            transform = np.transpose(self._evec, (0, 2, 1))@np.transpose(self.coords, (0, 2, 1))
+            return np.transpose(transform, (0, 2, 1))
