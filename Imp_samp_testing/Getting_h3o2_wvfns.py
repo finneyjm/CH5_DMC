@@ -49,19 +49,22 @@ class PotHolder:
 get_pot = PotHolder.get_pot
 
 
-def asym_grid(coords, r1, a):
+def asym_grid(coords, a):
+    re = np.linalg.norm(coords[2]-coords[1])
     coords = np.array([coords]*1)
     coords = coords[:, (1, 3, 0, 2, 4)]
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
                                                                         ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
                                                                                    [2, 0, 1, 0], [3, 0, 1, 2],
                                                                                    [4, 1, 0, 2]])).coords
-    N = len(r1)
+    N = len(a)
     zmat = np.array([zmat]*N).reshape((N, 4, 6))
-    zmat[:, 2, 1] = r1
-    zmat[:, 3, 1] = r1 - a
+    zmat[:, 2, 1] = re + np.sqrt(2)/2*a
+    zmat[:, 3, 1] = re - np.sqrt(2)/2*a
     new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
     coords = new_coords[:, (2, 0, 3, 1, 4)]
+    coords[:, :, 1] = coords[:, :, 2]
+    coords[:, :, 2] = np.zeros(coords[:, :, 2].shape)
     return coords
 
 
@@ -80,6 +83,7 @@ def sym_grid(coords, r1, s):
     zmat[:, 3, 1] = s-r1
     new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
     coords = new_coords[:, (2, 0, 3, 1, 4)]
+
     return coords
 
 
@@ -191,9 +195,9 @@ def Energy(T, V):
 
 def run(mass, struct, stretch, grid, r1=None):
     if stretch == 'asymmetric':
-        if r1 is None:
-            r1 = np.linspace(0.5, 3.0, len(grid))
-        coords = asym_grid(struct, r1, grid)
+        # if r1 is None:
+        #     r1 = np.linspace(0.5, 3.0, len(grid))
+        coords = asym_grid(struct, grid)
         V = pot(coords)
     elif stretch == 'symmetric':
         if r1 is None:
@@ -393,14 +397,16 @@ def Harmonic_wvfn2(x, state):
 # plt.tight_layout()
 # plt.show()
 #
-coords = asym_grid(linear_struct, np.linspace(0.5, 3.0, len(grid1)), grid1)
-energies, wvfns, V = run(m_red, linear_struct, 'harmonic asymmetric', grid1)
-from Imp_samp_testing import EckartsSpinz
 from Imp_samp_testing import MomentOfSpinz
 mass = np.array([m_H, m_O, m_H, m_O, m_H])
 MOM = MomentOfSpinz(linear_struct, mass)
-ref = MOM.coord_spinz()
-eck = EckartsSpinz(ref, coords, mass, planar=True)
+linear_struct = MOM.coord_spinz()
+grid1 /= np.sqrt(2)
+coords = asym_grid(linear_struct, grid1)
+coords2 = coords
+energies, wvfns, V = run(m_red, linear_struct, 'harmonic asymmetric', grid1)
+from Imp_samp_testing import EckartsSpinz
+eck = EckartsSpinz(linear_struct, coords, mass, planar=True)
 coords = eck.get_rotated_coords()
 MOM2 = MomentOfSpinz(coords, mass)
 eigvals = MOM2.gimme_dat_eigval()
@@ -417,14 +423,47 @@ import matplotlib.pyplot as plt
 # plt.show()
 
 
-
+print(np.dot((wvfns[:, 1]), grid1/ang2bohr*(wvfns[:, 0])))
 dips = dip(coords)/0.3934303
+plt.plot(grid1, dips[:, 0], label='x')
+plt.plot(grid1, dips[:, 1], label='y')
+plt.plot(grid1, dips[:, 2], label='z')
+plt.legend()
+plt.show()
 # print(dips)
 thingy = np.zeros(3)
 for i in range(3):
     thingy[i] = np.dot((wvfns[:, 1]), dips[:, i]*(wvfns[:, 0]))
 print(thingy)
-print(np.linalg.norm(thingy)/20/20)
+print(np.linalg.norm(thingy))
+
+bonds = [[1, 2], [3, 4]]
+cd1 = coords[:, tuple(x[0] for x in np.array(bonds))]
+cd2 = coords[:, tuple(x[1] for x in np.array(bonds))]
+a = cd2-cd1
+dis = a[:, 0] + a[:, 1]
+wth = np.linalg.norm(dis, axis=-1)
+plt.plot(a[:, 0, 0] + a[:, 1, 0], label='x')
+plt.plot(a[:, 0, 1] + a[:, 1, 1], label='y')
+plt.plot(a[:, 0, 2] + a[:, 1, 2], label='z')
+plt.legend()
+plt.show()
+plt.plot(grid1, wvfns[:, 0])
+plt.plot(grid1, wvfns[:, 1])
+plt.show()
+
+thingy = np.zeros(3)
+for i in range(3):
+    thingy[i] = np.dot((-wvfns[:, 1]), wvfns[:, 0]*(a[:, 0, i] + a[:, 1, i]))
+print(thingy)
+bonds = [[1, 2], [3, 4]]
+cd1 = coords[:, tuple(x[0] for x in np.array(bonds))]
+cd2 = coords[:, tuple(x[1] for x in np.array(bonds))]
+dis = np.linalg.norm(cd2-cd1, axis=2)
+s = 1/np.sqrt(2)*(dis[:, 0] + dis[:, 1])
+print(np.average(s))
+print(np.std(s))
+# print(np.linalg.norm(thingy))
 # thingy = np.zeros(3)
 # for i in range(3):
 #     thingy[i] += np.dot(wvfns[:, 0], dips[:, i]**2 * wvfns[:, 1])

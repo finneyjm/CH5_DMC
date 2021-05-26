@@ -10,8 +10,10 @@ har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11
 
 # parameters for the potential and for the analytic wavefuntion
-De = 0.1896
+
 omega = 3600./har2wave
+wexe = 500./har2wave
+De = omega**2/4/wexe
 mw = m_red * omega
 A = np.sqrt(omega**2 * m_red/(2*De))
 
@@ -61,6 +63,22 @@ def run(anharm=True):
     return grid, En[0], Eig[:, 0], np.diag(V)
 
 
+def drift(coords):
+    return -2.*mw*coords
+
+
+def sec_dir(coords):
+    return (mw/np.pi)**(1./4.)*np.exp(-(1./2.*mw*coords**2))*(mw**2*coords**2-mw)
+
+
+def E_loc(coords, anharm):
+    psi = psi_t(coords)
+    kin = -1./(2.*m_red)*sec_dir(coords)/psi
+    pot = Potential(coords, anharm)
+    El = kin + pot
+    return El
+
+
 import matplotlib.pyplot as plt
 g, en, wvfn, anharm_pot = run(anharm=False)
 # g, en2, wvfn2, harm_pot = run(anharm=False)
@@ -76,7 +94,7 @@ g, en, wvfn, anharm_pot = run(anharm=False)
 # plt.tick_params(axis='both', which='major', labelsize=12)
 # plt.tight_layout()
 # plt.show()
-plt.close()
+# plt.close()
 
 
 

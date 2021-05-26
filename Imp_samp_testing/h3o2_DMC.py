@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import copy
 from scipy import interpolate
 import numpy as np
@@ -35,47 +36,130 @@ new_struct = np.array([
     [5.20071798, 0.80543847, 1.55595785]
 ])
 
-Roo_grid = np.linspace(4., 5.4, 100)
-sp_grid = np.linspace(-1.2, 1.2, 100)
+Roo_grid = np.linspace(3.9, 5.8, 100)
+sp_grid = np.linspace(-1.5, 1.5, 100)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
-two_d_wvfns = np.load('small_grid_2d_h3o2_bigger_grid.npz')['wvfns']
-big_Roo_grid = np.linspace(4.1, 5.3, 2000)
-big_sp_grid = np.linspace(-0.9, 0.9, 2000)
+# two_d_wvfns = np.load('small_grid_2d_h3o2_bigger_grid.npz')['wvfns']
+big_Roo_grid = np.linspace(4, 5.4, 1000)
+big_sp_grid = np.linspace(-1.2, 1.2, 1000)
+# big_Roo_grid = np.linspace(3.9, 5.8, 100)
+# big_sp_grid = np.linspace(-1.5, 1.5, 100)
 X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
-wvfn = two_d_wvfns[:, 0].reshape((len(Roo_grid), len(sp_grid)))
-wvfn = np.abs(wvfn)
+# wvfn = two_d_wvfns[:, 0].reshape((len(Roo_grid), len(sp_grid)))
+# wvfn = np.abs(wvfn)
 
-interp_ground = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=0)
-z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
-z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1).T
-z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2).T
-z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1).T
-z_ground_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=2).T
-z_ground_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1, dy=1).T
+# interp_ground = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
+# z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1).T
+# z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2).T
+# z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1).T
+# z_ground_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=2).T
+# z_ground_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1, dy=1).T
+#
+# np.savez('interp_ground', a=interp_ground[0], b=interp_ground[1], c=interp_ground[2], d=interp_ground[3], e=interp_ground[4])
+# blah = np.load('interp_ground.npz')
+# interp_ground = [blah['a'], blah['b'], blah['c'], blah['d'], blah['e']]
+# z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
+# np.save('z_ground_no_der', z_ground_no_der)
+# np.load('z_ground_no_der.npy')
 
-ground_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_no_der)
-ground_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx1/z_ground_no_der)
-ground_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx2/z_ground_no_der)
-ground_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dy1/z_ground_no_der)
-ground_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dy2/z_ground_no_der)
-ground_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_ground_dx1_dy1/z_ground_no_der)
+# z_ground_dx1 = z_ground_dx1/z_ground_no_der
+# z_ground_dx2 = z_ground_dx2/z_ground_no_der
+# z_ground_dy1 = z_ground_dy1/z_ground_no_der
+# z_ground_dy2 = z_ground_dy2/z_ground_no_der
+# z_ground_dx1_dy1 = z_ground_dx1_dy1/z_ground_no_der
+#
+# np.save('z_ground_dx1', z_ground_dx1)
+# np.save('z_ground_dx2', z_ground_dx2)
+# np.save('z_ground_dy1', z_ground_dy1)
+# np.save('z_ground_dy2', z_ground_dy2)
+# np.save('z_ground_dx1_dy1', z_ground_dx1_dy1)
 
-import matplotlib.pyplot as plt
+z_ground_no_der = np.load('z_ground_no_der.npy')
+z_ground_dx1 = np.load('z_ground_dx1.npy')
+z_ground_dx2 = np.load('z_ground_dx2.npy')
+z_ground_dy1 = np.load('z_ground_dy1.npy')
+z_ground_dy2 = np.load('z_ground_dy2.npy')
+z_ground_dx1_dy1 = np.load('z_ground_dx1_dy1.npy')
 
-interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 1].reshape((len(Roo_grid), len(sp_grid))), s=0)
-z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh)
-z_excite_xh_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1)
-z_excite_xh_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=2)
-z_excite_xh_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=1)
-z_excite_xh_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=2)
-z_excite_xh_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1, dy=1)
+ind = np.argwhere(z_ground_no_der < 5e-5)
+z_ground_dx1[ind[:, 0], ind[:, 1]] = 0
+z_ground_dx2[ind[:, 0], ind[:, 1]] = 0
+z_ground_dx1_dy1[ind[:, 0], ind[:, 1]] = 0
+z_ground_dy1[ind[:, 0], ind[:, 1]] = 0
+z_ground_dy2[ind[:, 0], ind[:, 1]] = 0
 
-excite_xh_no_der = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_no_der)
-excite_xh_dx1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx1)
-excite_xh_dx2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx2)
-excite_xh_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dy1)
-excite_xh_dy2 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dy2)
-excite_xh_dx1_dy1 = interpolate.interp2d(big_sp_grid, big_Roo_grid, z_excite_xh_dx1_dy1)
+# import matplotlib.pyplot as plt
+# fig, ax = plt.subplots()
+# tcc = ax.contourf(X, Y, z_ground_dx1_dy1)
+# fig.colorbar(tcc)
+# plt.xlabel('XH')
+# plt.ylabel('Roo')
+# plt.show()
+
+ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_no_der.T.flatten())
+ground_dx1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_dx1.T.flatten())
+ground_dx2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_dx2.T.flatten())
+ground_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_dy1.T.flatten())
+ground_dy2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_dy2.T.flatten())
+ground_dx1_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_dx1_dy1.T.flatten())
+
+# wvfn = two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid)))
+# wvfn[:, 50:] = np.abs(wvfn[:, 50:])
+# wvfn[:, :50] = -np.abs(wvfn[:, :50])
+
+
+# interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
+# z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh).T
+# z_excite_xh_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1).T
+# z_excite_xh_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=2).T
+# z_excite_xh_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=1).T
+# z_excite_xh_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=2).T
+# z_excite_xh_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1, dy=1).T
+#
+# z_excite_xh_dx1 = z_excite_xh_dx1/z_excite_xh_no_der
+# z_excite_xh_dx2 = z_excite_xh_dx2/z_excite_xh_no_der
+# z_excite_xh_dy1 = z_excite_xh_dy1/z_excite_xh_no_der
+# z_excite_xh_dy2 = z_excite_xh_dy2/z_excite_xh_no_der
+# z_excite_xh_dx1_dy1 = z_excite_xh_dx1_dy1/z_excite_xh_no_der
+#
+# #
+# excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_excite_xh_no_der.T.flatten())
+# excite_xh_dx1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_excite_xh_dx1.T.flatten())
+# excite_xh_dx2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_excite_xh_dx2.T.flatten())
+# excite_xh_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_excite_xh_dy1.T.flatten())
+# excite_xh_dy2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_excite_xh_dy2.T.flatten())
+# excite_xh_dx1_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_excite_xh_dx1_dy1.T.flatten())
+
+# print(wvfn[56, 56])
+# print(wvfn[56, 42])
+# print(wvfn[42, 56])
+# print(z_excite_xh_no_der[56, 56])
+# print(z_excite_xh_no_der[56, 42])
+# print(z_excite_xh_no_der[42, 56])
+# sps = np.array([big_sp_grid[56], big_sp_grid[56], big_sp_grid[42]])
+# roos = np.array([big_Roo_grid[56], big_Roo_grid[42], big_Roo_grid[56]])
+# # # print(interpolate.griddata((big_sp_grid, big_Roo_grid), z_ground_no_der, (sps, roos), method='cubic'))
+# print(excite_xh_no_der(sps, roos))
+# print(ground_no_der(sps, roos)[np.argsort(np.argsort(roos)), np.argsort(np.argsort(sps))])
+
+# Roo_grid1 = np.linspace(4.4, 5., 100)
+# sp_grid1 = np.linspace(-0.5, 0.5, 100)
+# fig, ax = plt.subplots()
+# tcc = ax.contourf(Roo_grid, sp_grid, excite_xh_no_der(Roo_grid1, sp_grid1))
+# fig.colorbar(tcc)
+# plt.show()
 #
 # interp_excite_roo = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid))), s=0)
 # z_excite_roo_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_roo)
@@ -139,10 +223,10 @@ def psi_t_alt2(coords, excite, shift):
     elif excite == 'sp & a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
     elif excite == 'sp':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
     elif excite == 'roo & a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
@@ -153,10 +237,10 @@ def psi_t_alt2(coords, excite, shift):
     elif excite == 'a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
     else:
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
     return psi
 
 
@@ -179,10 +263,10 @@ def psi_t(coords, excite, shift, sp=None, roo=None):
     elif excite == 'sp & a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
     elif excite == 'sp':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
     elif excite == 'roo & a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
@@ -193,11 +277,11 @@ def psi_t(coords, excite, shift, sp=None, roo=None):
     elif excite == 'a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
     else:
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-    return psi[:, 1, None]
+        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
+    return psi
 
 
 def psi_t_alt(coords, excite, shift):
@@ -239,10 +323,10 @@ def dpsidx_alt2(coords, excite, shift):
 
 def dpsidx(coords, excite, shift):
     dists = all_dists(coords)
-    droox = daroodx(coords, dists[:, [1, 2, -2]])[..., 1]
+    droox = daroodx(coords, dists[:, [1, 2, -2]])
     dspx = dspdx(coords)
-    dr = np.concatenate((droox[..., None], dspx[..., None]), axis=-1)
-    collect = dpsidasp(coords, excite, dists)[:, [1, 2]]
+    dr = np.concatenate((droox, dspx[..., None]), axis=-1)
+    collect = dpsidasp(coords, excite, dists)
     test = np.matmul(dr, collect[:, None, :, None]).squeeze()
     return np.matmul(dr, collect[:, None, :, None]).squeeze()
 
@@ -316,18 +400,21 @@ def d2psidx2_alt2(coords, excite, shift):
 
 def d2psidx2(coords, excite, shift):
     dists = all_dists(coords)
-    droox = daroodx(coords, dists[:, [1, 2, -2]])[..., 1]
+    droox = daroodx(coords, dists[:, [1, 2, -2]])
     dspx = dspdx(coords)
-    dr1 = np.concatenate((droox[..., None], dspx[..., None]), axis=-1)
-    droox2 = daroodx2(coords, dists[:, [1, 2, -2]])[..., 1]
+    dr1 = np.concatenate((droox, dspx[..., None]), axis=-1)
+    droox2 = daroodx2(coords, dists[:, [1, 2, -2]])
     dspx2 = d2spdx2(coords, dists[:, -1])
-    dr2 = np.concatenate((droox2[..., None], dspx2[..., None]), axis=-1)
-    first_dir = dpsidasp(coords, excite, dists)[:, 1:]
-    second_dir = d2psidasp(coords, excite, dists)[:, 1:]
+    dr2 = np.concatenate((droox2, dspx2[..., None]), axis=-1)
+    first_dir = dpsidasp(coords, excite, dists)
+    second_dir = d2psidasp(coords, excite, dists)
     part1 = np.matmul(dr2, first_dir[:, None, :, None]).squeeze()
-    part2 = np.matmul(dr1 ** 2, second_dir[:, None, 0:2, None]).squeeze()
+    part2 = np.matmul(dr1 ** 2, second_dir[:, None, 0:3, None]).squeeze()
     part3 = dr1[..., 0] * dr1[..., 1] * np.broadcast_to(second_dir[:, -1, None, None], (len(dr1), 5, 3)).squeeze()
-    return part1 + part2 + 2*part3
+    part4 = np.matmul(np.broadcast_to(dr1[..., 0, None], droox.shape)*dr1[..., [1, 2]],
+                      (np.broadcast_to(first_dir[:, 0, None],
+                       first_dir[:, [1, 2]].shape)*first_dir[:, [1, 2]])[:, None, :, None]).squeeze()
+    return part1 + part2 + 2*part3 + 2*part4
 
 
 def parts(coords, excite):
@@ -371,12 +458,12 @@ def dpsidasp(coords, excite, dists):
         collect[:, 1] = excite_both_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
     elif excite == 'sp & a':
         collect[:, 0] = (1 - mw_h*dists[:, 0]**2)/dists[:, 0]
-        collect[:, 2] = excite_xh_dx1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 1] = excite_xh_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = excite_xh_dx1(dists[:, -1], dists[:, -2])
+        collect[:, 1] = excite_xh_dy1(dists[:, -1], dists[:, -2])
     elif excite == 'sp':
         collect[:, 0] = -mw_h*dists[:, 0]
-        collect[:, 2] = excite_xh_dx1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 1] = excite_xh_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = excite_xh_dx1(dists[:, -1], dists[:, -2])
+        collect[:, 1] = excite_xh_dy1(dists[:, -1], dists[:, -2])
     elif excite == 'roo & a':
         collect[:, 0] = (1 - mw_h*dists[:, 0]**2)/dists[:, 0]
         collect[:, 2] = excite_roo_dx1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
@@ -387,14 +474,14 @@ def dpsidasp(coords, excite, dists):
         collect[:, 1] = excite_roo_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
     elif excite == 'a':
         collect[:, 0] = (1 - mw_h*dists[:, 0]**2)/dists[:, 0]
-        collect[:, 2] = ground_dx1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 1] = ground_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = ground_dx1(dists[:, -1], dists[:, -2])
+        collect[:, 1] = ground_dy1(dists[:, -1], dists[:, -2])
     else:
         collect[:, 0] = -mw_h*dists[:, 0]
-        collect[:, 2] = ground_dx1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = ground_dx1(dists[:, -1], dists[:, -2])
         # collect[:, 2] = ground_dx1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]\
         #                 /ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
-        collect[:, 1] = ground_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 1] = ground_dy1(dists[:, -1], dists[:, -2])
         # collect[:, 1] = ground_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]\
         #                 /ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     return collect
@@ -435,14 +522,14 @@ def d2psidasp(coords, excite, dists):
         collect[:, 3] = excite_both_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
     elif excite == 'sp & a':
         collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
-        collect[:, 2] = excite_xh_dx2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 1] = excite_xh_dy2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 3] = excite_xh_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = excite_xh_dx2(dists[:, -1], dists[:, -2])
+        collect[:, 1] = excite_xh_dy2(dists[:, -1], dists[:, -2])
+        collect[:, 3] = excite_xh_dx1_dy1(dists[:, -1], dists[:, -2])
     elif excite == 'sp':
         collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
-        collect[:, 2] = excite_xh_dx2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 1] = excite_xh_dy2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 3] = excite_xh_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = excite_xh_dx2(dists[:, -1], dists[:, -2])
+        collect[:, 1] = excite_xh_dy2(dists[:, -1], dists[:, -2])
+        collect[:, 3] = excite_xh_dx1_dy1(dists[:, -1], dists[:, -2])
     elif excite == 'roo & a':
         collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
         collect[:, 2] = excite_roo_dx2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
@@ -455,18 +542,18 @@ def d2psidasp(coords, excite, dists):
         collect[:, 3] = excite_roo_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
     elif excite == 'a':
         collect[:, 0] = mw_h*(mw_h*dists[:, 0]**2 - 3)
-        collect[:, 2] = ground_dx2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 1] = ground_dy2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-        collect[:, 3] = ground_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = ground_dx2(dists[:, -1], dists[:, -2])
+        collect[:, 1] = ground_dy2(dists[:, -1], dists[:, -2])
+        collect[:, 3] = ground_dx1_dy1(dists[:, -1], dists[:, -2])
     else:
         collect[:, 0] = mw_h**2*dists[:, 0]**2 - mw_h
-        collect[:, 2] = ground_dx2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 2] = ground_dx2(dists[:, -1], dists[:, -2])
         # collect[:, 2] = ground_dx2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]\
         #                 / ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
-        collect[:, 1] = ground_dy2(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 1] = ground_dy2(dists[:, -1], dists[:, -2])
         # collect[:, 1] = ground_dy2(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]\
         #                 /ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
-        collect[:, 3] = ground_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
+        collect[:, 3] = ground_dx1_dy1(dists[:, -1], dists[:, -2])
         # collect[:, 3] = ground_dx1_dy1(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]\
         #                 /ground_no_der(dists[:, -1], dists[:, -2])[np.argsort(dists[:, -1]), np.argsort(dists[:, -2])]
     return collect
@@ -629,10 +716,9 @@ def drift(coords, excite, shift):
 
 
 def metropolis(Fqx, Fqy, x, y, excite, shift):
-    psi_1 = parralel_psi(x, excite, shift)
-    psi_2 = parralel_psi(y, excite, shift)
-    psi_ratio = np.prod((psi_2/psi_1)**2, axis=1)
-    # psi_ratio = (psi_2/psi_1)**2
+    psi_1 = np.prod(parralel_psi(x, excite, shift), axis=1)
+    psi_2 = np.prod(parralel_psi(y, excite, shift), axis=1)
+    psi_ratio = (psi_2/psi_1)**2
     a = np.exp(1. / 2. * (Fqx + Fqy) * (sigma ** 2 / 4. * (Fqx - Fqy) - (y - x)))
     a = np.prod(np.prod(a, axis=1), axis=1) * psi_ratio
     remove = np.argwhere(psi_2 * psi_1 < 0)
@@ -800,8 +886,9 @@ def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_
             psi = E_loc(psi)
             Eref = E_ref_calc(psi)
 
-        if i == 1000:
-            lets_debug = True
+        if i == 5000:
+            # lets_debug = True
+            raise Exception(i)
 
         psi, Fqx, acceptance = Kinetic(psi, Fqx)
         shift[i + 1] = psi.shift
@@ -834,24 +921,25 @@ def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_
 
 
 pool = mp.Pool(mp.cpu_count()-1)
-#
 
-import matplotlib.pyplot as plt
-# psi = Walkers(500, new_struct, None, [0, 2.5721982410729867])
-# psi.coords[:, 0, 0] = np.linspace(1.8, 2.8, 500)
-# # psi.coords[:, 3, 0] = np.linspace(4.5, 4.9, 500)
-# wvfn = np.sum(np.sum(dpsidx(psi.coords, psi.excite, psi.shift), axis=-1), axis=-1)
+# ref = np.array([
+#   [0.000000000000000, 0.000000000000000, 0.000000000000000],
+#   [-2.304566686034061, 0.000000000000000, 0.000000000000000],
+#   [-2.740400260927908, 1.0814221449986587E-016, -1.766154718409233],
+#   [2.304566686034061, 0.000000000000000, 0.000000000000000],
+#   [2.740400260927908, 1.0814221449986587E-016, 1.766154718409233],
+# ])
+#
+# xh = np.linspace(-0.25, 0.25, 100)
+# psi = Walkers(100, ref, None, [0, 2.5721982410729867])
+# psi.coords[:, 0, 0] = xh
 # psi = pot(psi)
 # psi = E_loc(psi)
-# sp = sp_calc_for_fd(psi.coords)
-# # plt.plot(wvfn[:, 0])
-# plt.plot(sp, psi.El*har2wave)
-# plt.plot(sp, psi.V*har2wave)
-# plt.ylim(-1000, 5000)
-# # plt.legend()
+# plt.plot(xh, psi.El*har2wave)
+# plt.plot(xh, psi.V*har2wave)
+# plt.plot(xh, (psi.El-psi.V)*har2wave)
 # plt.show()
-#
-#
+
 test_structure = np.array([
         [ 2.75704662,  0.05115356, -0.2381117 ],
         [ 0.24088235, -0.09677082,  0.09615192],
@@ -867,281 +955,45 @@ test_structure2 = np.array([
         [ 5.02836896, -0.06798562, -0.30434529],
         [ 5.24391277,  0.14767547,  1.4669121 ],
 ])
-
+trials = [4, 6, 8, 9]
 for i in range(5):
     coords, weights, time, Eref_array, sum_weights, accept, des = run(
         5000, 20000, 250, 500, 500, None, test_structure, [0, 2.5721982410729867], [0, 0]
     )
-    np.savez(f'ground_state_2d_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+    np.savez(f'ground_state_full_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, d=des)
-
+#
 for i in range(5):
     coords, weights, time, Eref_array, sum_weights, accept, des = run(
         5000, 20000, 250, 500, 500, 'sp', test_structure, [0, 2.5721982410729867], [0, 0]
     )
-    np.savez(f'XH_excite_state_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+    np.savez(f'XH_excite_state_full_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, d=des)
 
 for i in range(5):
     coords, weights, time, Eref_array, sum_weights, accept, des = run(
         5000, 20000, 250, 500, 500, None, test_structure2, [0, 2.5721982410729867], [0, 0]
     )
-    np.savez(f'ground_state_2d_h3o2_{i+6}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+    np.savez(f'ground_state_full_h3o2_{i+6}', coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, d=des)
-
+#
 for i in range(5):
     coords, weights, time, Eref_array, sum_weights, accept, des = run(
         5000, 20000, 250, 500, 500, 'sp', test_structure2, [0, 2.5721982410729867], [0, 0]
     )
-    np.savez(f'XH_excite_state_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+    np.savez(f'XH_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, d=des)
 
-# coords, weights, time, eref, sum_weights, accept, d = run(1000, 5000, 250, 500, 500, None, test_structure, [0, 2.5721982410729867], [0, 0])
-# plt.plot(eref*har2wave)
-# # print(coords[np.argmax(d)])
-# np.save('h3o2_test_ground_eref', eref)
-# eref = np.load('h3o2_test_ground_eref.npy')*har2wave
-# # plt.plot(eref)
-# print(np.mean(eref[500:]))
-# plt.show()
-# plt.show()
+for i in range(5):
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        5000, 20000, 250, 500, 500, 'a', test_structure, [0, 2.5721982410729867], [0, 0]
+    )
+    np.savez(f'Asym_excite_state_full_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
 
-
-def dpsidx_fd(coords):
-    chain = np.zeros((len(coords), 5, 3, 4))
-    dx = 1e-4  #Bohr
-    coeffs = np.array([1/12, -2/3, 2/3, -1/12])/dx
-    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    for atom in atoms:
-        for xyz in range(3):
-            coords[:, atom, xyz] -= 2*dx
-            chain[:, atom, xyz, 0] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] += dx
-            chain[:, atom, xyz, 1] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] += 2*dx
-            chain[:, atom, xyz, 2] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] += dx
-            chain[:, atom, xyz, 3] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] -= 2*dx
-    return np.dot(chain, coeffs)
-
-
-def d2psidx2_fd(coords, psi):
-    chain = np.zeros((len(coords), 5, 3, 5))
-    dx = 1e-3  #Bohr
-    chain[:, :, :, 2] = np.broadcast_to(psi[..., None, None], (len(coords), 5, 3))
-    coeffs = np.array([-1 / 12, 4 / 3, -5 / 2, 4 / 3, -1 / 12]) / (dx ** 2)
-    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    for atom in atoms:
-        for xyz in range(3):
-            coords[:, atom, xyz] -= 2*dx
-            chain[:, atom, xyz, 0] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] += dx
-            chain[:, atom, xyz, 1] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] += 2*dx
-            chain[:, atom, xyz, 3] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] += dx
-            chain[:, atom, xyz, 4] = np.prod(psi_t(coords, None, [0]), axis=-1)
-            coords[:, atom, xyz] -= 2*dx
-    return np.dot(chain, coeffs)
-
-
-def d2psidx2_fd(coords, psi):
-    chain = np.zeros((len(coords), 5, 3, 5))
-    dx = 1e-3  #Bohr
-    chain[:, :, :, 2] = np.broadcast_to(psi[..., None], (len(coords), 5, 3))
-    coeffs = np.array([-1 / 12, 4 / 3, -5 / 2, 4 / 3, -1 / 12]) / (dx ** 2)
-    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    for atom in atoms:
-        for xyz in range(3):
-            coords[:, atom, xyz] -= 2*dx
-            chain[:, atom, xyz, 0] = psi_t(coords, None, [0]).squeeze()
-            coords[:, atom, xyz] += dx
-            chain[:, atom, xyz, 1] = psi_t(coords, None, [0]).squeeze()
-            coords[:, atom, xyz] += 2*dx
-            chain[:, atom, xyz, 3] = psi_t(coords, None, [0]).squeeze()
-            coords[:, atom, xyz] += dx
-            chain[:, atom, xyz, 4] = psi_t(coords, None, [0]).squeeze()
-            coords[:, atom, xyz] -= 2*dx
-    return np.dot(chain, coeffs)
-
-
-def daroodx_fd(coords):
-    chain = np.zeros((len(coords), 2, 5, 3, 4))
-    dx = 1e-3  # Bohr
-    coeffs = np.array([1 / 12, -2 / 3, 2 / 3, -1 / 12]) / dx
-    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    for atom in atoms:
-        for xyz in range(3):
-            coords[:, atom, xyz] -= 2 * dx
-            chain[:, :, atom, xyz, 0] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] += dx
-            chain[:, :, atom, xyz, 1] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] += 2 * dx
-            chain[:, :, atom, xyz, 2] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] += dx
-            chain[:, :, atom, xyz, 3] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] -= 2 * dx
-    return np.dot(chain, coeffs)
-
-
-def d2aroodx2_fd(coords):
-    chain = np.zeros((len(coords), 2, 5, 3, 5))
-    aroo = all_dists(coords)[:, [0, -2]]
-    chain[:, :, :, :, 2] = np.broadcast_to(aroo[..., None, None], (len(coords), 2, 5, 3))
-    dx = 1e-3  # Bohr
-    coeffs = np.array([-1 / 12, 4 / 3, -5 / 2, 4 / 3, -1 / 12]) / (dx ** 2)
-    atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    for atom in atoms:
-        for xyz in range(3):
-            coords[:, atom, xyz] -= 2 * dx
-            chain[:, :, atom, xyz, 0] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] += dx
-            chain[:, :, atom, xyz, 1] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] += 2 * dx
-            chain[:, :, atom, xyz, 3] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] += dx
-            chain[:, :, atom, xyz, 4] = all_dists(coords)[:, [0, -2]]
-            coords[:, atom, xyz] -= 2 * dx
-    return np.dot(chain, coeffs)
-
-
-def d2psidsp_fd(coords):
-    chain = np.zeros((len(coords), 5))
-    dx = 1e-3  # Bohr
-    coeffs = np.array([-1 / 12, 4 / 3, -5 / 2, 4 / 3, -1 / 12]) / (dx ** 2)
-    # atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    sp = sp_calc_for_fd(coords)
-    sp_s = np.broadcast_to(sp[..., None], (len(coords), 5))
-    disp = np.array([-2, -1, 0, 1, 2])*dx
-    sp_s = sp_s + np.broadcast_to(disp[None, :], (len(coords), 5))
-    for i in range(len(disp)):
-        chain[:, i] = psi_t(coords, None, [0, 0], sp=sp_s[:, i]).squeeze()
-    return np.dot(chain, coeffs)
-
-
-def dpsidsp_fd(coords):
-    chain = np.zeros((len(coords), 4))
-    dx = 1e-3  # Bohr
-    coeffs = np.array([1 / 12, -2 / 3, 2 / 3, -1 / 12]) / dx
-    # atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    sp = sp_calc_for_fd(coords)
-    sp_s = np.broadcast_to(sp[..., None], (len(coords), 4))
-    disp = np.array([-2, -1, 1, 2])*dx
-    sp_s = sp_s + np.broadcast_to(disp[None, :], (len(coords), 4))
-    for i in range(len(disp)):
-        chain[:, i] = psi_t(coords, None, [0, 0], sp=sp_s[:, i]).squeeze()
-    return np.dot(chain, coeffs)
-
-
-def dpsidroo_fd(coords):
-    chain = np.zeros((len(coords), 4))
-    dx = 1e-3  # Bohr
-    coeffs = np.array([1 / 12, -2 / 3, 2 / 3, -1 / 12]) / dx
-    # atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    roo = all_dists(coords)[:, -2]
-    roo_s = np.broadcast_to(roo[..., None], (len(coords), 4))
-    disp = np.array([-2, -1, 1, 2])*dx
-    roo_s = roo_s + np.broadcast_to(disp[None, :], (len(coords), 4))
-    for i in range(len(disp)):
-        chain[:, i] = psi_t(coords, None, [0, 0], roo=roo_s[:, i]).squeeze()
-    return np.dot(chain, coeffs)
-
-
-def d2psidroo_fd(coords):
-    chain = np.zeros((len(coords), 5))
-    dx = 1e-3  # Bohr
-    coeffs = np.array([-1 / 12, 4 / 3, -5 / 2, 4 / 3, -1 / 12]) / (dx ** 2)
-    # atoms = [0, 1, 2, 3, 4]  # the only atoms that affect the derivative of sp
-    roo = all_dists(coords)[:, -2]
-    roo_s = np.broadcast_to(roo[..., None], (len(coords), 5))
-    disp = np.array([-2, -1, 0, 1, 2])*dx
-    roo_s = roo_s + np.broadcast_to(disp[None, :], (len(coords), 5))
-    for i in range(len(disp)):
-        chain[:, i] = psi_t(coords, None, [0, 0], roo=roo_s[:, i]).squeeze()
-    return np.dot(chain, coeffs)
-
-
-def d2psi_mixed_fd(coords):
-    chain = np.zeros((len(coords), 3, 3))
-    dx = 1e-3
-    weights = 1 / 2 * np.array([-1, 0, 1])/dx
-    # coeff = np.array([
-    #     [-1, -8, 8, -1],
-    #     [-8, 64, 64, 8],
-    #     [8, 64, 64, -8],
-    #     [-1, 8, -8, -1]
-    # ]) / (144*dx**2)
-    # disp = np.array([-2, -1, 1, 2])*dx
-    disp = np.array([-1, 0, 1])
-    roo_xh = all_dists(coords)[:, [-2, -1]]
-    for i in range(3):
-        for j in range(3):
-            chain[:, i, j] = psi_t(coords, None, [0, 0],
-                                               sp=roo_xh[:, 1]+disp[i]*dx, roo=roo_xh[:, 0]+disp[j]*dx).squeeze()
-
-    fd_mat = np.zeros((3, 3))
-    for i,v in zip(disp, weights):
-        if i == 0:
-            np.fill_diagonal(fd_mat, v)
-        elif i < 0:
-            np.fill_diagonal(fd_mat[:, -i:], v)
-        else:
-            np.fill_diagonal(fd_mat[i:], v)
-
-    left_points = np.sum(disp < 0)
-    right_points = np.sum(disp > 0)
-    fd_mat = fd_mat[left_points:-right_points]
-
-    deriv = np.zeros(len(coords))
-    for i in range(len(coords)):
-        derivs_2d = np.tensordot(chain[i], fd_mat, [0, 1])
-        derivs_2d = np.tensordot(derivs_2d, fd_mat, [0, 1])
-        deriv[i] = derivs_2d
-    return deriv
-
-coords = np.array([test_structure2]*4)
-psi = psi_t(coords, None, [0, 3.6376376376376376])
-dpsi = dpsidx(coords, None, [0, 3.6376376376376376])
-dpsi_fd = dpsidx_fd(coords)/np.broadcast_to(psi[:, None], (4, 5, 3))
-aroo = all_dists(coords)[:, [1, 2, -2]]
-d2aroo = daroodx2(coords, aroo)
-d2aroo_fd = d2aroodx2_fd(coords)
-# droo_fd = droodx_fd(coords)
-da_fd = daroodx_fd(coords)
-dsp_fd = dspdx(coords)
-d2sp_fd = d2spdx2(coords, sp_calc_for_fd(coords))
-daroo = daroodx(coords, all_dists(coords)[:, [1, 2, -2]])
-d2psi = d2psidx2(coords, None, [0])
-d2psi_fd = d2psidx2_fd(coords, psi)/np.broadcast_to(psi[:, None], (4, 5, 3))
-dpsi_sroo = dpsidasp(coords, None, all_dists(coords))[:, 1:]
-dpsi_s_fd = dpsidsp_fd(coords)/psi.squeeze()
-dpsi_roo_fd = dpsidroo_fd(coords)/psi.squeeze()
-d2psi_s_fd = d2psidsp_fd(coords)/psi.squeeze()
-d2psi_roo_fd = d2psidroo_fd(coords)/psi.squeeze()
-d2psi_s_roo = d2psidasp(coords, None, all_dists(coords))[:, 1:]
-d2psi_mixed = d2psi_mixed_fd(coords)/psi.squeeze()
-
-part1, part2, part3 = parts(coords, None)
-part1_fd = d2sp_fd*np.broadcast_to(dpsi_s_fd[:, None, None], (len(coords), 5, 3)) +\
-           d2aroo_fd[:, 1]*np.broadcast_to(dpsi_roo_fd[:, None, None], (len(coords), 5, 3))
-part2_fd = dsp_fd**2*np.broadcast_to(d2psi_s_fd[:, None, None], (len(coords), 5, 3)) + \
-           da_fd[:, 1]**2*np.broadcast_to(d2psi_roo_fd[:, None, None], (len(coords), 5, 3))
-part3_fd = dsp_fd * da_fd[:,  1] * \
-           np.broadcast_to(d2psi_mixed[:, None, None], (len(dsp_fd), 5, 3)).squeeze()
-
-full_fd = part1_fd + part2_fd + 2*part3_fd
-
-f = d2psi/d2psi_fd
-f1 = dpsi/dpsi_fd
-f2 = d2psi/full_fd
-
-# print(np.average(daroo[:, :, :, 0]-da_fd))
-# print(np.average(droo_fd-daroo[:, :, :, 1]))
-# print(daroo[..., 1])
-# print(da_fd)
-
-# print(dpsi)
-# print(dpsi_fd)
-
-print(psi)
+for i in range(5):
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        5000, 20000, 250, 500, 500, 'a', test_structure2, [0, 2.5721982410729867], [0, 0]
+    )
+    np.savez(f'Asym_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)

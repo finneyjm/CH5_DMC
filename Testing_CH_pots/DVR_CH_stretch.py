@@ -135,6 +135,25 @@ def run(CH, coords, mass, entos=None):
 
 # print(m_red)
 # print(m_red_D)
+def ch_dist(coords):
+    N = len(coords)
+    rch = np.zeros((N, 5))
+    for i in range(5):
+        rch[:, i] = np.sqrt((coords[:, i + 1, 0] - coords[:, 0, 0]) ** 2 +
+                            (coords[:, i + 1, 1] - coords[:, 0, 1]) ** 2 +
+                            (coords[:, i + 1, 2] - coords[:, 0, 2]) ** 2)
+    return rch
+
+coords = np.array([[coords_initial_min], [coords_initial_c2v], [coords_initial_cs]]).squeeze()
+d = ch_dist(coords)
+avg = np.average(d)/ang2bohr
+std = np.std(d)/ang2bohr
+max = np.max(d)/ang2bohr
+min = np.min(d)/ang2bohr
+print(avg)
+print(std)
+
+
 entos_wvfn = np.load('CH5_GSW_3.npy')
 entos_pot = np.load('CH5_CH_3_pot.npy')
 print(entos_wvfn[0, 0]/ang2bohr)
@@ -142,6 +161,25 @@ print(entos_wvfn[0, -1]/ang2bohr)
 g, eig, V = run(3, coords_initial_min, m_red)
 g_ent, eig_ent, V_eng = run(3, coords_initial_min, m_red, "entos")
 import matplotlib.pyplot as plt
+plt.plot(g/ang2bohr, eig, color='blue', label='Ground State Wave Function')
+g, eig, V = run(1, coords_initial_min, m_red)
+plt.plot(g/ang2bohr, eig, color='blue')
+g, eig, V = run(2, coords_initial_min, m_red)
+plt.plot(g/ang2bohr, eig, color='blue')
+g, eig, V = run(4, coords_initial_min, m_red)
+plt.plot(g/ang2bohr, eig, color='blue')
+g, eig, V = run(5, coords_initial_min, m_red)
+plt.plot(g/ang2bohr, eig, color='blue')
+plt.errorbar(avg, 0.05, yerr=0.007, color='orange', label='Average')
+plt.errorbar([avg-std, avg+std], [0.05, 0.05], yerr=[0.005, 0.005], ecolor='green', label='Standard Deviation')
+plt.errorbar([min, max], [0.05, 0.05], yerr=[0.003, 0.003], color='red', label='Range')
+plt.xlabel(r'r$_{\rm{CH}}$ $\rm\AA$', fontsize=16)
+plt.legend()
+plt.tight_layout()
+plt.savefig('CH5_plot_for_Anne')
+plt.show()
+
+
 entos_norm = np.max(entos_wvfn[1])/np.linalg.norm(eig)
 bowman_norm = np.max(eig)/np.linalg.norm(eig)
 

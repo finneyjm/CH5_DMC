@@ -73,6 +73,27 @@ def asym_grid(coords, r1, a):
     return coords
 
 
+def all_dists(coords):
+    bonds = [[1, 2],  [3, 4], [1, 3], [1, 0]]
+    cd1 = coords[:, tuple(x[0] for x in np.array(bonds))]
+    cd2 = coords[:, tuple(x[1] for x in np.array(bonds))]
+    dis = np.linalg.norm(cd2 - cd1, axis=2)
+    a_oh = 1/np.sqrt(2)*(dis[:, 0]-dis[:, 1])
+    s_oh = 1/np.sqrt(2)*(dis[:, 0]+dis[:, 1])
+    mid = dis[:, 2]/2
+    sp = mid - dis[:, -1]*np.cos(roh_roo_angle(coords, dis[:, -2], dis[:, -1]))
+    return np.vstack((a_oh, dis[:, 0], dis[:, 1], s_oh, dis[:, -2], sp)).T
+
+
+def roh_roo_angle(coords, roo_dist, roh_dist):
+    v1 = (coords[:, 1]-coords[:, 3])/np.broadcast_to(roo_dist[:, None], (len(roo_dist), 3))
+    v2 = (coords[:, 1]-coords[:, 0])/np.broadcast_to(roh_dist[:, None], (len(roh_dist), 3))
+    v1_new = np.reshape(v1, (v1.shape[0], 1, v1.shape[1]))
+    v2_new = np.reshape(v2, (v2.shape[0], v2.shape[1], 1))
+    aang = np.arccos(np.matmul(v1_new, v2_new).squeeze())
+    return aang
+
+
 def shared_prot_grid(coords, sp):
     # coords = np.array([coords] * len(sp))
     mid = (coords[:, 3, 0] - coords[:, 1, 0])/2
@@ -106,8 +127,10 @@ def pot(coords, grid1, grid2):
     roo_coords = oo_grid(coords, gridz[1])
     full_coords = shared_prot_grid(roo_coords, gridz[0])
     print('finished making the grid, now to start the potential')
+    mid = (full_coords[:, 3, 0] - full_coords[:, 1, 0])/2
+    full_coords[:, :, 0] -= mid[:, None]
     pot = get_pot(full_coords)
-    pot[pot > 12000/har2wave] = 12000/har2wave
+    # pot[pot > 12000/har2wave] = 12000/har2wave
     print('finished evaluating the potential')
     import scipy.sparse as sp
     return sp.diags([pot], [0]), pot.reshape((len(grid1), len(grid2)))
@@ -149,7 +172,7 @@ def Kinetic_Calc(grid1, grid2, red_m1, red_m2):
     print('done calculating kinetic energy')
     kinetic_map = map(sp.csr_matrix, kinetic)  # provide a map iterable for the sparse matrix
 
-    def kron_sum(a, b):
+    def kron_sum(b, a):
         '''Computes a Kronecker sum to build our Kronecker-Delta tensor product expression'''
         n_1 = a.shape[0]  # len of grid 1
         n_2 = b.shape[0]  # len of grid 2
@@ -170,9 +193,9 @@ def Energy(T, V, num_wvfns=20):
     print('starting the diagonalization')
     import scipy.sparse.linalg as la
     En, Eigv = la.eigsh(H, num_wvfns, which='SM')
-    # ind = np.argsort(En)
-    # En = En[ind]
-    # Eigv = Eigv[:, ind]
+    ind = np.argsort(En)
+    En = En[ind]
+    Eigv = Eigv[:, ind]
     return En, Eigv
 
 
@@ -194,31 +217,40 @@ def run(grid1, grid2, mass1, mass2):
 num_points1 = 350
 num_points2 = 350
 small_grid_points = 100
-xh_a = -1.5
-xh_b = 1.5
-roo_a = 3.9
-roo_b = 5.8
+blah = np.loadtxt('wf_Rz_60_60')
+xh_a = -1.492883667487176
+xh_b = 1.492883667487176
+roo_a = 3.892916571908299
+roo_b = 5.801579551339067
+xh_a = blah[0, 1]
+xh_b = blah[-1, 1]
+roo_a = blah[0, 0]
+roo_b = blah[-1, 0]
+xh = blah[:, 1].reshape((60, 60))[:, 0]
+roo = blah[:, 0].reshape((60, 60))[0]
+roo = np.linspace(3.9, 5.8, 100)
+xh = np.linspace(-1.5, 1.5, 100)
 # en, eig, V = run(np.linspace(-1, 1, num=num_points1), np.linspace(-1, 1, num=num_points2), m_red, m_red)
-en, eig, V = run(np.linspace(xh_a, xh_b, num=small_grid_points), np.linspace(roo_a, roo_b, num=small_grid_points), m_red_sp, m_red_OO)
+en, eig, V = run(xh, roo, m_red_sp, m_red_OO)
 # np.savez('small_grid_2d_h3o2', energies=en, wvfns=eig, pot=V)
 np.savez('small_grid_2d_h3o2_bigger_grid', energies=en, wvfns=eig, pot=V)
 # np.savez('test_2d_HO', energies=en, wvfns=eig, pot=V)
-two_d = np.load('first_2d_h3o2.npz')
+# two_d = np.load('first_2d_h3o2.npz')
 small_grid = np.load('small_grid_2d_h3o2_bigger_grid.npz')
 # two_d = np.load('test_2d_HO.npz')
-energies = two_d['energies']*har2wave
+# energies = two_d['energies']*har2wave
 small_energies = small_grid['energies']*har2wave
-freq1 = energies[1] - energies[0]
-freq2 = energies[2] - energies[0]
-freq3 = energies[3] - energies[2]
+# freq1 = energies[1] - energies[0]
+# freq2 = energies[2] - energies[0]
+# freq3 = energies[3] - energies[2]
 
 small_freq1 = small_energies[1] - small_energies[0]
 small_freq2 = small_energies[2] - small_energies[0]
 small_freq3 = small_energies[3] - small_energies[0]
 
-print(f'freq1 diff = {freq1 - small_freq1}')
-print(f'freq2 diff = {freq2 - small_freq2}')
-print(f'freq3 diff = {freq3 - small_freq3}')
+# print(f'freq1 diff = {freq1 - small_freq1}')
+# print(f'freq2 diff = {freq2 - small_freq2}')
+# print(f'freq3 diff = {freq3 - small_freq3}')
 print(f'freq1 = {small_freq1}')
 print(f'freq2 = {small_freq2}')
 print(f'freq3 = {small_freq3}')
@@ -230,12 +262,12 @@ print(f'energies = {small_energies[6]}')
 print(f'freq 6 = {small_energies[6]-small_energies[0]}')
 
 
-wvfns = two_d['wvfns']
-V = two_d['pot']*har2wave
+# wvfns = two_d['wvfns']
+# V = two_d['pot']*har2wave
 import matplotlib.pyplot as plt
-sp = np.linspace(xh_a, xh_b, num=num_points1)/ang2bohr
-Roo = np.linspace(roo_a, roo_b, num=num_points2)/ang2bohr
-X, Y = np.meshgrid(sp, Roo)
+# sp = np.linspace(xh_a, xh_b, num=num_points1)/ang2bohr
+# Roo = np.linspace(roo_a, roo_b, num=num_points2)/ang2bohr
+# X, Y = np.meshgrid(sp, Roo)
 
 # fig, ax = plt.subplots()
 # tcc = ax.contourf(X, Y, V)

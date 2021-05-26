@@ -62,13 +62,14 @@ for i in range(1):
     # plt.plot(bin, amp/np.linalg.norm(amp))
     ratio[i] = Harmonic_wvfn(bin, 1)/Harmonic_wvfn(bin, 0)
     new_amp = amp/np.linalg.norm(amp)*ratio[i]
-    plt.plot(bin, new_amp/np.linalg.norm(new_amp), label=r'f($\rm\Delta r_{OH}$)*$\Psi_1/\Psi_0$', linewidth=3)
+    # plt.plot(bin, new_amp/np.linalg.norm(new_amp), label=r'f($\rm\Delta r_{OH}$)*$\Psi_1/\Psi_0$', linewidth=3)
     psi_1 = interpolate.splev(bin, interp1, der=0)
     psi_0 = interpolate.splev(bin, interp0, der=0)
-    plt.plot(bin, psi_1*psi_0/np.linalg.norm(psi_1*psi_0), label=r'$\Phi_1\Phi_0$', linewidth=3)
+    plt.plot(bin, -Harmonic_wvfn(bin, 1), label=r'$\Phi_1$', linewidth=3, color='orange')
 
 plt.xlabel(r'$\rm\Delta r_{OH}$', fontsize=28)
 plt.tick_params(axis='both', labelsize=18)
-plt.legend(fontsize=20)
+# plt.legend(fontsize=20)
+# plt.xlim(-0.5, 0.5)
 plt.tight_layout()
 plt.show()
