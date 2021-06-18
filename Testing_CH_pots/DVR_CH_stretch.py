@@ -118,7 +118,7 @@ def Energy(T, V):
 
 
 def run(CH, coords, mass, entos=None):
-    g = grid(1, 4., 900, CH, coords)
+    g = grid(0.5*ang2bohr, 2*ang2bohr, 900, CH, coords)
     if entos is not None:
         V = np.diag(np.load('CH5_CH_3_pot.npy')[1] + 40.652825169)
     else:
@@ -159,22 +159,38 @@ entos_pot = np.load('CH5_CH_3_pot.npy')
 print(entos_wvfn[0, 0]/ang2bohr)
 print(entos_wvfn[0, -1]/ang2bohr)
 g, eig, V = run(3, coords_initial_min, m_red)
+eigs = np.zeros((5, 900))
+eigs[0] = eig
+from scipy import interpolate
+interp = interpolate.splrep(g, eig, s=0)
+half_max = np.max(eig)/2
+print(half_max)
 g_ent, eig_ent, V_eng = run(3, coords_initial_min, m_red, "entos")
 import matplotlib.pyplot as plt
-plt.plot(g/ang2bohr, eig, color='blue', label='Ground State Wave Function')
+fig, ax = plt.subplots()
+# line, = ax.plot(g/ang2bohr, eig, color='blue', label='Ground State Wave Function')
 g, eig, V = run(1, coords_initial_min, m_red)
-plt.plot(g/ang2bohr, eig, color='blue')
+eigs[1] = eig
+# ax.plot(g/ang2bohr, eig, color='blue')
+
 g, eig, V = run(2, coords_initial_min, m_red)
-plt.plot(g/ang2bohr, eig, color='blue')
+eigs[2] = eig
+# ax.plot(g/ang2bohr, eig, color='blue')
 g, eig, V = run(4, coords_initial_min, m_red)
-plt.plot(g/ang2bohr, eig, color='blue')
+eigs[3] = eig
+# ax.plot(g/ang2bohr, eig, color='blue')
 g, eig, V = run(5, coords_initial_min, m_red)
-plt.plot(g/ang2bohr, eig, color='blue')
-plt.errorbar(avg, 0.05, yerr=0.007, color='orange', label='Average')
-plt.errorbar([avg-std, avg+std], [0.05, 0.05], yerr=[0.005, 0.005], ecolor='green', label='Standard Deviation')
-plt.errorbar([min, max], [0.05, 0.05], yerr=[0.003, 0.003], color='red', label='Range')
-plt.xlabel(r'r$_{\rm{CH}}$ $\rm\AA$', fontsize=16)
-plt.legend()
+eigs[4] = eig
+line, = ax.plot(g/ang2bohr, np.average(eigs, axis=0), color='blue')
+
+Ohs = np.array([min, max, avg-std, avg+std, avg])
+bp = ax.boxplot(Ohs, positions=[np.max(eig)/2], widths=[0.01], vert=0, manage_ticks=False)
+plt.xlabel(r'r$_{\rm{CH}}$ [/$\rm\AA$]', fontsize=20)
+plt.ylabel(r'$\rm{\Psi_0^{avg} (r_{CH})}$', fontsize=20)
+plt.xlim(0.5, 2.0)
+# plt.legend((line, bp['boxes'][0]), (r'$\rm{\Psi_0^{avg} (r_{CH})}$', r'r$_{\rm{CH}}$ in CH$_5^+$'),
+#            loc='upper right', fontsize=12)
+ax.tick_params(axis='both', labelsize=18)
 plt.tight_layout()
 plt.savefig('CH5_plot_for_Anne')
 plt.show()

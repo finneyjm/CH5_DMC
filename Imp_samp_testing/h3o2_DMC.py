@@ -39,7 +39,7 @@ new_struct = np.array([
 Roo_grid = np.linspace(3.9, 5.8, 100)
 sp_grid = np.linspace(-1.5, 1.5, 100)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
-# two_d_wvfns = np.load('small_grid_2d_h3o2_bigger_grid.npz')['wvfns']
+two_d_wvfns = np.load('small_grid_2d_h3o2_bigger_grid.npz')['wvfns']
 big_Roo_grid = np.linspace(4, 5.4, 1000)
 big_sp_grid = np.linspace(-1.2, 1.2, 1000)
 # big_Roo_grid = np.linspace(3.9, 5.8, 100)
@@ -48,7 +48,8 @@ X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 # wvfn = two_d_wvfns[:, 0].reshape((len(Roo_grid), len(sp_grid)))
 # wvfn = np.abs(wvfn)
 
-# interp_ground = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
+interp_ground = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 0].reshape((len(Roo_grid), len(sp_grid))), s=1e-6)
+z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
 # z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1).T
 # z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2).T
 # z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1).T
@@ -59,7 +60,7 @@ X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 # blah = np.load('interp_ground.npz')
 # interp_ground = [blah['a'], blah['b'], blah['c'], blah['d'], blah['e']]
 # z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
-# np.save('z_ground_no_der', z_ground_no_der)
+np.save('z_ground_no_der', z_ground_no_der)
 # np.load('z_ground_no_der.npy')
 
 # z_ground_dx1 = z_ground_dx1/z_ground_no_der
@@ -109,24 +110,35 @@ ground_dy2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flat
 ground_dx1_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
                                                        z_ground_dx1_dy1.T.flatten())
 
-# wvfn = two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid)))
-# wvfn[:, 50:] = np.abs(wvfn[:, 50:])
-# wvfn[:, :50] = -np.abs(wvfn[:, :50])
+wvfn = two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid)))
+wvfn[:, 50:] = np.abs(wvfn[:, 50:])
+wvfn[:, :50] = -np.abs(wvfn[:, :50])
 
 
-# interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
-# z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh).T
-# z_excite_xh_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1).T
-# z_excite_xh_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=2).T
-# z_excite_xh_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=1).T
-# z_excite_xh_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=2).T
-# z_excite_xh_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1, dy=1).T
+interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
+z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh).T
+np.save('z_excite_xh_no_der', z_excite_xh_no_der)
+
+
+z_excite_xh_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1).T
+z_excite_xh_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=2).T
+z_excite_xh_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=1).T
+z_excite_xh_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dy=2).T
+z_excite_xh_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1, dy=1).T
 #
-# z_excite_xh_dx1 = z_excite_xh_dx1/z_excite_xh_no_der
-# z_excite_xh_dx2 = z_excite_xh_dx2/z_excite_xh_no_der
-# z_excite_xh_dy1 = z_excite_xh_dy1/z_excite_xh_no_der
-# z_excite_xh_dy2 = z_excite_xh_dy2/z_excite_xh_no_der
-# z_excite_xh_dx1_dy1 = z_excite_xh_dx1_dy1/z_excite_xh_no_der
+z_excite_xh_dx1 = z_excite_xh_dx1/z_excite_xh_no_der
+z_excite_xh_dx2 = z_excite_xh_dx2/z_excite_xh_no_der
+z_excite_xh_dy1 = z_excite_xh_dy1/z_excite_xh_no_der
+z_excite_xh_dy2 = z_excite_xh_dy2/z_excite_xh_no_der
+z_excite_xh_dx1_dy1 = z_excite_xh_dx1_dy1/z_excite_xh_no_der
+
+# np.save('z_excite_xh_dx1', z_excite_xh_dx1)
+# np.save('z_excite_xh_dx2', z_excite_xh_dx2)
+# np.save('z_excite_xh_dy1', z_excite_xh_dy1)
+# np.save('z_excite_xh_dy2', z_excite_xh_dy2)
+# np.save('z_excite_xh_dx1_dy1', z_excite_xh_dx1_dy1)
+
+raise Exception(wvfn)
 #
 # #
 # excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),

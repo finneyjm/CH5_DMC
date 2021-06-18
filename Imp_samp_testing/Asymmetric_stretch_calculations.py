@@ -4,6 +4,7 @@ from ProtWaterPES import Dipole
 import multiprocessing as mp
 from Imp_samp_testing import EckartsSpinz
 from Imp_samp_testing import MomentOfSpinz
+from scipy import interpolate
 
 
 har2wave = 219474.6
@@ -28,6 +29,20 @@ mass = np.array([m_H, m_O, m_H, m_O, m_H])
 MOM = MomentOfSpinz(ref, mass)
 ref = MOM.coord_spinz()
 
+big_Roo_grid = np.linspace(4, 5.4, 1000)
+big_sp_grid = np.linspace(-1.2, 1.2, 1000)
+X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
+
+
+z_ground_no_der = np.load('z_ground_no_der.npy')
+
+ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_no_der.flatten())
+
+z_excite_xh_no_der = np.load('z_excite_xh_no_der.npy')
+
+excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                          z_excite_xh_no_der.flatten())
 
 def all_dists(coords):
     bonds = [[1, 2],  [3, 4], [1, 3], [1, 0]]
@@ -99,7 +114,7 @@ ground_coords = np.zeros((10, 27, 5000, 5, 3))
 ground_erefs = np.zeros((10, 20000))
 ground_weights = np.zeros((10, 27, 5000))
 for i in range(10):
-    blah = np.load(f'ground_state_h3o2_{i+1}.npz')
+    blah = np.load(f'ground_state_full_h3o2_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -116,7 +131,7 @@ excite_neg_coords = np.zeros((5, 27, 5000, 5, 3))
 excite_neg_erefs = np.zeros((5, 20000))
 excite_neg_weights = np.zeros((5, 27, 5000))
 for i in range(5):
-    blah = np.load(f'asym_excite_state_h3o2_{i+1}.npz')
+    blah = np.load(f'Asym_excite_state_full_h3o2_left_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -132,7 +147,7 @@ excite_pos_coords = np.zeros((5, 27, 5000, 5, 3))
 excite_pos_erefs = np.zeros((5, 20000))
 excite_pos_weights = np.zeros((5, 27, 5000))
 for i in range(5):
-    blah = np.load(f'asym_excite_state_h3o2_right_{i+1}.npz')
+    blah = np.load(f'Asym_excite_state_full_h3o2_right_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -318,20 +333,20 @@ for i in range(5):
 term1 = np.zeros((10, 3))
 for i in range(10):
     frac = Harmonic_wvfn(ground_dists[i], 1)/Harmonic_wvfn(ground_dists[i], 0)
-    # for j in range(3):
-    #     term1[i, j] = np.dot(ground_weights[i], frac*ground_dips[i, :, j]*au_to_Debye)/np.sum(ground_weights[i])
+    for j in range(3):
+        term1[i, j] = np.dot(ground_weights[i], frac*ground_dips[i, :, j]*au_to_Debye)/np.sum(ground_weights[i])
     #     term1[i, j] = np.dot(ground_weights[i], frac * ((ground_coords[i, :, 2, j] - ground_coords[i, :, 1, j]) +
     #                                                     (ground_coords[i, :, 4, j] - ground_coords[i, :, 3, j]))) \
     #                   / np.sum(ground_weights[i])
     #     term1[i, j] = np.dot(ground_weights[i], np.abs(frac*ground_dips[i, :, j]) * au_to_Debye) / np.sum(ground_weights[i])
-    term1[i, 0] = np.dot(ground_weights[i], frac*ground_dists[i]/ang2bohr)/np.sum(ground_weights[i])
-    term1[i, 1] = np.dot(ground_weights[i], frac)/np.sum(ground_weights[i])
+    # term1[i, 0] = np.dot(ground_weights[i], frac*ground_dists[i]/ang2bohr)/np.sum(ground_weights[i])
+    # term1[i, 1] = np.dot(ground_weights[i], frac)/np.sum(ground_weights[i])
 # print(term1)
 # print(np.average(term1, axis=0))
 # print(np.std(term1, axis=0))
-# term1 = np.linalg.norm(term1, axis=-1)
-ov_term1 = term1[:, 1]
-term1 = term1[:, 0]
+term1 = np.linalg.norm(term1, axis=-1)
+# ov_term1 = term1[:, 1]
+# term1 = term1[:, 0]
 # term1 = np.sum(term1, axis=-1)
 std_term1 = np.std(term1)
 term1 = np.average(term1)
@@ -339,13 +354,13 @@ term1 = np.average(term1)
 print(term1)
 print(std_term1)
 #
-# freq = average_excite_energy-average_zpe
-# std_freq = np.sqrt(std_zpe**2 + std_excite_energy**2)
-# std_term1_sq = term1**2*np.sqrt((std_term1/term1)**2 + (std_term1/term1)**2)
-# std_term1_sq_freq = term1**2*freq*np.sqrt((std_term1_sq/term1**2)**2 + (std_freq/freq)**2)
-# conversion = conv_fac*km_mol
-# print(conversion*term1**2*freq)
-# print(std_term1_sq_freq*conversion)
+freq = average_excite_energy-average_zpe
+std_freq = np.sqrt(std_zpe**2 + std_excite_energy**2)
+std_term1_sq = term1**2*np.sqrt((std_term1/term1)**2 + (std_term1/term1)**2)
+std_term1_sq_freq = term1**2*freq*np.sqrt((std_term1_sq/term1**2)**2 + (std_freq/freq)**2)
+conversion = conv_fac*km_mol
+print(conversion*term1**2*freq)
+print(std_term1_sq_freq*conversion)
 
 
 term2 = np.zeros((5, 3))
@@ -362,24 +377,24 @@ for i in range(5):
     frac = H0/H1
     # ind = np.argwhere(np.abs(H1) < 0.01)[:, 0]
     # combine_weights[i, ind] = H1[ind]**2
-    # for j in range(3):
+    for j in range(3):
         # term2[i, j] = np.dot(combine_weights[i, ind], frac[ind]*combine_dips[i, ind, j]*au_to_Debye)\
         #               /np.sum(combine_weights[i, ind])
-        # term2[i, j] = np.dot(combine_weights[i], frac * combine_dips[i, :,  j] * au_to_Debye) \
-        #               / np.sum(combine_weights[i])
+        term2[i, j] = np.dot(combine_weights[i], frac * combine_dips[i, :,  j] * au_to_Debye) \
+                      / np.sum(combine_weights[i])
         # term2[i, j] = np.dot(combine_weights[i], np.abs(frac*combine_dips[i, :, j]) * au_to_Debye) \
         #               / np.sum(combine_weights[i])
         # term2[i, j] = np.dot(combine_weights[i], frac * ((combine_coords[:, 2, j] - combine_coords[:, 1, j]) +
         #                                                  (combine_coords[:, 4, j] - combine_coords[:, 3, j]))) \
         #               / np.sum(combine_weights[i])
-    term2[i, 0] = np.dot(combine_weights[i], frac*combine_dists[i]/ang2bohr)/np.sum(combine_weights[i])
-    term2[i, 1] = np.dot(combine_weights[i], frac)/np.sum(combine_weights[i])
+    # term2[i, 0] = np.dot(combine_weights[i], frac*combine_dists[i]/ang2bohr)/np.sum(combine_weights[i])
+    # term2[i, 1] = np.dot(combine_weights[i], frac)/np.sum(combine_weights[i])
 # print(term2)
 # print(np.average(term2, axis=0))
 # print(np.std(term2, axis=0))
-ov_term2 = term2[:, 1]
-term2 = term2[:, 0]
-# term2 = np.linalg.norm(term2, axis=-1)
+# ov_term2 = term2[:, 1]
+# term2 = term2[:, 0]
+term2 = np.linalg.norm(term2, axis=-1)
 # term2 = np.sum(term2, axis=-1)
 
 
@@ -387,17 +402,17 @@ std_term2 = np.std(term2)
 term2 = np.average(term2)
 print(term2)
 print(std_term2)
-print(np.average(ov_term1))
-print(np.std(ov_term1))
-print(np.average(ov_term2))
-print(np.std(ov_term2))
-print(np.average(ov_term1)+np.average(ov_term2))
-print(np.sqrt(np.std(ov_term1)**2 + np.std(ov_term2)**2))
+# print(np.average(ov_term1))
+# print(np.std(ov_term1))
+# print(np.average(ov_term2))
+# print(np.std(ov_term2))
+# print(np.average(ov_term1)+np.average(ov_term2))
+# print(np.sqrt(np.std(ov_term1)**2 + np.std(ov_term2)**2))
 #
-# std_term2_sq = term2**2*np.sqrt((std_term2/term2)**2 + (std_term2/term2)**2)
-# std_term2_sq_freq = term2**2*freq*np.sqrt((std_term2_sq/term2**2)**2 + (std_freq/freq)**2)
-# print(conversion*term2**2*freq)
-# print(std_term2_sq_freq*conversion)
+std_term2_sq = term2**2*np.sqrt((std_term2/term2)**2 + (std_term2/term2)**2)
+std_term2_sq_freq = term2**2*freq*np.sqrt((std_term2_sq/term2**2)**2 + (std_freq/freq)**2)
+print(conversion*term2**2*freq)
+print(std_term2_sq_freq*conversion)
 
 
 term3 = 0.14379963852224506

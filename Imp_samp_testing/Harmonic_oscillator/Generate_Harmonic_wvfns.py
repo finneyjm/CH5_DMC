@@ -11,10 +11,15 @@ ang2bohr = 1.e-10/5.291772106712e-11
 harm_freq = 3600/har2wave
 # re = 2.2625250501002006  # Minimum bond length in Bohr
 re=0.
-omega = 3600./har2wave
+# omega = 3884.81/har2wave
+omega = 3704.47/har2wave
 
-wexe = 75./har2wave
+# wexe = 86.9175/har2wave
+wexe = 75.26/har2wave
 De = omega**2/4/wexe
+# De = 0.2293
+# wexe = omega**2/4/De
+# print(wexe*har2wave)
 # De = 0.1897
 # De = 0.037
 # De = 0.0147
@@ -28,6 +33,9 @@ m_red = (m_O*m_H)/(m_O+m_H)
 
 mw = m_red * omega
 A = np.sqrt(omega**2 * m_red/(2*De))
+# re = 0.961369*ang2bohr
+re = 0.972826*ang2bohr
+# A = 2.0531/ang2bohr
 
 m_O = 15.994915 / (Avo_num*me*1000)
 m_H = 1.007825 / (Avo_num*me*1000)
@@ -45,7 +53,7 @@ def Potential(grid):
         # else:
         #     V[i] = 500000000000.
     # return np.diag(V)
-    return np.diag(De * (1. - np.exp(-A * grid)) ** 2)
+    return np.diag(De * (1. - np.exp(-A * (grid-re))) ** 2)
     # return np.diag(np.load('Potential_CH_stretch2.npy'))
 
 
@@ -76,7 +84,7 @@ def Energy(T, V):
 
 
 def run():
-    grid = np.linspace(-1, 1, 2000)
+    grid = np.linspace(0.2*ang2bohr, 2*ang2bohr, 2000)
     V = Potential(grid)
     T = Kinetic_Calc(grid)
     En, Eig = Energy(T, V)
@@ -90,15 +98,22 @@ def run():
 
 
 import matplotlib.pyplot as plt
-g, wvfn, harm_pot = run()
-np.save('Anharmonic_trial_wvfn_ground_150_wvnum', np.vstack((g, wvfn[:, 0])))
-np.save('Anharmonic_trial_wvfn_150_wvnum', np.vstack((g, -wvfn[:, 1])))
+g, wvfn, V = run()
+np.save('Water_dimer_Morse_trial_wvfn_ground', np.vstack((g, wvfn[:, 0])))
+np.save('Water_dimer_Morse_trial_wvfn_excite', np.vstack((g, -wvfn[:, 1])))
+# np.save('Anharmonic_trial_wvfn_ground_150_wvnum', np.vstack((g, wvfn[:, 0])))
+# np.save('Anharmonic_trial_wvfn_150_wvnum', np.vstack((g, -wvfn[:, 1])))
 print(f'<1|g^2|0> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 0])}')
 print(f'dipole = {np.dot(wvfn[:, 0], g*wvfn[:, 1])}')
 print(f'<1|g^2|1> = {np.dot(wvfn[:, 1], g**2*wvfn[:, 1])}')
 # x = g-0.039
 x=g
 
+ind = np.argmin(V)
+dx = 1.8*ang2bohr/2000
+second_dir = ((1/90*V[ind-3] - 3/20*V[ind-2] + 3/2*V[ind-1] - 49/18*V[ind] + 3/2*V[ind+1] - 3/20*V[ind+2] + 1/90*V[ind+3])/dx**2)
+print(np.sqrt(second_dir*m_red)*har2wave)
+print(np.sqrt(second_dir/m_red)*har2wave)
 a = (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * x ** 2)) * (2 * mw) ** (1 / 2) * x
 ma = np.max(a)
 a /= (ma/np.max(wvfn[:, 1]))

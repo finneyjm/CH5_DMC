@@ -46,7 +46,12 @@ X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 z_ground_no_der = np.load('z_ground_no_der.npy')
 
 ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_no_der.T.flatten())
+                                                       z_ground_no_der.flatten())
+
+z_excite_xh_no_der = np.load('z_excite_xh_no_der.npy')
+
+excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                          z_excite_xh_no_der.flatten())
 
 
 # Creates the walkers with all of their attributes
@@ -208,6 +213,7 @@ def local_kinetic(Psi):
 
 def E_loc(Psi):
     Psi.El = local_kinetic(Psi) + Psi.V
+    # Psi.El[np.abs(Psi.El) > 1] = 0
     return Psi
 
 
@@ -336,7 +342,63 @@ def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_
     return coords, weights, time, Eref_array, sum_weights, accept, des
 
 
-
+# def twod_pot(coords, grid1, grid2):
+#     print('started making our grid')
+#     mesh = np.array(np.meshgrid(grid1, grid2))
+#     gridz = np.reshape(mesh, (2, len(grid1)*len(grid2)))
+#     roo_coords = oo_grid(coords, gridz[1])
+#     full_coords = shared_prot_grid(roo_coords, gridz[0])
+#     print('finished making the grid, now to start the potential')
+#     mid = (full_coords[:, 3, 0] - full_coords[:, 1, 0])/2
+#     full_coords[:, :, 0] -= mid[:, None]
+#     pot = get_pot(full_coords)
+#     np.save('coords_for_testing', full_coords)
+#     print('finished evaluating the potential')
+#     import scipy.sparse as sp
+#     return sp.diags([pot], [0]), pot, full_coords
+#
+#
+# def oo_grid(coords, Roo):
+#     coords = np.array([coords] * len(Roo))
+#     equil_roo_roh_x = coords[0, 3, 0] - coords[0, 4, 0]
+#     coords[:, 3, 0] = Roo
+#     coords[:, 4, 0] = Roo - equil_roo_roh_x
+#     return coords
+#
+#
+# def shared_prot_grid(coords, sp):
+#     mid = (coords[:, 3, 0] - coords[:, 1, 0])/2
+#     coords[:, 0, 0] = mid-sp
+#     return coords
+#
+#
+# new_struct = np.array([
+#     [0.000000000000000, 0.000000000000000, 0.000000000000000],
+#     [-2.304566686034061, 0.000000000000000, 0.000000000000000],
+#     [-2.740400260927908, 1.0814221449986587E-016, -1.866154718409233],
+#     [2.304566686034061, 0.000000000000000, 0.000000000000000],
+#     [2.740400260927908, 1.0814221449986587E-016, 1.766154718409233]
+# ])
+# new_struct[:, 0] = new_struct[:, 0] + 2.304566686034061
+#
+# big_sp_grid = np.linspace(-0.5, 0.5, 100)
+# big_Roo_grid = np.linspace(4.6, 5.2, 100)
+#
+# blah, V, coords = twod_pot(new_struct, big_sp_grid, big_Roo_grid)
+# #
+# psi = Walkers(len(coords), 0, None, [0.33, 0])
+# psi.coords = coords
+# psi.V = V
+# psi.psit = psi_t(psi.coords, psi.excite, psi.shift)
+# psi = E_loc(psi)
+# psi.El = psi.El*har2wave
+# psit = psi.psit[:, 1, 0, 0]
+# #
+# import matplotlib.pyplot as plt
+# fig, ax = plt.subplots()
+# tcc = ax.contourf(big_sp_grid, big_Roo_grid, psi.El.reshape((len(big_Roo_grid), len(big_sp_grid))))
+# fig.colorbar(tcc)
+# plt.show()
 
 test_structure = np.array([
         [ 2.75704662,  0.05115356, -0.2381117 ],
@@ -347,51 +409,105 @@ test_structure = np.array([
 ])
 
 test_structure2 = np.array([
-        [ 2.55704662,  0.05115356, -0.2381117 ],
+        [ 2.48704662,  0.05115356, -0.2381117 ],
         [ 0.24088235, -0.09677082,  0.09615192],
         [-0.09502706, -1.86894299, -0.69579001],
         [ 5.02836896, -0.06798562, -0.30434529],
         [ 5.24391277,  0.14767547,  1.4669121 ],
 ])
-trials = [4, 6, 8, 9]
-for i in range(5):
-    coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        5000, 20000, 250, 500, 500, None, test_structure, [0, 2.5721982410729867], [0, 0]
-    )
-    np.savez(f'ground_state_full_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-             sum_weights=sum_weights, accept=accept, d=des)
+
+# wow_im_tired = True
+# trials = [4, 6, 8, 9]
+# for i in range(5):
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         5000, 20000, 250, 500, 500, None, test_structure, [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'ground_state_full_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
 #
-for i in range(5):
-    coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        5000, 20000, 250, 500, 500, 'sp', test_structure, [0, 2.5721982410729867], [0, 0]
-    )
-    np.savez(f'XH_excite_state_full_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-             sum_weights=sum_weights, accept=accept, d=des)
-
-for i in range(5):
-    coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        5000, 20000, 250, 500, 500, None, test_structure2, [0, 2.5721982410729867], [0, 0]
-    )
-    np.savez(f'ground_state_full_h3o2_{i+6}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-             sum_weights=sum_weights, accept=accept, d=des)
+# coords = np.load('coords_for_testing.npy')
+# print(coords.shape)
 #
-for i in range(5):
-    coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        5000, 20000, 250, 500, 500, 'sp', test_structure2, [0, 2.5721982410729867], [0, 0]
-    )
-    np.savez(f'XH_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-             sum_weights=sum_weights, accept=accept, d=des)
+# psi = Walkers(10000, test_structure2, 'a', [0, 2.5721982410729867])
+# psi.coords = coords
+# psi.coords[:, -1, 0] += 0.02
+# psi.psit = psi_t(psi.coords, psi.excite, psi.shift)
+# psi = pot(psi)
+# psi = E_loc(psi)
+#
+# import matplotlib.pyplot as plt
+# roo = np.linspace(3.9, 5.8, 100)
+# xh = np.linspace(-1.5, 1.5, 100)
+#
+# X, Y = np.meshgrid(xh, roo)
+#
+# fig, ax = plt.subplots()
+# tcc = ax.contourf(X, Y, psi.El.reshape((100, 100)))
+# fig.colorbar(tcc)
+# plt.xlabel('XH')
+# plt.ylabel('Roo')
+# plt.show()
+#
+# psi = Walkers(10000, test_structure2, 'sp', [0, 2.5721982410729867])
+# psi.coords = coords
+# psi.psit = psi_t(psi.coords, psi.excite, psi.shift)
+# psi = pot(psi)
+# psi = E_loc(psi)
+#
+# fig, ax = plt.subplots()
+# tcc = ax.contourf(X, Y, psi.El.reshape((100, 100)))
+# fig.colorbar(tcc)
+# plt.xlabel('XH')
+# plt.ylabel('Roo')
+# plt.show()
+#
+# psi = Walkers(10000, test_structure2, 'a', [0, 2.5721982410729867])
+# psi.coords = coords
+# psi.psit = psi_t(psi.coords, psi.excite, psi.shift)
+# psi = pot(psi)
+# psi = E_loc(psi)
+#
+# fig, ax = plt.subplots()
+# tcc = ax.contourf(X, Y, psi.El.reshape((100, 100)))
+# fig.colorbar(tcc)
+# plt.xlabel('XH')
+# plt.ylabel('Roo')
+# plt.show()
+# xh_left = [0, 1, 2, 3, 4]
+# for i in xh_left:
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         5000, 20000, 250, 500, 500, 'sp', test_structure, [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'XH_excite_state_full_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
 
-for i in range(5):
-    coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        5000, 20000, 250, 500, 500, 'a', test_structure, [0, 2.5721982410729867], [0, 0]
-    )
-    np.savez(f'Asym_excite_state_full_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-             sum_weights=sum_weights, accept=accept, d=des)
-
-for i in range(5):
-    coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        5000, 20000, 250, 500, 500, 'a', test_structure2, [0, 2.5721982410729867], [0, 0]
-    )
-    np.savez(f'Asym_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-             sum_weights=sum_weights, accept=accept, d=des)
+# for i in range(5):
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         5000, 20000, 250, 500, 500, None, test_structure2, [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'ground_state_full_h3o2_{i+6}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
+#
+# xh_right = [0]
+# for i in xh_right:
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         5000, 20000, 250, 500, 500, 'sp', test_structure2, [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'XH_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
+# asym_left = [0, 1, 2, 3, 4]
+# for i in asym_left:
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         5000, 20000, 250, 500, 500, 'a', test_structure, [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'Asym_excite_state_full_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
+#
+# asym_right = [0, 1, 2, 3, 4]
+#
+# for i in asym_right:
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         5000, 20000, 250, 500, 500, 'a', test_structure2, [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'Asym_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
