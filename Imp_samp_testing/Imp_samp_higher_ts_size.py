@@ -334,44 +334,44 @@ import matplotlib.pyplot as plt
 # print(avg_en - 5387.37)
 # print(std_en)
 #
-# # energies = np.zeros((2, 50))
-# coords_ex = np.zeros((2, 5, 19, 5000))
-# weights_ex = np.zeros((2, 5, 19, 5000))
-# for i in np.arange(0, 5):
-#     coords_ex[0, i, :] = np.load(f'phi_mon_correct_left_{i+1}.npy')[0]
-#     coords_ex[1, i, :] = np.load(f'phi_mon_correct_right_{i+1}.npy')[0]
-#     weights_ex[0, i, :] = np.load(f'phi_mon_correct_left_{i+1}.npy')[1]
-#     weights_ex[1, i, :] = np.load(f'phi_mon_correct_right_{i+1}.npy')[1]
-#     # e = run(250, 0.05, 0.038, 0, f'{i+1}')
-#     # energies[0, i] = np.mean(np.load(f'Imp_samp_morse_energy_{i+1}.npy')[2000:])*har2wave
-#     # blah = np.load(f'{i+1}.npy')
-#     # coords[i] = blah[0]
-#     # weights[i] = blah[1]
-#
-# coords_ex = coords_ex.reshape((5, 10000*19))
-# weights_ex = weights_ex.reshape((5, 10000*19))
-#
-# coords = np.zeros((5, 19, 5000))
-# weights = np.zeros((5, 19, 5000))
-# des = np.zeros((5, 19, 5000))
-# for i in np.arange(0, 5):
-#     blah = np.load(f'Harmonic_oscillator/water_no_shift_{i + 1}.npz')
-#     coords[i] = blah['wvfn'][0]
-#     weights[i] = blah['wvfn'][1]
-#     des[i] = blah['wvfn'][2]
-#
-# psitmax = 1.856
-# Psi_t1[0] = Psi_t1[0] + 1.875
-# interp_w = interpolate.splrep(Psi_t[0], Psi_t[1], s=0)
-# interp_w2 = interpolate.splrep(Psi_t1[0], Psi_t1[1], s=0)
-# frac = interpolate.splev(coords_ex, interp_w, der=0)/interpolate.splev(coords_ex, interp_w2, der=0)
-# term2 = np.zeros(5)
-# for i in range(5):
-#     term2[i] = np.dot(weights_ex[i], -frac[i]*(coords_ex[i]-re_dimer)/ang2bohr)/np.sum(weights_ex[i])
-# avg_term2 = np.average(term2)
-# std_term2 = np.std(term2)
-# print(avg_term2)
-# print(std_term2)
+# energies = np.zeros((2, 50))
+coords_ex = np.zeros((2, 5, 19, 5000))
+weights_ex = np.zeros((2, 5, 19, 5000))
+for i in np.arange(0, 5):
+    coords_ex[0, i, :] = np.load(f'phi_mon_correct_left_{i+1}.npy')[0]
+    coords_ex[1, i, :] = np.load(f'phi_mon_correct_right_{i+1}.npy')[0]
+    weights_ex[0, i, :] = np.load(f'phi_mon_correct_left_{i+1}.npy')[1]
+    weights_ex[1, i, :] = np.load(f'phi_mon_correct_right_{i+1}.npy')[1]
+    # e = run(250, 0.05, 0.038, 0, f'{i+1}')
+    # energies[0, i] = np.mean(np.load(f'Imp_samp_morse_energy_{i+1}.npy')[2000:])*har2wave
+    # blah = np.load(f'{i+1}.npy')
+    # coords[i] = blah[0]
+    # weights[i] = blah[1]
+
+coords_ex = coords_ex.reshape((5, 10000*19))
+weights_ex = weights_ex.reshape((5, 10000*19))
+
+coords = np.zeros((5, 19, 5000))
+weights = np.zeros((5, 19, 5000))
+des = np.zeros((5, 19, 5000))
+for i in np.arange(0, 5):
+    blah = np.load(f'Harmonic_oscillator/water_no_shift_{i + 1}.npz')
+    coords[i] = blah['wvfn'][0]
+    weights[i] = blah['wvfn'][1]
+    des[i] = blah['wvfn'][2]
+
+psitmax = 1.856
+Psi_t1[0] = Psi_t1[0] + 1.875
+interp_w = interpolate.splrep(Psi_t[0], Psi_t[1], s=0)
+interp_w2 = interpolate.splrep(Psi_t1[0], Psi_t1[1], s=0)
+frac = interpolate.splev(coords_ex, interp_w, der=0)/interpolate.splev(coords_ex, interp_w2, der=0)
+term2 = np.zeros(5)
+for i in range(5):
+    term2[i] = np.dot(weights_ex[i], -frac[i]*(coords_ex[i]-re_dimer)/ang2bohr)/np.sum(weights_ex[i])
+avg_term2 = np.average(term2)
+std_term2 = np.std(term2)
+print(avg_term2)
+print(std_term2)
 #
 # coords = coords.flatten()
 # coords_ex = coords_ex.flatten()

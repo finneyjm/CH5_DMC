@@ -19,10 +19,11 @@ sigmaH = np.sqrt(dtau/m_H)
 sigmaO = np.sqrt(dtau/m_O)
 sigmaD = np.sqrt(dtau/m_D)
 sigma = np.broadcast_to(np.array([sigmaH, sigmaO, sigmaH, sigmaO, sigmaH])[:, None], (5, 3))
+sigma = np.sqrt(dtau/((m_O*m_H)/(m_O+m_H)))
 har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11
 
-omega_asym = 3070.648654929466/har2wave
+omega_asym = 3815.044564/har2wave
 omega_asym_D = 2235.4632530938925/har2wave
 
 omega_sym = 2704.021674298211/har2wave
@@ -36,6 +37,10 @@ new_struct = np.array([
     [2.740400260927908, 1.766154718409233, 1.0814221449986587E-016]
 ])
 
+re = np.linalg.norm(new_struct[2] - new_struct[1])
+re_unit1 = (new_struct[2] - new_struct[1])/re
+re_unit2 = (new_struct[4] - new_struct[3])/re
+
 Roo_grid = np.linspace(3.9, 5.8, 100)
 sp_grid = np.linspace(-1.5, 1.5, 100)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
@@ -43,15 +48,15 @@ big_Roo_grid = np.linspace(4, 5.4, 1000)
 big_sp_grid = np.linspace(-1.2, 1.2, 1000)
 X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 
-z_ground_no_der = np.load('z_ground_no_der.npy')
-
-ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_no_der.flatten())
-
-z_excite_xh_no_der = np.load('z_excite_xh_no_der.npy')
-
-excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                          z_excite_xh_no_der.flatten())
+# z_ground_no_der = np.load('z_ground_no_der.npy')
+#
+# ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_no_der.flatten())
+#
+# z_excite_xh_no_der = np.load('z_excite_xh_no_der.npy')
+#
+# excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                           z_excite_xh_no_der.flatten())
 
 
 # Creates the walkers with all of their attributes
@@ -72,53 +77,34 @@ class Walkers(object):
 
 
 def get_da_psi(coords, excite, shift):
-    psi = np.zeros((len(coords), 2))
-    dists = all_dists(coords)
+    coords = coords.squeeze()
+    psi = np.ones((len(coords), 2))
+    # dists = all_dists(coords)
     mw_h = m_OH * omega_asym
-    dists[:, 0] = dists[:, 0] - shift[0]
-    if excite == 'all':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
-                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = excite_both_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-    elif excite == 'sp & roo':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = excite_both_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-    elif excite == 'sp & a':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
-                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
-    elif excite == 'sp':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
-    elif excite == 'roo & a':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
-                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = excite_roo_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-    elif excite == 'roo':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = excite_roo_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
-    elif excite == 'a':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
-                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
+    # dists[:, 0] = dists[:, 0] - shift[0]
+    if excite == 'a':
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * coords ** 2)) * \
+                    (2 * mw_h) ** (1 / 2) * coords
+        # psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
     else:
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * coords ** 2))
+        # psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
     return psi
 
 
 def all_da_psi(coords, excite, shift):
     dx = 1e-3
-    psi = np.zeros((len(coords), 3, 5, 3))
-    psi[:, 1] = np.broadcast_to(np.prod(get_da_psi(coords, excite, shift), axis=1)[:, None, None], (len(coords), 5, 3))
-    for atom in range(5):
-        for xyz in range(3):
-            coords[:, atom, xyz] -= dx
-            psi[:, 0, atom, xyz] = np.prod(get_da_psi(coords, excite, shift), axis=1)
-            coords[:, atom, xyz] += 2*dx
-            psi[:, 2, atom, xyz] = np.prod(get_da_psi(coords, excite, shift), axis=1)
-            coords[:, atom, xyz] -= dx
-    return psi
+    psi = np.zeros((len(coords), 3, 1))
+    # psi[:, 1] = np.broadcast_to(np.prod(get_da_psi(coords, excite, shift), axis=1)[:, None], (len(coords), 1))
+    psi[:, 1] = np.prod(get_da_psi(coords, excite, shift), axis=1)[:, None]
+    # for atom in range(5):
+    #     for xyz in range(3):
+    coords[:] -= dx
+    psi[:, 0] = np.prod(get_da_psi(coords, excite, shift), axis=1)[:, None]
+    coords[:] += 2*dx
+    psi[:, 2] = np.prod(get_da_psi(coords, excite, shift), axis=1)[:, None]
+    coords[:] -= dx
+    return psi.squeeze()
 
 
 def all_dists(coords):
@@ -150,11 +136,12 @@ def drift(coords, excite, shift):
 
 
 def metropolis(Fqx, Fqy, x, y, psi1, psi2):
-    psi_1 = psi1[:, 1, 0, 0]
-    psi_2 = psi2[:, 1, 0, 0]
+    psi_1 = psi1[:, 1]
+    psi_2 = psi2[:, 1]
     psi_ratio = (psi_2/psi_1)**2
-    a = np.exp(1. / 2. * (Fqx + Fqy) * (sigma ** 2 / 4. * (Fqx - Fqy) - (y - x)))
-    a = np.prod(np.prod(a, axis=1), axis=1) * psi_ratio
+    a = np.exp(1. / 2. * (Fqx + Fqy) * (sigma ** 2 / 4. * (Fqx - Fqy) - (y - x.squeeze())))
+    # a = np.prod(np.prod(a, axis=1), axis=1) * psi_ratio
+    a = a * psi_ratio
     remove = np.argwhere(psi_2 * psi_1 < 0)
     a[remove] = 0.
     return a
@@ -163,13 +150,13 @@ def metropolis(Fqx, Fqy, x, y, psi1, psi2):
 # Random walk of all the walkers
 def Kinetic(Psi, Fqx):
     Drift = sigma**2/2.*Fqx
-    randomwalk = np.random.normal(0.0, sigma, size=(len(Psi.coords), sigma.shape[0], sigma.shape[1]))
-    y = randomwalk + Drift + np.array(Psi.coords)
+    randomwalk = np.random.normal(0.0, sigma, size=(len(Psi.coords)))
+    y = randomwalk + Drift.squeeze() + np.array(Psi.coords).squeeze()
     Fqy, psi = drift(y, Psi.excite, Psi.shift)
     a = metropolis(Fqx, Fqy, Psi.coords, y, Psi.psit, psi)
     check = np.random.random(size=len(Psi.coords))
     accept = np.argwhere(a > check)
-    Psi.coords[accept] = y[accept]
+    Psi.coords[accept] = y[accept, None]
     Fqx[accept] = Fqy[accept]
     Psi.psit[accept] = psi[accept]
     acceptance = float(len(accept)/len(Psi.coords))*100.
@@ -189,12 +176,17 @@ get_pot = PotHolder.get_pot
 
 
 def pot(Psi):
-    coords = np.array_split(Psi.coords, mp.cpu_count()-1)
+    inp = np.array([new_struct]*len(Psi.coords))
+    inp[:, 2] = re_unit1*(re + np.sqrt(2)/2*Psi.coords) + new_struct[1]
+    inp[:, 4] = re_unit2*(re - np.sqrt(2)/2*Psi.coords) + new_struct[3]
+    coords = np.array_split(inp, mp.cpu_count()-1)
     V = pool.map(get_pot, coords)
     Psi.V = np.concatenate(V)
     return Psi
 
+
 pool = mp.Pool(mp.cpu_count()-1)
+
 
 def psi_t(coords, excite, shift):
     coords = np.array_split(coords, mp.cpu_count() - 1)
@@ -206,8 +198,8 @@ def psi_t(coords, excite, shift):
 def local_kinetic(Psi):
     dx = 1e-3
     d2psidx2 = ((Psi.psit[:, 0] - 2. * Psi.psit[:, 1] + Psi.psit[:, 2]) / dx ** 2) / Psi.psit[:, 1]
-    kin = -1. / 2. * np.sum(np.sum(sigma ** 2 / dtau * d2psidx2, axis=1), axis=1)
-    return kin
+    kin = -1. / 2. * sigma ** 2 / dtau * d2psidx2
+    return kin.squeeze()
 
 
 def E_loc(Psi):
@@ -274,6 +266,7 @@ def descendants(Psi):
     while len(d) < len(Psi.coords):
         d = np.append(d, 0.)
     return d
+
 
 def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_struct, initial_shifts, shift_rate):
     DW = False
@@ -417,12 +410,12 @@ test_structure2 = np.array([
 
 # wow_im_tired = True
 # trials = [4, 6, 8, 9]
-# for i in range(5):
-#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
-#         5000, 20000, 250, 500, 500, None, test_structure, [0, 2.5721982410729867], [0, 0]
-#     )
-#     np.savez(f'ground_state_full_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-#              sum_weights=sum_weights, accept=accept, d=des)
+for i in range(10):
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        500, 20000, 250, 500, 500, None, [0.05], [0, 2.5721982410729867], [0, 0]
+    )
+    np.savez(f'ground_state_1d_a_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
 #
 # coords = np.load('coords_for_testing.npy')
 # print(coords.shape)
@@ -494,19 +487,21 @@ test_structure2 = np.array([
 #     )
 #     np.savez(f'XH_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
 #              sum_weights=sum_weights, accept=accept, d=des)
-# asym_left = [0, 1, 2, 3, 4]
-# for i in asym_left:
-#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
-#         5000, 20000, 250, 500, 500, 'a', test_structure, [0, 2.5721982410729867], [0, 0]
-#     )
-#     np.savez(f'Asym_excite_state_full_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-#              sum_weights=sum_weights, accept=accept, d=des)
+asym_left = [0, 1, 2, 3, 4]
+# asym_left = [0]
+for i in asym_left:
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        500, 20000, 250, 500, 500, 'a', [-0.05], [0, 2.5721982410729867], [0, 0]
+    )
+    np.savez(f'Asym_excite_state_1d_a_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
+
+asym_right = [0, 1, 2, 3, 4]
+# asym_right = [0]
+for i in asym_right:
+    coords, weights, time, Eref_array, sum_weights, accept, des = run(
+        500, 20000, 250, 500, 500, 'a', [0.05], [0, 2.5721982410729867], [0, 0]
+    )
+    np.savez(f'Asym_excite_state_1d_a_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+             sum_weights=sum_weights, accept=accept, d=des)
 #
-# asym_right = [0, 1, 2, 3, 4]
-#
-# for i in asym_right:
-#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
-#         5000, 20000, 250, 500, 500, 'a', test_structure2, [0, 2.5721982410729867], [0, 0]
-#     )
-#     np.savez(f'Asym_excite_state_full_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-#              sum_weights=sum_weights, accept=accept, d=des)

@@ -186,6 +186,48 @@ average_excite_energy = np.average(np.array([average_excite_pos_energy, average_
 std_excite_energy = np.sqrt(std_excite_pos_energy**2 + std_excite_neg_energy**2)
 print(average_excite_energy-average_zpe)
 print(np.sqrt(std_zpe**2 + std_excite_energy**2))
+
+xh_excite_neg_coords = np.zeros((5, 27, 5000, 5, 3))
+xh_excite_neg_erefs = np.zeros((5, 20000))
+xh_excite_neg_weights = np.zeros((5, 27, 5000))
+for i in range(5):
+    blah = np.load(f'XH_excite_state_full_h3o2_left_{i+1}.npz')
+    coords = blah['coords']
+    eref = blah['Eref']
+    weights = blah['weights']
+    xh_excite_neg_coords[i] = coords
+    xh_excite_neg_erefs[i] = eref
+    xh_excite_neg_weights[i] = weights
+
+print(np.mean(np.mean(xh_excite_neg_erefs[:, 5000:], axis=1), axis=0)*har2wave)
+average_xh_excite_neg_energy = np.mean(np.mean(xh_excite_neg_erefs[:, 5000:], axis=1), axis=0)*har2wave
+std_xh_excite_neg_energy = np.std(np.mean(xh_excite_neg_erefs[:, 5000:]*har2wave, axis=1))
+
+xh_excite_pos_coords = np.zeros((5, 27, 5000, 5, 3))
+xh_excite_pos_erefs = np.zeros((5, 20000))
+xh_excite_pos_weights = np.zeros((5, 27, 5000))
+for i in range(5):
+    blah = np.load(f'XH_excite_state_full_h3o2_right_{i+1}.npz')
+    coords = blah['coords']
+    eref = blah['Eref']
+    weights = blah['weights']
+    xh_excite_pos_coords[i] = coords
+    xh_excite_pos_erefs[i] = eref
+    xh_excite_pos_weights[i] = weights
+
+print(np.mean(np.mean(xh_excite_pos_erefs[:, 5000:], axis=1), axis=0)*har2wave)
+average_xh_excite_pos_energy = np.mean(np.mean(xh_excite_pos_erefs[:, 5000:], axis=1), axis=0)*har2wave
+std_xh_excite_pos_energy = np.std(np.mean(xh_excite_pos_erefs[:, 5000:]*har2wave, axis=1))
+
+print(average_xh_excite_neg_energy-average_zpe)
+print(np.sqrt(std_zpe**2 + std_xh_excite_neg_energy**2))
+print(average_xh_excite_pos_energy-average_zpe)
+print(np.sqrt(std_zpe**2 + std_xh_excite_pos_energy**2))
+
+average_xh_excite_energy = np.average(np.array([average_xh_excite_pos_energy, average_xh_excite_neg_energy]))
+std_xh_excite_energy = np.sqrt(std_xh_excite_pos_energy**2 + std_xh_excite_neg_energy**2)
+print(average_xh_excite_energy-average_zpe)
+print(np.sqrt(std_zpe**2 + std_xh_excite_energy**2))
 au_to_Debye = 1/0.3934303
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
@@ -197,257 +239,263 @@ mw = m_OH*omega_asym
 conv_fac = 4.702e-7
 km_mol = 5.33e6
 
-def Harmonic_wvfn(x, state):
-    if state == 1:
-        return ((mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2)) * (2 * mw) ** (1 / 2) * (x))
-    else:
-        return ((mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2)))
 
 ground_coords = np.reshape(ground_coords, (10, 135000, 5, 3))
 ground_coords = np.hstack((ground_coords, ground_coords[:, :, [0, 3, 4, 1, 2]]))
 ground_weights = np.reshape(ground_weights, (10, 135000))
 ground_weights = np.hstack((ground_weights, ground_weights))
-ground_dists = np.zeros((10, 135000*2))
-ground_xh = np.zeros((10, 135000*2))
 ground_dips = np.zeros((10, 135000*2, 3))
-print(ground_coords[0, 0])
-amper1 = np.zeros((10, 75))
 for i in range(10):
-    # pre_dists = all_dists(ground_coords[i])
     eck = EckartsSpinz(ref, ground_coords[i], mass, planar=True)
     ground_coords[i] = eck.get_rotated_coords()
-    # post_dists = all_dists(ground_coords[i])
-    # print(np.average(pre_dists-post_dists))
-    ground_dists[i] = all_dists(ground_coords[i])[:, 0]
-    ground_xh[i] = all_dists(ground_coords[i])[:, -1]
     ground_dips[i] = dip(ground_coords[i])
-    # plt.hist2d(ground_xh[i]/ang2bohr, ground_dists[i]/ang2bohr, weights=ground_weights[i], bins=75, density=True)
-    # amp, xx = np.histogram(ground_xh[i]/ang2bohr, weights=ground_weights[i], bins=75, range=(-1, 1), density=True)
-    # plt.hist2d(ground_dips[i, :, 0]*au_to_Debye, Harmonic_wvfn(ground_dists[i], 0), weights=ground_weights[i], bins=75)
-    # amp, xx = np.histogram(ground_dips[i, :, 0]*au_to_Debye, weights=ground_weights[i], bins=75, range=(-4, 4))
-    # Mom = MomentOfSpinz(ground_coords[i], mass)
-    # eigvals = 1/(2*Mom.gimme_dat_eigval())
-    # amp, xx = np.histogram(eigvals[:, 0], weights=ground_weights[i], bins=75)
-# x = np.linspace(-0.7, 0.7, 75)
-# y1 = Harmonic_wvfn(x, 1)/Harmonic_wvfn(x, 0)
-# amp, xx = np.histogram(ground_dists[5], weights=ground_weights[5], bins=75, range=(-0.7, 0.7), density=True)
-# bin = (xx[1:] + xx[:-1]) / 2.
-# plt.plot(bin, amp*y1, label=r'f(a)*$\Psi_1/\Psi_0$')
-    # amp, xx = np.histogram(eigvals[:, 1], weights=ground_weights[i], bins=75)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp)
-    # amp, xx = np.histogram(eigvals[:, 2], weights=ground_weights[i], bins=75)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp)
-    # amper1[i] = amp
-# plt.plot(bin, np.average(amper1, axis=0), label=r'f$_0$')
-# plt.xlabel(r'$\mu_x$ (Debye)')
-# plt.ylabel(r'$\Psi_0$')
-# plt.xlabel(r'XH ($\AA$)')
-# plt.ylabel(r'a ($\AA$)')
-# plt.show()
-# for i in range(10):
-#     plt.hist2d(ground_dips[i, :, 0] * au_to_Debye, Harmonic_wvfn(ground_dists[i], 1), weights=ground_weights[i],
-#                bins=75)
-# plt.xlabel(r'$\mu_x$ (Debye)')
-# plt.ylabel(r'$\Psi_1$')
-# y = Harmonic_wvfn(x, 1)*Harmonic_wvfn(x, 0)
-# plt.plot(x, y/np.max(y)*np.max(amp*y1), label=r'$\Phi_0\Phi_1$')
-# plt.xlabel(r'a ($\AA$)')
-# plt.legend()
-# plt.show()
-print(ground_coords[0, 0])
-print(ref)
+
 excite_neg_coords = np.reshape(excite_neg_coords, (5, 135000, 5, 3))
 excite_neg_coords = np.hstack((excite_neg_coords, excite_neg_coords[:, :, [0, 3, 4, 1, 2]]))
 excite_neg_weights = np.reshape(excite_neg_weights, (5, 135000))
 excite_neg_weights = np.hstack((excite_neg_weights, excite_neg_weights))
-excite_neg_dists = np.zeros((5, 135000*2))
-excite_neg_xh = np.zeros((5, 135000*2))
 excite_neg_dips = np.zeros((5, 135000*2, 3))
 for i in range(5):
     eck = EckartsSpinz(ref, excite_neg_coords[i], mass, planar=True)
     excite_neg_coords[i] = eck.get_rotated_coords()
-    excite_neg_dists[i] = all_dists(excite_neg_coords[i])[:, 0]
-    excite_neg_xh[i] = all_dists(excite_neg_coords[i])[:, -1]
     excite_neg_dips[i] = dip(excite_neg_coords[i])
-    # amp, xx = np.histogram(excite_neg_dists[i], weights=excite_neg_weights[i], bins=75, range=(-0.5, 0.5), density=True)
-    # bin = (xx[1:] + xx[:-1])/2
-    # plt.plot(bin, amp)
 
 excite_pos_coords = np.reshape(excite_pos_coords, (5, 135000, 5, 3))
 excite_pos_coords = np.hstack((excite_pos_coords, excite_pos_coords[:, :, [0, 3, 4, 1, 2]]))
 excite_pos_weights = np.reshape(excite_pos_weights, (5, 135000))
 excite_pos_weights = np.hstack((excite_pos_weights, excite_pos_weights))
-excite_pos_dists = np.zeros((5, 135000*2))
-excite_pos_xh = np.zeros((5, 135000*2))
 excite_pos_dips = np.zeros((5, 135000*2, 3))
-amper = np.zeros((5, 75))
 for i in range(5):
     eck = EckartsSpinz(ref, excite_pos_coords[i], mass, planar=True)
     excite_pos_coords[i] = eck.get_rotated_coords()
-    com = np.dot(mass, excite_pos_coords[i])/np.sum(mass)
-    excite_pos_dists[i] = all_dists(excite_pos_coords[i])[:, 0]
-    excite_pos_xh[i] = all_dists(excite_pos_coords[i])[:, -1]
     excite_pos_dips[i] = dip(excite_pos_coords[i])
-    combine_dists = np.hstack((excite_pos_dists[i], excite_neg_dists[i]))
-    combine_xh = np.hstack((excite_pos_xh[i], excite_neg_xh[i]))
-    combine_weights = np.hstack((excite_pos_weights[i], excite_neg_weights[i]))
-    # plt.hist2d(combine_xh/ang2bohr, combine_dists/ang2bohr, weights=combine_weights, bins=75, density=True)
-    # amp, xx = np.histogram(excite_neg_xh[i]/ang2bohr,
-    #                        weights=excite_neg_weights[i],
-    #                        bins=75, range=(-1, 1), density=True)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp, label='negative a')
-    # amp, xx = np.histogram(excite_pos_xh[i] / ang2bohr,
-    #                        weights=excite_pos_weights[i],
-    #                        bins=75, range=(-1, 1), density=True)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp, label='positive a')
-    # plt.hist2d(np.hstack((excite_pos_dips[i, :, 0], excite_neg_dips[i, :, 0]))*au_to_Debye,
-    #            Harmonic_wvfn(np.hstack((excite_pos_dists[i], excite_neg_dists[i])), 0),
-    #            weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75,
-    #            )
-    # amp, xx = np.histogram(np.hstack((excite_pos_dips[i, :, 0], excite_neg_dips[i, :, 0]))*au_to_Debye,
-    #                        weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75,
-    #                        range=(-4, 4))
-    # amper[i] = amp
-    # bin = (xx[1:] + xx[:-1])/2
-    # Mom2 = MomentOfSpinz(np.concatenate((excite_pos_coords[i], excite_neg_coords[i]), axis=0), mass)
-    # eigvals = 1/(2*Mom2.gimme_dat_eigval())
-    # amp, xx = np.histogram(eigvals[:, 0], weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75)
-    # amp, xx = np.histogram(ground_dists[i], weights=ground_weights[i], bins=75, range=(-0.7, 0.7), density=True)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp)
-    # amp, xx = np.histogram(eigvals[:, 1], weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp)
-    # amp, xx = np.histogram(eigvals[:, 2], weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75)
-    # bin = (xx[1:] + xx[:-1]) / 2.
-    # plt.plot(bin, amp)
-    # amp, xx = np.histogram(np.hstack((excite_pos_dists[i], excite_neg_dists[i])), weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75, range=(-0.7, 0.7), density=True)
-    # bin = (xx[1:] + xx[:-1])/2
-# plt.plot(bin, np.average(amper, axis=0), label=r'f$_1$')
-# plt.xlabel(r'$\mu_x$ (Debye)')
-# plt.legend()
-# x = np.linspace(-0.5, 0.5, 200)
-# plt.plot(x, Harmonic_wvfn(x, 0)**2)
-# plt.xlabel(r'a ($\AA$)')
-# plt.xlabel(r'XH ($\AA$)')
-# plt.ylabel(r'a ($\AA$)')
-# plt.ylabel(r'$\Psi_0$ ')
-# plt.show()
+    # combine_weights = np.hstack((excite_pos_weights[i], excite_neg_weights[i]))
 
-# for i in range(5):
-#     plt.hist2d(np.hstack((excite_pos_dips[i, :, 0], excite_neg_dips[i, :, 0])) * au_to_Debye,
-#                Harmonic_wvfn(np.hstack((excite_pos_dists[i], excite_neg_dists[i])), 1),
-#                weights=np.hstack((excite_pos_weights[i], excite_neg_weights[i])), bins=75,
-#                )
-# plt.xlabel(r'$\mu_x$ (Debye)')
-# plt.ylabel(r'$\Psi_1$')
-# plt.show()
 
+xh_excite_neg_coords = np.reshape(xh_excite_neg_coords, (5, 135000, 5, 3))
+xh_excite_neg_coords = np.hstack((xh_excite_neg_coords, xh_excite_neg_coords[:, :, [0, 3, 4, 1, 2]]))
+xh_excite_neg_weights = np.reshape(xh_excite_neg_weights, (5, 135000))
+xh_excite_neg_weights = np.hstack((xh_excite_neg_weights, xh_excite_neg_weights))
+xh_excite_neg_dips = np.zeros((5, 135000*2, 3))
+for i in range(5):
+    eck = EckartsSpinz(ref, xh_excite_neg_coords[i], mass, planar=True)
+    xh_excite_neg_coords[i] = eck.get_rotated_coords()
+    xh_excite_neg_dips[i] = dip(xh_excite_neg_coords[i])
+
+xh_excite_pos_coords = np.reshape(xh_excite_pos_coords, (5, 135000, 5, 3))
+xh_excite_pos_coords = np.hstack((xh_excite_pos_coords, xh_excite_pos_coords[:, :, [0, 3, 4, 1, 2]]))
+xh_excite_pos_weights = np.reshape(xh_excite_pos_weights, (5, 135000))
+xh_excite_pos_weights = np.hstack((xh_excite_pos_weights, xh_excite_pos_weights))
+xh_excite_pos_dips = np.zeros((5, 135000*2, 3))
+for i in range(5):
+    eck = EckartsSpinz(ref, xh_excite_pos_coords[i], mass, planar=True)
+    xh_excite_pos_coords[i] = eck.get_rotated_coords()
+    xh_excite_pos_dips[i] = dip(xh_excite_pos_coords[i])
+    # xh_combine_weights = np.hstack((xh_excite_pos_weights[i], xh_excite_neg_weights[i]))
 
 term1 = np.zeros((10, 3))
+term1_vec = np.zeros((10, 3))
+term1_ov = np.zeros(10)
+term1_dis = np.zeros(10)
+xh_term1 = np.zeros((10, 3))
+xh_term1_vec = np.zeros((10, 3))
+xh_term1_ov = np.zeros(10)
+xh_term1_dis = np.zeros(10)
 for i in range(10):
     frac = get_da_psi(ground_coords[i], 'a')/get_da_psi(ground_coords[i], None)
+    frac2 = get_da_psi(ground_coords[i], 'sp')/get_da_psi(ground_coords[i], None)
+    term1_ov[i] = np.dot(ground_weights[i], frac)/np.sum(ground_weights[i])
+    xh_term1_ov[i] = np.dot(ground_weights[i], frac2)/np.sum(ground_weights[i])
+    dists = all_dists(ground_coords[i])
+    term1_dis[i] = np.dot(ground_weights[i], frac*dists[:, 0])/np.sum(ground_weights[i])
+    xh_term1_dis[i] = np.dot(ground_weights[i], frac2*dists[:, -1])/np.sum(ground_weights[i])
     for j in range(3):
         term1[i, j] = np.dot(ground_weights[i], frac*ground_dips[i, :, j]*au_to_Debye)/np.sum(ground_weights[i])
-    #     term1[i, j] = np.dot(ground_weights[i], frac * ((ground_coords[i, :, 2, j] - ground_coords[i, :, 1, j]) +
-    #                                                     (ground_coords[i, :, 4, j] - ground_coords[i, :, 3, j]))) \
-    #                   / np.sum(ground_weights[i])
-    #     term1[i, j] = np.dot(ground_weights[i], np.abs(frac*ground_dips[i, :, j]) * au_to_Debye) / np.sum(ground_weights[i])
-    # term1[i, 0] = np.dot(ground_weights[i], frac*ground_dists[i]/ang2bohr)/np.sum(ground_weights[i])
-    # term1[i, 1] = np.dot(ground_weights[i], frac)/np.sum(ground_weights[i])
-# print(term1)
-# print(np.average(term1, axis=0))
-# print(np.std(term1, axis=0))
+        term1_vec[i, j] = np.dot(ground_weights[i], frac * ((ground_coords[i, :, 2, j] - ground_coords[i, :, 1, j]) +
+                                                             (ground_coords[i, :, 4, j] - ground_coords[i, :, 3, j]))) \
+                          / np.sum(ground_weights[i])
+        xh_term1[i, j] = np.dot(ground_weights[i], frac2 * ground_dips[i, :, j] * au_to_Debye) / np.sum(ground_weights[i])
+        mid = (ground_coords[i, :, 3, j] - ground_coords[i, :, 1, j]) / 2
+        xh_term1_vec[i, j] = np.dot(ground_weights[i], frac2 * (mid - ground_coords[i, :, 0, j])) \
+                             / np.sum(ground_weights[i])
+
+avg_term1_vec = np.average(term1_vec, axis=0)
+std_term1_vec = np.std(term1_vec, axis=0)
+avg_term1_o = np.average(term1_ov)
+std_term1_o = np.std(term1_ov)
+avg_term1_d = np.average(term1_dis)
+std_term1_d = np.std(term1_dis)
+avg_xh_term1_v = np.average(xh_term1_vec, axis=0)
+std_xh_term1_v = np.std(xh_term1_vec, axis=0)
+avg_xh_term1_o = np.average(xh_term1_ov)
+std_xh_term1_o = np.std(xh_term1_ov)
+avg_xh_term1_d = np.average(xh_term1_dis)
+std_xh_term1_d = np.std(xh_term1_dis)
+print(np.average(term1, axis=0))
+print(np.std(term1, axis=0))
+print(np.average(xh_term1, axis=0))
+print(np.std(xh_term1, axis=0))
+xh_term1 = np.linalg.norm(xh_term1, axis=-1)
 term1 = np.linalg.norm(term1, axis=-1)
-# ov_term1 = term1[:, 1]
-# term1 = term1[:, 0]
-# term1 = np.sum(term1, axis=-1)
+std_xh_term1 = np.std(xh_term1)
 std_term1 = np.std(term1)
 term1 = np.average(term1)
-
+xh_term1 = np.average(xh_term1)
 print(term1)
 print(std_term1)
-#
+print(xh_term1)
+print(std_xh_term1)
+
 freq = average_excite_energy-average_zpe
+freq2 = average_xh_excite_energy - average_zpe
+std_freq2 = np.sqrt(std_zpe**2 + std_xh_excite_energy**2)
 std_freq = np.sqrt(std_zpe**2 + std_excite_energy**2)
 std_term1_sq = term1**2*np.sqrt((std_term1/term1)**2 + (std_term1/term1)**2)
 std_term1_sq_freq = term1**2*freq*np.sqrt((std_term1_sq/term1**2)**2 + (std_freq/freq)**2)
+
+std_term1_xh_sq = xh_term1**2*np.sqrt((std_xh_term1/xh_term1)**2 + (std_xh_term1/xh_term1)**2)
+std_term1_xh_freq = xh_term1**2*freq2*np.sqrt((std_term1_xh_sq/xh_term1**2)**2 + (std_freq2/freq2)**2)
 conversion = conv_fac*km_mol
 print(conversion*term1**2*freq)
 print(std_term1_sq_freq*conversion)
 
 
 term2 = np.zeros((5, 3))
-combine_dists = np.zeros((5, 135000*4))
+term2_vec = np.zeros((5, 3))
+term2_ov = np.zeros(5)
+xh_term2 = np.zeros((5, 3))
+xh_term2_vec = np.zeros((5, 3))
+xh_term2_ov = np.zeros(5)
+term2_dis = np.zeros(5)
+xh_term2_dis = np.zeros(5)
 combine_dips = np.zeros((5, 135000*4, 3))
-combine_weights = np.zeros(combine_dists.shape)
+combine_weights = np.zeros((5, 135000*4))
+xh_combine_dips = np.zeros((5, 135000*4, 3))
+xh_combine_weights = np.zeros((5, 135000*4))
 for i in range(5):
     combine_coords = np.vstack((excite_neg_coords[i], excite_pos_coords[i]))
-    combine_dists[i] = np.hstack((excite_neg_dists[i], excite_pos_dists[i]))
+    xh_combine_coords = np.vstack((xh_excite_neg_coords[i], xh_excite_pos_coords[i]))
     combine_weights[i] = np.hstack((excite_neg_weights[i], excite_pos_weights[i]))
     combine_dips[i] = np.vstack((excite_neg_dips[i], excite_pos_dips[i]))
-    H0 = get_da_psi(combine_coords[i], None)
-    H1 = get_da_psi(combine_coords[i], 'a')
+    xh_combine_weights[i] = np.hstack((xh_excite_neg_weights[i], xh_excite_pos_weights[i]))
+    xh_combine_dips[i] = np.vstack((xh_excite_neg_dips[i], xh_excite_pos_dips[i]))
+    H0 = get_da_psi(combine_coords, None)
+    H0x = get_da_psi(xh_combine_coords, None)
+    H1 = get_da_psi(combine_coords, 'a')
+    H2 = get_da_psi(xh_combine_coords, 'sp')
     frac = H0/H1
-    # ind = np.argwhere(np.abs(H1) < 0.01)[:, 0]
-    # combine_weights[i, ind] = H1[ind]**2
+    frac2 = H0x/H2
+    term2_ov[i] = np.dot(combine_weights[i], frac)/np.sum(combine_weights[i])
+    xh_term2_ov[i] = np.dot(xh_combine_weights[i], frac2)/np.sum(xh_combine_weights[i])
+    dists = all_dists(combine_coords)
+    term2_dis[i] = np.dot(combine_weights[i], frac*dists[:, 0])/np.sum(combine_weights[i])
+    dists = all_dists(xh_combine_coords)
+    xh_term2_dis[i] = np.dot(xh_combine_weights[i], frac2*dists[:, -1])/np.sum(xh_combine_weights[i])
     for j in range(3):
-        # term2[i, j] = np.dot(combine_weights[i, ind], frac[ind]*combine_dips[i, ind, j]*au_to_Debye)\
-        #               /np.sum(combine_weights[i, ind])
-        term2[i, j] = np.dot(combine_weights[i], frac * combine_dips[i, :,  j] * au_to_Debye) \
+        term2[i, j] = np.dot(combine_weights[i], frac * combine_dips[i, :, j] * au_to_Debye) \
                       / np.sum(combine_weights[i])
-        # term2[i, j] = np.dot(combine_weights[i], np.abs(frac*combine_dips[i, :, j]) * au_to_Debye) \
-        #               / np.sum(combine_weights[i])
-        term2[i, j] = np.dot(combine_weights[i], frac * ((combine_coords[:, 2, j] - combine_coords[:, 1, j]) +
+        term2_vec[i, j] = np.dot(combine_weights[i], frac * ((combine_coords[:, 2, j] - combine_coords[:, 1, j]) +
                                                          (combine_coords[:, 4, j] - combine_coords[:, 3, j]))) \
                       / np.sum(combine_weights[i])
-    # term2[i, 0] = np.dot(combine_weights[i], frac*combine_dists[i]/ang2bohr)/np.sum(combine_weights[i])
-    # term2[i, 1] = np.dot(combine_weights[i], frac)/np.sum(combine_weights[i])
-# print(term2)
-# print(np.average(term2, axis=0))
-# print(np.std(term2, axis=0))
-# ov_term2 = term2[:, 1]
-# term2 = term2[:, 0]
-# term2 = np.sum(term2, axis=-1)
-term2 = np.linalg.norm(term2, axis=-1)
+        xh_term2[i, j] = np.dot(xh_combine_weights[i], frac2*xh_combine_dips[i, :, j] * au_to_Debye)\
+                         /np.sum(xh_combine_weights[i])
+        mid = (combine_coords[:, 3, j] - combine_coords[:, 1, j])/2
+        xh_term2_vec[i, j] = np.dot(xh_combine_weights[i], frac2 * (mid - xh_combine_coords[:, 0, j])) \
+                      / np.sum(xh_combine_weights[i])
 
+avg_term2_vec = np.average(term2_vec, axis=0)
+std_term2_vec = np.std(term2_vec, axis=0)
+avg_term2_o = np.average(term2_ov)
+std_term2_o = np.std(term2_ov)
+avg_term2_d = np.average(term2_dis)
+std_term2_d = np.std(term2_dis)
+avg_xh_term2_v = np.average(xh_term2_vec, axis=0)
+std_xh_term2_v = np.std(xh_term2_vec, axis=0)
+avg_xh_term2_o = np.average(xh_term2_ov)
+std_xh_term2_o = np.std(xh_term2_ov)
+avg_xh_term2_d = np.average(xh_term2_dis)
+std_xh_term2_d = np.std(xh_term2_dis)
+print(np.average(term2, axis=0))
+print(np.std(term2, axis=0))
+print(np.average(xh_term2, axis=0))
+print(np.std(xh_term2, axis=0))
+
+term2 = np.linalg.norm(term2, axis=-1)
+xh_term2 = np.linalg.norm(xh_term2, axis=-1)
 
 std_term2 = np.std(term2)
+xh_std_term2 = np.std(xh_term2)
 term2 = np.average(term2)
+xh_term2 = np.average(xh_term2)
 print(term2)
 print(std_term2)
-# print(np.average(ov_term1))
-# print(np.std(ov_term1))
-# print(np.average(ov_term2))
-# print(np.std(ov_term2))
-# print(np.average(ov_term1)+np.average(ov_term2))
-# print(np.sqrt(np.std(ov_term1)**2 + np.std(ov_term2)**2))
-#
+print(xh_term2)
+print(xh_std_term2)
+
+
+std_term2_xh_sq = xh_term2**2*np.sqrt((xh_std_term2/xh_term2)**2 + (xh_std_term2/xh_term2)**2)
 std_term2_sq = term2**2*np.sqrt((std_term2/term2)**2 + (std_term2/term2)**2)
 std_term2_sq_freq = term2**2*freq*np.sqrt((std_term2_sq/term2**2)**2 + (std_freq/freq)**2)
+xh_std_term2_sq_freq = xh_term2**2*freq2*np.sqrt((std_term2_xh_sq/xh_term2**2)**2 + (std_freq2/freq2)**2)
 print(conversion*term2**2*freq)
 print(std_term2_sq_freq*conversion)
 
 
-term3 = 0.14379963852224506
-# term3 = 0.014661873657093441
-# term3 = 0.008699279761412408
-# term3 = 0.022111361939871958
+# term3 = 0.14379963852224506
+term3 = 0.046455953675400584
+xh_term3 = 1.1154257246577732
 std_term3 = 0.0
 std_term3_sq = 0.0
 std_term3_sq_freq = term3**2*freq*np.sqrt((std_term3_sq/term3**2)**2 + (std_freq/freq)**2)
+xh_std_term3_sq_freq = xh_term3**2*freq2*np.sqrt((std_freq2/freq2)**2)
 print(term3**2*freq*conversion)
 print(std_term3_sq_freq*conversion)
-#
+
 full_error = np.sqrt(std_term1**2 + std_term2**2 + std_term3**2)
+full_error_xh = np.sqrt(std_xh_term1**2 + xh_std_term2**2)
+dipole_xh = xh_term1 + xh_term2 - xh_term3
 dipole = term1 + term2 - term3
 full_error_sq = dipole**2*np.sqrt((full_error/dipole)**2 + (full_error/dipole)**2)
+full_error_sq_xh = dipole_xh**2*np.sqrt((full_error_xh/dipole_xh)**2 + (full_error_xh/dipole_xh)**2)
 full_error = dipole**2*freq*np.sqrt((full_error_sq/dipole**2)**2 + (std_freq/freq)**2)
+full_error_xh = dipole_xh**2*freq2*np.sqrt((full_error_sq_xh/dipole_xh**2)**2 + (std_freq2/freq2)**2)
 print(dipole**2*freq*conversion)
 print(full_error*conversion)
+
+
+print(conversion*xh_term1**2*freq2)
+print(std_term1_xh_freq*conversion)
+print(conversion*xh_term2**2*freq2)
+print(xh_std_term2_sq_freq*conversion)
+print(xh_term3**2*freq2*conversion)
+print(xh_std_term3_sq_freq*conversion)
+print(dipole_xh**2*freq2*conversion)
+print(full_error_xh*conversion)
+
+
+print(f'term1 a overlap = {avg_term1_o} {std_term1_o}')
+print(f'term2 a overlap = {avg_term2_o} {std_term2_o}')
+
+print(f'term1 xh overlap = {avg_xh_term1_o} {std_xh_term1_o}')
+print(f'term2 xh overlap = {avg_xh_term2_o} {std_xh_term2_o}')
+
+print(f'term1 a dis = {avg_term1_d} {std_term1_d}')
+print(f'term2 a dis = {avg_term2_d} {std_term2_d}')
+
+print(f'term1 xh dis = {avg_xh_term1_d} {std_xh_term1_d}')
+print(f'term2 xh dis = {avg_xh_term2_d} {std_xh_term2_d}')
+
+print(f'term1 a vec = {avg_term1_vec} {std_term1_vec}')
+print(f'term2 a vec = {avg_term2_vec} {std_term2_vec}')
+
+print(f'term1 xh vec = {avg_xh_term1_v} {std_xh_term1_v}')
+print(f'term2 xh vec = {avg_xh_term2_v} {std_xh_term2_v}')
+
+
+
+
+
+
+
 
 

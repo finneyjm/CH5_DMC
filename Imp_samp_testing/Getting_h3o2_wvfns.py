@@ -142,7 +142,13 @@ def pot(coords):
 
 
 def harm_pot(grid, mass):
-    omega = 3070.648654929466/har2wave
+    omega = 3815.044564/har2wave
+    # omega = 3819.6773412163216/har2wave
+    return np.diag(1/2*mass*omega**2*grid**2)
+
+
+def old_harm_pot(grid, mass):
+    omega = 3070/har2wave
     return np.diag(1/2*mass*omega**2*grid**2)
 
 
@@ -163,6 +169,7 @@ def dip(coords):
     V = pool.map(get_dip, coords)
     dips = np.concatenate(V)
     return dips
+
 
 pool = mp.Pool(mp.cpu_count()-1)
 
@@ -209,6 +216,9 @@ def run(mass, struct, stretch, grid, r1=None):
         V = pot(coords)
     elif stretch == 'harmonic asymmetric':
         V = harm_pot(grid, mass)
+
+    elif stretch == 'false Harmonic':
+        V = old_harm_pot(grid, mass)
     else:
         coords = oo_grid(struct, grid)
         V = pot(coords)
@@ -280,7 +290,8 @@ grid1 = np.linspace(-2.5, 2.5, 2000)
 # grid2 = np.linspace(-1., 1., 1000)
 # grid3 = np.linspace(4.2, 5.2, 30)
 # grid4 = np.linspace(1, 6, 1000)
-# en1, eig1, V1 = run(m_red, linear_struct, 'asymmetric', grid1)
+en1, eig1, V = run(m_red, linear_struct, 'asymmetric', grid1/np.sqrt(2))
+en2, eig2, V2 = run(m_red, linear_struct, 'false Harmonic', grid1/np.sqrt(2))
 # equil_roo_roh_x = linear_struct[3, 0] - linear_struct[4, 0]
 
 # for i in range(len(grid3)):
@@ -316,10 +327,10 @@ grid1 = np.linspace(-2.5, 2.5, 2000)
 # en4 = np.load('symmetric_energies.npy')
 # eig4 = np.load('symmetric_wvfns.npy')
 # V = np.load('symmetric_pot.npy')
-# dx = 5.0/1000
-# ind = np.argmin(V)
-# second_der = ((1/90*V[ind-3] - 3/20*V[ind-2] + 3/2*V[ind-1] - 49/18*V[ind] + 3/2*V[ind+1] - 3/20*V[ind+2] + 1/90*V[ind+3])/dx**2)
-# print(np.sqrt(second_der/m_red)*har2wave)
+dx = (2.5/np.sqrt(2) + 2.5/np.sqrt(2))/2000
+ind = np.argmin(V)
+second_der = ((1/90*V[ind-3] - 3/20*V[ind-2] + 3/2*V[ind-1] - 49/18*V[ind] + 3/2*V[ind+1] - 3/20*V[ind+2] + 1/90*V[ind+3])/dx**2)
+print(np.sqrt(second_der/m_red)*har2wave)
 # print(np.sqrt(second_der/m_red_D)*har2wave)
 #
 # omega = np.sqrt(second_der/m_red)
@@ -380,7 +391,7 @@ grid1 = np.linspace(-2.5, 2.5, 2000)
 #
 #
 def Harmonic_wvfn2(x, state):
-    omega_asym = 3070.648654929466 / har2wave
+    omega_asym = 3815.044564 / har2wave
     mw = m_red * omega_asym
     if state == 1:
         return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2)) * (2 * mw) ** (1 / 2) * (x)
@@ -399,21 +410,34 @@ def Harmonic_wvfn2(x, state):
 #
 from Imp_samp_testing import MomentOfSpinz
 mass = np.array([m_H, m_O, m_H, m_O, m_H])
+grid1 /= np.sqrt(2)
+energies, wvfns, V1 = run(m_red, linear_struct, 'harmonic asymmetric', grid1)
 MOM = MomentOfSpinz(linear_struct, mass)
 linear_struct = MOM.coord_spinz()
-grid1 /= np.sqrt(2)
 coords = asym_grid(linear_struct, grid1)
 coords2 = coords
-energies, wvfns, V = run(m_red, linear_struct, 'harmonic asymmetric', grid1)
 from Imp_samp_testing import EckartsSpinz
 eck = EckartsSpinz(linear_struct, coords, mass, planar=True)
 coords = eck.get_rotated_coords()
 MOM2 = MomentOfSpinz(coords, mass)
 eigvals = MOM2.gimme_dat_eigval()
 harm = Harmonic_wvfn2(grid1, 0)
-print(np.max(harm)/np.max(wvfns[:, 0]))
+# print(np.max(harm)/np.max(wvfns[:, 0]))
 
 import matplotlib.pyplot as plt
+plt.plot(grid1, V1*har2wave, label='Harmonic')
+plt.plot(grid1, V2*har2wave, label='old Harmonic')
+plt.plot(grid1, V*har2wave - np.min(V)*har2wave, label='True')
+plt.legend()
+plt.ylim(0, 10000)
+plt.show()
+plt.close()
+plt.plot(grid1, wvfns[:, 0], label='Harmonic')
+plt.plot(grid1, eig2[:, 0], label='old Harmonic')
+plt.plot(grid1, eig1[:, 0], label='True')
+plt.legend()
+plt.show()
+plt.close()
 # plt.plot(grid1, 1/(2*eigvals[:, 0]))
 # plt.plot(grid1, 1/(2*eigvals[:, 1]))
 # plt.plot(grid1, 1/(2*eigvals[:, 2]))
@@ -431,6 +455,7 @@ plt.plot(grid1, dips[:, 2], label='z')
 plt.legend()
 plt.show()
 # print(dips)
+# print('overlap' + np.dot(wvfns[:, 1], wvfns[:, 0]))
 thingy = np.zeros(3)
 for i in range(3):
     thingy[i] = np.dot((wvfns[:, 1]), dips[:, i]*(wvfns[:, 0]))
@@ -443,9 +468,9 @@ cd2 = coords[:, tuple(x[1] for x in np.array(bonds))]
 a = cd2-cd1
 dis = a[:, 0] + a[:, 1]
 wth = np.linalg.norm(dis, axis=-1)
-plt.plot(a[:, 0, 0] + a[:, 1, 0], label='x')
-plt.plot(a[:, 0, 1] + a[:, 1, 1], label='y')
-plt.plot(a[:, 0, 2] + a[:, 1, 2], label='z')
+plt.plot(a[:, 0, 0] - a[:, 1, 0], label='x')
+plt.plot(a[:, 0, 1] - a[:, 1, 1], label='y')
+plt.plot(a[:, 0, 2] - a[:, 1, 2], label='z')
 plt.legend()
 plt.show()
 plt.plot(grid1, wvfns[:, 0])
