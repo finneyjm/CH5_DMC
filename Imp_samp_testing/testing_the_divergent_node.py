@@ -26,31 +26,38 @@ big_sp_grid = np.linspace(-1.2, 1.2, 1000)
 X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 
 
-z_ground_no_der = np.load('z_ground_no_der.npy')
-
-ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_no_der.flatten())
-
-z_excite_xh_no_der = np.load('z_excite_xh_no_der.npy')
-
-excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                          z_excite_xh_no_der.flatten())
+# z_ground_no_der = np.load('z_ground_no_der.npy')
+#
+# ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_no_der.flatten())
+#
+# z_excite_xh_no_der = np.load('z_excite_xh_no_der.npy')
+#
+# excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                           z_excite_xh_no_der.flatten())
 
 
 def get_da_psi(coords, excite):
-    psi = np.zeros((len(coords), 2))
+    psi = np.ones((len(coords), 2))
     dists = all_dists(coords)
     mw_h = m_OH * omega_asym
+    m = 1/5.8040096330468950e-4*omega_asym
+    dead = -0.29339998970198611*dists[:, -1] + 0.95598977298027321*dists[:, 0]
     if excite == 'sp':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
+        # psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
+    elif excite == 'mod':
+        psi[:, 0] = (m / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * m * dead ** 2))
+    elif excite == 'mod1':
+        psi[:, 0] = (m / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * m * dead ** 2)) * \
+                    (2 * m) ** (1 / 2) * dead
     elif excite == 'a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
+        # psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
     else:
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
+        # psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
     return np.prod(psi, axis=-1)
 
 
@@ -96,7 +103,7 @@ xh_excite_neg_coords = np.zeros((5, 27, 5000, 5, 3))
 xh_excite_neg_erefs = np.zeros((5, 20000))
 xh_excite_neg_weights = np.zeros((5, 27, 5000))
 for i in range(5):
-    blah = np.load(f'XH_excite_state_full_h3o2_left_{i+1}.npz')
+    blah = np.load(f'Asym_excite_state_full_h3o2_left_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -112,7 +119,7 @@ xh_excite_pos_coords = np.zeros((5, 27, 5000, 5, 3))
 xh_excite_pos_erefs = np.zeros((5, 20000))
 xh_excite_pos_weights = np.zeros((5, 27, 5000))
 for i in range(5):
-    blah = np.load(f'XH_excite_state_full_h3o2_right_{i+1}.npz')
+    blah = np.load(f'Asym_excite_state_full_h3o2_right_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -152,29 +159,45 @@ xh_excite_pos_weights = np.hstack((xh_excite_pos_weights, xh_excite_pos_weights)
 
 xh_term1_dis = np.zeros(10)
 for i in range(10):
-    frac2 = get_da_psi(ground_coords[i], 'sp')/get_da_psi(ground_coords[i], None)
+    frac2 = get_da_psi(ground_coords[i], 'a')/get_da_psi(ground_coords[i], None)
     dists = all_dists(ground_coords[i])
-    xh_term1_dis[i] = np.dot(ground_weights[i], frac2*dists[:, -1])/np.sum(ground_weights[i])
+    xh_term1_dis[i] = np.dot(ground_weights[i], frac2*dists[:, 0])/np.sum(ground_weights[i])
 
 avg_xh_term1_d = np.average(xh_term1_dis)
 std_xh_term1_d = np.std(xh_term1_dis)
 
-xh_term2_dis = np.zeros(5)
-xh_combine_weights = np.zeros((5, 135000*4))
-for i in range(5):
-    xh_combine_coords = np.vstack((xh_excite_neg_coords[i], xh_excite_pos_coords[i]))
-    xh_combine_weights[i] = np.hstack((xh_excite_neg_weights[i], xh_excite_pos_weights[i]))
-    H0 = get_da_psi(xh_combine_coords, None)
-    H1 = get_da_psi(xh_combine_coords, 'sp')
+xh_term2_vec = np.zeros((10, 3))
+xh_term2_dis = np.zeros(10)
+xh_combine_weights = np.zeros((10, 135000*2))
+xh_combine_coords = np.zeros((10, 135000*2, 5, 3))
+for i in range(10):
+    if i < 5:
+        xh_combine_coords[i] = xh_excite_neg_coords[i]
+        xh_combine_weights[i] = xh_excite_neg_weights[i]
+    else:
+        xh_combine_coords[i] = xh_excite_pos_coords[i-5]
+        xh_combine_weights[i] = xh_excite_pos_weights[i-5]
+    # xh_combine_coords[i] = np.vstack((xh_excite_neg_coords[i], xh_excite_pos_coords[i]))
+    # xh_combine_weights[i] = np.hstack((xh_excite_neg_weights[i], xh_excite_pos_weights[i]))
+    H0 = get_da_psi(xh_combine_coords[i], None)
+    H1 = get_da_psi(xh_combine_coords[i], 'a')
     frac2 = H0/H1
-    dists = all_dists(xh_combine_coords)
-    xh_term2_dis[i] = np.dot(xh_combine_weights[i], frac2*dists[:, -1])/np.sum(xh_combine_weights[i])
+    dists = all_dists(xh_combine_coords[i])
+    xh_term2_dis[i] = np.dot(xh_combine_weights[i], frac2*dists[:, 0])/np.sum(xh_combine_weights[i])
+    for j in range(3):
+        xh_term2_vec[i, j] = np.dot(xh_combine_weights[i], frac2 * ((xh_combine_coords[i, :, 2, j] - xh_combine_coords[i, :, 1, j]) +
+                                                         (xh_combine_coords[i, :, 4, j] - xh_combine_coords[i, :, 3, j]))) \
+                      / np.sum(xh_combine_weights[i])
 
+xh_term2_vec = np.linalg.norm(xh_term2_vec, axis=1)/np.sqrt(2)
 avg_xh_term2_d = np.average(xh_term2_dis)
 std_xh_term2_d = np.std(xh_term2_dis)
+avg_xh_term2_v = np.average(xh_term2_vec)
+std_xh_term2_v = np.std(xh_term2_vec)
 
-print(f'term1 xh dis = {avg_xh_term1_d} {std_xh_term1_d}')
-print(f'term2 xh dis = {avg_xh_term2_d} {std_xh_term2_d}')
+print(f'term1 a dis = {avg_xh_term1_d} {std_xh_term1_d}')
+print(f'term2 a dis = {avg_xh_term2_d} {std_xh_term2_d}')
+print(f'term2 a dis = {avg_xh_term2_v} {std_xh_term2_v}')
 
 
 

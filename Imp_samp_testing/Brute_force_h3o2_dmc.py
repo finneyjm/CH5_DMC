@@ -22,18 +22,20 @@ sigma = np.broadcast_to(np.array([sigmaH, sigmaO, sigmaH, sigmaO, sigmaH])[:, No
 har2wave = 219474.6
 ang2bohr = 1.e-10/5.291772106712e-11
 
-omega_asym = 3070.648654929466/har2wave
+m_OH = 1
+
+omega_asym = 3815.044564/har2wave
 omega_asym_D = 2235.4632530938925/har2wave
 
 omega_sym = 2704.021674298211/har2wave
 omega_sym_D = 1968.55510602268/har2wave
 
 new_struct = np.array([
-    [0.000000000000000, 0.000000000000000, 0.000000000000000],
-    [-2.304566686034061, 0.000000000000000, 0.000000000000000],
-    [-2.740400260927908, -1.766154718409233, 1.0814221449986587E-016],
-    [2.304566686034061, 0.000000000000000, 0.000000000000000],
-    [2.740400260927908, 1.766154718409233, 1.0814221449986587E-016]
+    [2.06095307, 0.05378083, 0.],
+    [0., 0., 0.],
+    [-0.32643038, -1.70972841, 0.52193868],
+    [4.70153912, 0., 0.],
+    [5.20071798, 0.80543847, 1.55595785]
 ])
 
 Roo_grid = np.linspace(3.9, 5.8, 100)
@@ -41,17 +43,24 @@ sp_grid = np.linspace(-1.5, 1.5, 100)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
 big_Roo_grid = np.linspace(4, 5.4, 1000)
 big_sp_grid = np.linspace(-1.2, 1.2, 1000)
+big_sp_grid = np.linspace(-50, 50, 1000)
 X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
+import time
 
-z_ground_no_der = np.load('z_ground_no_der.npy')
+start = time.time()
+
+z_ground_no_der = np.load('z_ground_no_der_new_def.npy')
 
 ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
                                                        z_ground_no_der.flatten())
 
-z_excite_xh_no_der = np.load('z_excite_xh_no_der.npy')
+z_excite_xh_no_der = np.load('z_excite_xh_no_der_new_def.npy')
 
 excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
                                                           z_excite_xh_no_der.flatten())
+
+end = time.time()
+print(end-start)
 
 
 # Creates the walkers with all of their attributes
@@ -72,10 +81,12 @@ class Walkers(object):
 
 
 def get_da_psi(coords, excite, shift):
-    psi = np.zeros((len(coords), 2))
+    psi = np.ones((len(coords), 2))
     dists = all_dists(coords)
     mw_h = m_OH * omega_asym
-    dists[:, 0] = dists[:, 0] - shift[0]
+    # dists[:, 0] = dists[:, 0] - shift[0]
+    dead = -0.60594644269321474*dists[:, -1] + 42.200232187251913*dists[:, 0]
+    dead2 = 41.561937672470521*dists[:, -1] + 1.0206303697659393*dists[:, 0]
     if excite == 'all':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
@@ -86,10 +97,10 @@ def get_da_psi(coords, excite, shift):
     elif excite == 'sp & a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
+        psi[:, 1] = excite_xh_no_der(dead2, dists[:, -2])
     elif excite == 'sp':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = excite_xh_no_der(dists[:, -1], dists[:, -2])
+        psi[:, 1] = excite_xh_no_der(dead2, dists[:, -2])
     elif excite == 'roo & a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
@@ -98,12 +109,15 @@ def get_da_psi(coords, excite, shift):
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
         psi[:, 1] = excite_roo_no_der(dists[:, -1], dists[:, -2])[np.argsort(np.argsort(dists[:, -2])), np.argsort(np.argsort(dists[:, -1]))]
     elif excite == 'a':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
-                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
+        # psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
+        #             (2 * mw_h) ** (1 / 2) * dists[:, 0]
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dead ** 2)) * \
+                    (2 * mw_h) ** (1 / 2) * dead
+        psi[:, 1] = ground_no_der(dead2, dists[:, -2])
     else:
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
+        # psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dead ** 2))
+        psi[:, 1] = ground_no_der(dead2, dists[:, -2])
     return psi
 
 
@@ -122,15 +136,16 @@ def all_da_psi(coords, excite, shift):
 
 
 def all_dists(coords):
-    bonds = [[1, 2],  [3, 4], [1, 3], [1, 0]]
+    bonds = [[1, 2],  [3, 4], [1, 3], [1, 0], [3, 0]]
     cd1 = coords[:, tuple(x[0] for x in np.array(bonds))]
     cd2 = coords[:, tuple(x[1] for x in np.array(bonds))]
     dis = np.linalg.norm(cd2 - cd1, axis=2)
     a_oh = 1/np.sqrt(2)*(dis[:, 0]-dis[:, 1])
     s_oh = 1/np.sqrt(2)*(dis[:, 0]+dis[:, 1])
+    # z = 1/2*(dis[:, -2] - dis[:, -1])
     mid = dis[:, 2]/2
-    sp = mid - dis[:, -1]*np.cos(roh_roo_angle(coords, dis[:, -2], dis[:, -1]))
-    return np.vstack((a_oh, dis[:, 0], dis[:, 1], s_oh, dis[:, -2], sp)).T
+    sp = -mid + dis[:, -2]*np.cos(roh_roo_angle(coords, dis[:, -3], dis[:, -2]))
+    return np.vstack((a_oh, dis[:, 0], dis[:, 1], s_oh, dis[:, -3], sp)).T
 
 
 def roh_roo_angle(coords, roo_dist, roh_dist):
@@ -155,7 +170,7 @@ def metropolis(Fqx, Fqy, x, y, psi1, psi2):
     psi_ratio = (psi_2/psi_1)**2
     a = np.exp(1. / 2. * (Fqx + Fqy) * (sigma ** 2 / 4. * (Fqx - Fqy) - (y - x)))
     a = np.prod(np.prod(a, axis=1), axis=1) * psi_ratio
-    remove = np.argwhere(psi_2 * psi_1 < 0)
+    remove = np.argwhere(psi_2 * psi_1 <= 0)
     a[remove] = 0.
     return a
 
@@ -194,7 +209,9 @@ def pot(Psi):
     Psi.V = np.concatenate(V)
     return Psi
 
+
 pool = mp.Pool(mp.cpu_count()-1)
+
 
 def psi_t(coords, excite, shift):
     coords = np.array_split(coords, mp.cpu_count() - 1)
@@ -275,12 +292,15 @@ def descendants(Psi):
         d = np.append(d, 0.)
     return d
 
+
 def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_struct, initial_shifts, shift_rate):
+    import time
+
     DW = False
     psi = Walkers(N_0, initial_struct, excite, initial_shifts)
     Fqx, psi.psit = drift(psi.coords, psi.excite, psi.shift)
     num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
-    time = np.zeros(time_steps)
+    timez = np.zeros(time_steps)
     sum_weights = np.zeros(time_steps)
     accept = np.zeros(time_steps)
     coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
@@ -297,8 +317,10 @@ def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_
     shift_rate = np.array(shift_rate)
     psi.shift = np.array(psi.shift)
     for i in range(int(time_steps)):
-        if i % 1000 == 0:
-            print(i)
+        if i % 1 == 0:
+            print(i, flush=True)
+            end = time.time()
+            print(end - start, flush=True)
 
         if DW is False:
             prop = float(propagation)
@@ -320,12 +342,15 @@ def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_
         Eref = E_ref_calc(psi)
 
         Eref_array[i] = Eref
-        time[i] = i + 1
+        timez[i] = i + 1
         sum_weights[i] = np.sum(psi.weights)
         accept[i] = acceptance
 
         if i >= 5000:
             psi.shift = psi.shift + shift_rate
+
+        if Eref < 0:
+            blah = True
 
         if i >= int(equilibration) - 1 and wait <= 0. < prop:
             DW = True
@@ -338,7 +363,7 @@ def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_
             des[num] = descendants(psi)
             num += 1
 
-    return coords, weights, time, Eref_array, sum_weights, accept, des
+    return coords, weights, timez, Eref_array, sum_weights, accept, des
 
 
 # def twod_pot(coords, grid1, grid2):
@@ -418,9 +443,13 @@ test_structure2 = np.array([
 # wow_im_tired = True
 # trials = [4, 6, 8, 9]
 # for i in range(5):
-#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
-#         5000, 20000, 250, 500, 500, None, test_structure, [0, 2.5721982410729867], [0, 0]
-#     )
+import time
+start = time.time()
+coords, weights, timez, Eref_array, sum_weights, accept, des = run(
+        20000, 11000, 250, 500, 500, 'sp', test_structure, [0, 2.5721982410729867], [0, 0]
+    )
+end = time.time()
+print(end-start)
 #     np.savez(f'ground_state_full_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
 #              sum_weights=sum_weights, accept=accept, d=des)
 #

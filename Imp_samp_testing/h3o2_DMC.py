@@ -36,12 +36,16 @@ new_struct = np.array([
     [5.20071798, 0.80543847, 1.55595785]
 ])
 
-Roo_grid = np.linspace(3.9, 5.8, 100)
-sp_grid = np.linspace(-1.5, 1.5, 100)
+small_grid_points = 200
+Roo_grid = np.linspace(3.9, 5.8, small_grid_points)
+sp_grid = np.linspace(-1.5, 1.5, small_grid_points)
+sp_grid = np.linspace(-65, 65, small_grid_points)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
 two_d_wvfns = np.load('small_grid_2d_h3o2_bigger_grid.npz')['wvfns']
+two_d_wvfns = np.load('2d_h3o2_new_def.npz')['wvfns']
 big_Roo_grid = np.linspace(4, 5.4, 1000)
 big_sp_grid = np.linspace(-1.2, 1.2, 1000)
+big_sp_grid = np.linspace(-50, 50, 1000)
 # big_Roo_grid = np.linspace(3.9, 5.8, 100)
 # big_sp_grid = np.linspace(-1.5, 1.5, 100)
 X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
@@ -60,7 +64,10 @@ z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).
 # blah = np.load('interp_ground.npz')
 # interp_ground = [blah['a'], blah['b'], blah['c'], blah['d'], blah['e']]
 # z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
-np.save('z_ground_no_der', z_ground_no_der)
+# np.save('z_ground_no_der', z_ground_no_der)
+# ind = np.argwhere(z_ground_no_der < 1e-5)
+z_ground_no_der[z_ground_no_der < 1e-6] = 0
+np.save('z_ground_no_der_new_def', z_ground_no_der)
 # np.load('z_ground_no_der.npy')
 
 # z_ground_dx1 = z_ground_dx1/z_ground_no_der
@@ -75,19 +82,19 @@ np.save('z_ground_no_der', z_ground_no_der)
 # np.save('z_ground_dy2', z_ground_dy2)
 # np.save('z_ground_dx1_dy1', z_ground_dx1_dy1)
 
-z_ground_no_der = np.load('z_ground_no_der.npy')
-z_ground_dx1 = np.load('z_ground_dx1.npy')
-z_ground_dx2 = np.load('z_ground_dx2.npy')
-z_ground_dy1 = np.load('z_ground_dy1.npy')
-z_ground_dy2 = np.load('z_ground_dy2.npy')
-z_ground_dx1_dy1 = np.load('z_ground_dx1_dy1.npy')
-
-ind = np.argwhere(z_ground_no_der < 5e-5)
-z_ground_dx1[ind[:, 0], ind[:, 1]] = 0
-z_ground_dx2[ind[:, 0], ind[:, 1]] = 0
-z_ground_dx1_dy1[ind[:, 0], ind[:, 1]] = 0
-z_ground_dy1[ind[:, 0], ind[:, 1]] = 0
-z_ground_dy2[ind[:, 0], ind[:, 1]] = 0
+# z_ground_no_der = np.load('z_ground_no_der.npy')
+# z_ground_dx1 = np.load('z_ground_dx1.npy')
+# z_ground_dx2 = np.load('z_ground_dx2.npy')
+# z_ground_dy1 = np.load('z_ground_dy1.npy')
+# z_ground_dy2 = np.load('z_ground_dy2.npy')
+# z_ground_dx1_dy1 = np.load('z_ground_dx1_dy1.npy')
+#
+# ind = np.argwhere(z_ground_no_der < 5e-5)
+# z_ground_dx1[ind[:, 0], ind[:, 1]] = 0
+# z_ground_dx2[ind[:, 0], ind[:, 1]] = 0
+# z_ground_dx1_dy1[ind[:, 0], ind[:, 1]] = 0
+# z_ground_dy1[ind[:, 0], ind[:, 1]] = 0
+# z_ground_dy2[ind[:, 0], ind[:, 1]] = 0
 
 # import matplotlib.pyplot as plt
 # fig, ax = plt.subplots()
@@ -97,27 +104,30 @@ z_ground_dy2[ind[:, 0], ind[:, 1]] = 0
 # plt.ylabel('Roo')
 # plt.show()
 
-ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_no_der.T.flatten())
-ground_dx1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_dx1.T.flatten())
-ground_dx2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_dx2.T.flatten())
-ground_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_dy1.T.flatten())
-ground_dy2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_dy2.T.flatten())
-ground_dx1_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-                                                       z_ground_dx1_dy1.T.flatten())
+# ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_no_der.T.flatten())
+# ground_dx1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_dx1.T.flatten())
+# ground_dx2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_dx2.T.flatten())
+# ground_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_dy1.T.flatten())
+# ground_dy2 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_dy2.T.flatten())
+# ground_dx1_dy1 = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+#                                                        z_ground_dx1_dy1.T.flatten())
 
 wvfn = two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid)))
-wvfn[:, 50:] = np.abs(wvfn[:, 50:])
-wvfn[:, :50] = -np.abs(wvfn[:, :50])
+wvfn[:, int(small_grid_points/2):] = np.abs(wvfn[:, int(small_grid_points/2):])
+wvfn[:, :int(small_grid_points/2)] = -np.abs(wvfn[:, :int(small_grid_points/2)])
 
 
 interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
 z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh).T
-np.save('z_excite_xh_no_der', z_excite_xh_no_der)
+# ind = np.argwhere(z_excite_xh_no_der < 1e-6)
+z_excite_xh_no_der[np.abs(z_excite_xh_no_der) < 1e-6] = 0
+np.save('z_excite_xh_no_der_new_def', z_excite_xh_no_der)
+# np.save('z_excite_xh_no_der', z_excite_xh_no_der)
 
 
 z_excite_xh_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh, dx=1).T

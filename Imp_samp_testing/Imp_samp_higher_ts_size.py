@@ -373,83 +373,84 @@ std_term2 = np.std(term2)
 print(avg_term2)
 print(std_term2)
 #
-# coords = coords.flatten()
-# coords_ex = coords_ex.flatten()
-# weights = weights.flatten()
-# weights_ex = weights_ex.flatten()
-# des = des.flatten()
-# frac = frac.flatten()
-# # ang2bohr = 1.e-10/5.291772106712e-11
-# har2wave = 219474.6
+coords = coords.flatten()
+coords_ex = coords_ex.flatten()
+weights = weights.flatten()
+weights_ex = weights_ex.flatten()
+des = des.flatten()
+frac = frac.flatten()
 # ang2bohr = 1.e-10/5.291772106712e-11
+har2wave = 219474.6
+ang2bohr = 1.e-10/5.291772106712e-11
+
+# parameters for the potential and for the analytic wavefuntion
+omega = 3704.47/har2wave
+
+wexe = 75.26/har2wave
+De = omega**2/4/wexe
+sigmaOH = np.sqrt(dtau/m_red)
+
+mw = m_red * omega
+A = np.sqrt(omega**2 * m_red/(2*De))
+
+# Loads the wavefunction from the DVR for interpolation
+Psi_t = np.load('Harmonic_oscillator/Water_Morse_trial_wvfn_ground.npy')
+Psi_t1 = np.load('Harmonic_oscillator/Water_Morse_trial_wvfn_excite.npy')
+wvfn1 = np.load('Harmonic_oscillator/Water_dimer_Morse_trial_wvfn_ground.npy')
+wvfn2 = np.load('Harmonic_oscillator/Water_dimer_Morse_trial_wvfn_excite.npy')
+# print(wvfn1[0, np.argmax(wvfn1[1])])
+# shift = wvfn1[0, np.argmax(wvfn1[1])]
+# shift = 0.175
+psitmax = 1.856
+Psi_t1[0] = Psi_t1[0] - psitmax + 1.875
+interp_w = interpolate.splrep(Psi_t[0], Psi_t[1], s=0)
+interp_w2 = interpolate.splrep(Psi_t1[0], Psi_t1[1], s=0)
+shift = 0.006897*ang2bohr
+shift2 = 0.06897*ang2bohr
+interp = interpolate.splrep(wvfn1[0], wvfn1[1], s=0)
+interp2 = interpolate.splrep(wvfn2[0], -wvfn2[1], s=0)
 #
-# # parameters for the potential and for the analytic wavefuntion
-# omega = 3704.47/har2wave
+amp, xx = np.histogram(coords, weights=weights, bins=75, range=(0.6*ang2bohr, 1.5*ang2bohr), density=True)
+amp2, xx = np.histogram(coords, weights=des, bins=75, range=(0.6*ang2bohr, 1.5*ang2bohr), density=True)
+amp3, xx = np.histogram(coords_ex, weights=weights_ex, bins=75, range=(0.6*ang2bohr, 1.5*ang2bohr), density=True)
+bin = (xx[1:] + xx[:-1]) / 2.
+truth = interpolate.splev(bin, interp, der=0)**2
+phi = interpolate.splev(bin, interp_w, der=0)
+phi1 = interpolate.splev(bin, interp_w2, der=0)
+phi1 = phi1/np.linalg.norm(phi1)
+truth1 = interpolate.splev(bin, interp2, der=0)
+truth0 = interpolate.splev(bin, interp, der=0)
+truth1 = truth1/np.linalg.norm(truth1)
+truth0 = truth0/np.linalg.norm(truth0)
+truth1 = truth1*truth0
+# phi = phi/np.max(phi)*np.max(truth)/np.linalg.norm(truth)
+# phi = phi/np.dot(phi, phi)
+amp = amp/np.linalg.norm(amp)
+amp2 = amp2/np.linalg.norm(amp2)
+amp3 = amp3/np.linalg.norm(amp3)
+truth = truth/np.linalg.norm(truth)
+mod = amp*phi1/phi
+mod2 = amp*phi1/phi + amp3*phi/phi1 - phi*phi1
+mod2 = mod2/np.max(mod2)*np.max(truth1)
+# mod = -mod/np.min(mod)*np.max(truth1)
+# truth1 = truth1/np.min(truth1)*np.min(mod2)
+phi_sq = phi**2/np.linalg.norm(phi**2)
+# truth = truth/np.max(truth)*np.max(phi)
+
 #
-# wexe = 75.26/har2wave
-# De = omega**2/4/wexe
-# sigmaOH = np.sqrt(dtau/m_red)
-#
-# mw = m_red * omega
-# A = np.sqrt(omega**2 * m_red/(2*De))
-#
-# # Loads the wavefunction from the DVR for interpolation
-# Psi_t = np.load('Harmonic_oscillator/Water_Morse_trial_wvfn_ground.npy')
-# Psi_t1 = np.load('Harmonic_oscillator/Water_Morse_trial_wvfn_excite.npy')
-# wvfn1 = np.load('Harmonic_oscillator/Water_dimer_Morse_trial_wvfn_ground.npy')
-# wvfn2 = np.load('Harmonic_oscillator/Water_dimer_Morse_trial_wvfn_excite.npy')
-# # print(wvfn1[0, np.argmax(wvfn1[1])])
-# # shift = wvfn1[0, np.argmax(wvfn1[1])]
-# # shift = 0.175
-# psitmax = 1.856
-# Psi_t1[0] = Psi_t1[0] - psitmax + 1.875
-# interp_w = interpolate.splrep(Psi_t[0], Psi_t[1], s=0)
-# interp_w2 = interpolate.splrep(Psi_t1[0], Psi_t1[1], s=0)
-# shift = 0.006897*ang2bohr
-# shift2 = 0.06897*ang2bohr
-# interp = interpolate.splrep(wvfn1[0], wvfn1[1], s=0)
-# interp2 = interpolate.splrep(wvfn2[0], -wvfn2[1], s=0)
-# #
-# amp, xx = np.histogram(coords, weights=weights, bins=75, range=(0.6*ang2bohr, 1.5*ang2bohr), density=True)
-# amp2, xx = np.histogram(coords, weights=des, bins=75, range=(0.6*ang2bohr, 1.5*ang2bohr), density=True)
-# amp3, xx = np.histogram(coords_ex, weights=weights_ex, bins=75, range=(0.6*ang2bohr, 1.5*ang2bohr), density=True)
-# bin = (xx[1:] + xx[:-1]) / 2.
-# truth = interpolate.splev(bin, interp, der=0)**2
-# phi = interpolate.splev(bin, interp_w, der=0)
-# phi1 = interpolate.splev(bin, interp_w2, der=0)
-# phi1 = phi1/np.linalg.norm(phi1)
-# truth1 = interpolate.splev(bin, interp2, der=0)
-# truth0 = interpolate.splev(bin, interp, der=0)
-# truth1 = truth1/np.linalg.norm(truth1)
-# truth0 = truth0/np.linalg.norm(truth0)
-# truth1 = truth1*truth0
-# # phi = phi/np.max(phi)*np.max(truth)/np.linalg.norm(truth)
-# # phi = phi/np.dot(phi, phi)
-# amp = amp/np.linalg.norm(amp)
-# amp2 = amp2/np.linalg.norm(amp2)
-# amp3 = amp3/np.linalg.norm(amp3)
-# truth = truth/np.linalg.norm(truth)
-# mod = amp*phi1/phi
-# mod2 = amp*phi1/phi + amp3*phi/phi1 - phi*phi1
-# mod2 = mod2/np.max(mod2)*np.max(truth1)
-# # mod = -mod/np.min(mod)*np.max(truth1)
-# # truth1 = truth1/np.min(truth1)*np.min(mod2)
-# phi_sq = phi**2/np.linalg.norm(phi**2)
-# # truth = truth/np.max(truth)*np.max(phi)
-#
-# #
-# import matplotlib.pyplot as plt
-# # plt.figure(figsize=(12,7))
-# # plt.plot(bin/ang2bohr, mod, color='orange', label=r'f$_0$($\rm{\Delta r_{OH}}$)*$\frac{\rm{\Phi_{T, 1}(\Delta r_{OH})}}{\rm{\Phi_{T, 0}(\Delta r_{OH})}}$')
-# plt.plot(bin/ang2bohr, mod2, color='green', label=r'Eq. 20')
-# plt.plot(bin/ang2bohr, truth1, color='black', linestyle='dashdot', label=r'Exact')
-# plt.xlabel(r'r$_{\rm{OH}}$ [/$\rm\AA$]', fontsize=20)
-# plt.ylabel(r'$\rm{\Phi_1^{dim}(r_{OH})}$$\rm{\Phi_0^{dim}(r_{OH})}$', fontsize=20)
-# plt.tick_params(axis='both', labelsize=18)
-# plt.legend(frameon=False, fontsize=12)
-# plt.tight_layout()
-# plt.savefig('f_compared_to_psi1psi0_legend1')
-# plt.show()
+import matplotlib.pyplot as plt
+# plt.figure(figsize=(12,7))
+plt.plot(bin/ang2bohr, mod, color='orange', label=r'f$_0$($\rm{\Delta r_{OH}}$)*$\frac{\rm{\Phi_{T, 1}(\Delta r_{OH})}}{\rm{\Phi_{T, 0}(\Delta r_{OH})}}$')
+plt.plot(bin/ang2bohr, amp3*phi/phi1, label=r'f$_1$($\rm{\Delta r_{OH}}$)*$\frac{\rm{\Phi_{T, 0}(\Delta r_{OH})}}{\rm{\Phi_{T, 1}(\Delta r_{OH})}}$')
+plt.plot(bin/ang2bohr, mod2, color='green', label=r'Eq. 20')
+plt.plot(bin/ang2bohr, truth1, color='black', linestyle='dashdot', label=r'Exact')
+plt.xlabel(r'r$_{\rm{OH}}$ [/$\rm\AA$]', fontsize=20)
+plt.ylabel(r'$\rm{\Phi_1^{dim}(r_{OH})}$$\rm{\Phi_0^{dim}(r_{OH})}$', fontsize=20)
+plt.tick_params(axis='both', labelsize=18)
+plt.legend(frameon=False, fontsize=12)
+plt.tight_layout()
+plt.savefig('f_compared_to_psi1psi0_legend1')
+plt.show()
 
 # print(np.average(energies, axis=-1))
 # print(np.std(energies, axis=-1))

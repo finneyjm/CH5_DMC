@@ -152,6 +152,35 @@ def old_harm_pot(grid, mass):
     return np.diag(1/2*mass*omega**2*grid**2)
 
 
+def shared_prot_grid(coords, sp):
+    # coords = np.array([coords] * len(sp))
+    mid = (coords[:, 3, 0] - coords[:, 1, 0])/2
+    coords[:, 0, 0] = mid+sp
+    return coords
+
+
+def linear_combo_grid(coords, grid1, grid2):
+    re_sp = np.linalg.norm(coords[0]-coords[1])
+    re_a = np.linalg.norm(coords[2]-coords[1])
+    coords = np.array([coords] * 1)
+    coords = coords[:, (1, 3, 0, 2, 4)]
+    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
+                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
+                                                                                   [2, 0, 1, 0], [3, 0, 1, 2],
+                                                                                   [4, 1, 0, 2]])).coords
+    N = len(grid1)
+    zmat = np.array([zmat] * N).reshape((N, 4, 6))
+    # zmat[:, 1, 1] = re_sp + grid1
+    zmat[:, 2, 1] = re_a + np.sqrt(2) / 2 * grid2
+    zmat[:, 3, 1] = re_a - np.sqrt(2) / 2 * grid2
+    new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+    coords = new_coords[:, (2, 0, 3, 1, 4)]
+    coords = shared_prot_grid(coords, grid1)
+    coords[:, :, 1] = coords[:, :, 2]
+    coords[:, :, 2] = np.zeros(coords[:, :, 2].shape)
+    return coords
+
+
 class DipHolder:
     dip = None
     @classmethod
@@ -219,6 +248,11 @@ def run(mass, struct, stretch, grid, r1=None):
 
     elif stretch == 'false Harmonic':
         V = old_harm_pot(grid, mass)
+
+    elif stretch == 'linear combo':
+        coords = linear_combo_grid(struct, grid, r1)
+        grid = -0.60594644269321474*grid + 42.200232187251913*r1
+        V = pot(coords)
     else:
         coords = oo_grid(struct, grid)
         V = pot(coords)
@@ -286,10 +320,47 @@ mesh = np.meshgrid(Roo, XH)
 # np.save('roh_prime_grid.npy', rOH_p)
 
 
-grid1 = np.linspace(-2.5, 2.5, 2000)
+grid1 = np.linspace(-1.5, 1.5, 2000)
+
 # grid2 = np.linspace(-1., 1., 1000)
 # grid3 = np.linspace(4.2, 5.2, 30)
 # grid4 = np.linspace(1, 6, 1000)
+
+# grid_sp = np.linspace(-1.5, 1.5, 2000)
+# grid_a = grid1/np.sqrt(2)
+A = np.array([[42.200232187251913, -0.60594644269321474], [1.0206303697659393, 41.561937672470521]])
+fancy_grid = np.linspace(-30, 30, 2000)
+eh = np.matmul(np.linalg.inv(A), np.vstack((fancy_grid, np.zeros(2000))))
+grid_sp = eh[1]
+grid_a = eh[0]
+en_combo, eig_combo, V_combo = run(1, linear_struct, 'linear combo', grid_sp, r1=grid_a)
+import matplotlib.pyplot as plt
+dead = -0.60594644269321474*grid_sp + 42.200232187251913*grid_a
+
+def Harmonic_w(x, state):
+    omega_asym = 3815.044564 / har2wave
+    mw = omega_asym
+    if state == 1:
+        return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2)) * (2 * mw) ** (1 / 2) * (x)
+    else:
+        return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * (x) ** 2))
+
+np.savez('true_asymmetric_wvfns', grid=dead, eig=eig_combo)
+wvfn = eig_combo[:, 0]*har2wave
+wvfn1 = eig_combo[:, 1]*har2wave
+harm_wvfn = Harmonic_w(dead, 0)
+harm_wvfn1 = Harmonic_w(dead, 1)
+harm_wvfn = harm_wvfn/np.linalg.norm(harm_wvfn)
+harm_wvfn1 = harm_wvfn1/np.linalg.norm(harm_wvfn1)
+stuctures = linear_combo_grid(linear_struct, grid_sp, grid_a)
+plt.plot(grid_a, harm_wvfn/np.max(harm_wvfn)*np.max(wvfn) + en_combo[0]*har2wave)
+plt.plot(grid_a, V_combo*har2wave, color='magenta')
+plt.plot(grid_a,  wvfn + en_combo[0]*har2wave)
+plt.plot(grid_a, harm_wvfn1/np.max(harm_wvfn1)*np.max(wvfn1) + en_combo[1]*har2wave)
+plt.plot(grid_a, -wvfn1 + en_combo[1]*har2wave)
+plt.show()
+
+
 en1, eig1, V = run(m_red, linear_struct, 'asymmetric', grid1/np.sqrt(2))
 en2, eig2, V2 = run(m_red, linear_struct, 'false Harmonic', grid1/np.sqrt(2))
 # equil_roo_roh_x = linear_struct[3, 0] - linear_struct[4, 0]
@@ -408,7 +479,7 @@ def Harmonic_wvfn2(x, state):
 # plt.tight_layout()
 # plt.show()
 #
-from Imp_samp_testing import MomentOfSpinz
+from PAF_spinz import MomentOfSpinz
 mass = np.array([m_H, m_O, m_H, m_O, m_H])
 grid1 /= np.sqrt(2)
 energies, wvfns, V1 = run(m_red, linear_struct, 'harmonic asymmetric', grid1)
@@ -416,28 +487,33 @@ MOM = MomentOfSpinz(linear_struct, mass)
 linear_struct = MOM.coord_spinz()
 coords = asym_grid(linear_struct, grid1)
 coords2 = coords
-from Imp_samp_testing import EckartsSpinz
+from Eckart_turny_turn import EckartsSpinz
 eck = EckartsSpinz(linear_struct, coords, mass, planar=True)
 coords = eck.get_rotated_coords()
+eck2 = EckartsSpinz(linear_struct, stuctures, mass, planar=True)
+rot_structs = eck.get_rotated_coords()
 MOM2 = MomentOfSpinz(coords, mass)
 eigvals = MOM2.gimme_dat_eigval()
 harm = Harmonic_wvfn2(grid1, 0)
+harm2 = Harmonic_wvfn2(grid1, 1)
+normalized = harm/np.linalg.norm(harm)
+normalized2 = harm2/np.linalg.norm(harm2)
 # print(np.max(harm)/np.max(wvfns[:, 0]))
 
 import matplotlib.pyplot as plt
-plt.plot(grid1, V1*har2wave, label='Harmonic')
-plt.plot(grid1, V2*har2wave, label='old Harmonic')
-plt.plot(grid1, V*har2wave - np.min(V)*har2wave, label='True')
-plt.legend()
-plt.ylim(0, 10000)
-plt.show()
-plt.close()
-plt.plot(grid1, wvfns[:, 0], label='Harmonic')
-plt.plot(grid1, eig2[:, 0], label='old Harmonic')
-plt.plot(grid1, eig1[:, 0], label='True')
-plt.legend()
-plt.show()
-plt.close()
+# plt.plot(grid1, V1*har2wave, label='Harmonic')
+# plt.plot(grid1, V2*har2wave, label='old Harmonic')
+# plt.plot(grid1, V*har2wave - np.min(V)*har2wave, label='True')
+# plt.legend()
+# plt.ylim(0, 10000)
+# plt.show()
+# plt.close()
+# plt.plot(grid1, wvfns[:, 0], label='Harmonic')
+# plt.plot(grid1, eig2[:, 0], label='old Harmonic')
+# plt.plot(grid1, eig1[:, 0], label='True')
+# plt.legend()
+# plt.show()
+# plt.close()
 # plt.plot(grid1, 1/(2*eigvals[:, 0]))
 # plt.plot(grid1, 1/(2*eigvals[:, 1]))
 # plt.plot(grid1, 1/(2*eigvals[:, 2]))
@@ -447,8 +523,27 @@ plt.close()
 # plt.show()
 
 
-print(np.dot((wvfns[:, 1]), grid1/ang2bohr*(wvfns[:, 0])))
+print(np.dot((wvfns[:, 1]), grid1*(wvfns[:, 0])))
+print(np.dot(normalized2, grid1*normalized))
 dips = dip(coords)/0.3934303
+dips2 = dip(rot_structs)/0.3934303
+
+thingyx2 = np.zeros(3)
+for i in range(3):
+    thingyx2[i] = np.dot(harm_wvfn1, dips2[:, i]*harm_wvfn)
+print(thingyx2)
+print(np.linalg.norm(thingyx2))
+print(np.dot(harm_wvfn1, grid_a*harm_wvfn))
+
+bonds = [[1, 2], [3, 4]]
+cd1 = rot_structs[:, tuple(x[0] for x in np.array(bonds))]
+cd2 = rot_structs[:, tuple(x[1] for x in np.array(bonds))]
+a = cd2-cd1
+thingy = np.zeros(3)
+for i in range(3):
+    thingy[i] = np.dot(harm_wvfn1, harm_wvfn*(a[:, 0, i] + a[:, 1, i]))
+print(thingy)
+
 plt.plot(grid1, dips[:, 0], label='x')
 plt.plot(grid1, dips[:, 1], label='y')
 plt.plot(grid1, dips[:, 2], label='z')
