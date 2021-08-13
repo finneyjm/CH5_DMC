@@ -46,28 +46,36 @@ z_excite_xh_no_der = np.load('z_excite_xh_no_der_new_def.npy')
 excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
                                                           z_excite_xh_no_der.flatten())
 
+def a_prime(a, z):
+    return -0.60594644269321474*z + 42.200232187251913*a
+
+def z_prime(a, z):
+    return 41.561937672470521*z + 1.0206303697659393*a
 
 def get_da_psi(coords, excite):
     psi = np.ones((len(coords), 2))
     dists = all_dists(coords)
     mw_h = m_OH * omega_asym
+    # m = mw_h
     m = 1*omega_asym
-    dead = -0.60594644269321474*dists[:, -4] + 42.200232187251913*dists[:, 0]
-    dead2 = 41.561937672470521*dists[:, -4] + 1.0206303697659393*dists[:, 0]
+    dead = -0.60594644269321474*dists[:, -1] + 42.200232187251913*dists[:, 0]
+    dead2 = 41.561937672470521*dists[:, -1] + 1.0206303697659393*dists[:, 0]
+    # dead = dists[:, 0]
+    # dead2 = dists[:, -1]
     if excite == 'sp':
         psi[:, 0] = (m / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * m * dead ** 2))
         psi[:, 1] = excite_xh_no_der(dead2, dists[:, -2])
     elif excite == 'a':
-        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
-                    (2 * mw_h) ** (1 / 2) * dists[:, 0]
-        psi[:, 1] = ground_no_der(dists[:, -1], dists[:, -2])
-    elif excite == 'mod':
-        psi[:, 0] = (m / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * m * dead ** 2))
-        psi[:, 1] = ground_no_der(dead2, dists[:, -2])
-    elif excite == 'mod1':
         psi[:, 0] = (m / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * m * dead ** 2)) * \
                     (2 * m) ** (1 / 2) * dead
         psi[:, 1] = ground_no_der(dead2, dists[:, -2])
+    elif excite == 'mod':
+        psi[:, 0] = (m / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * m * dead ** 2))
+        # psi[:, 1] = ground_no_der(dead2, dists[:, -2])
+    elif excite == 'mod1':
+        psi[:, 0] = (m / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * m * dead ** 2)) * \
+                    (2 * m) ** (1 / 2) * dead
+        # psi[:, 1] = ground_no_der(dead2, dists[:, -2])
     elif excite == 'a_only':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2)) * \
                     (2 * mw_h) ** (1 / 2) * dists[:, 0]
@@ -155,7 +163,7 @@ ground_coords = np.zeros((10, 27, walkers, 5, 3))
 ground_erefs = np.zeros((10, 20000))
 ground_weights = np.zeros((10, 27, walkers))
 for i in range(10):
-    blah = np.load(f'ground_excite_state_2d_h3o2_{i+1}.npz')
+    blah = np.load(f'ground_excite_state_drifty_full_h3o2_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -168,11 +176,12 @@ average_zpe = np.mean(np.mean(ground_erefs[:, 5000:], axis=1), axis=0)*har2wave
 std_zpe = np.std(np.mean(ground_erefs[:, 5000:]*har2wave, axis=1))
 print(std_zpe)
 
+# walkers = 5000
 excite_neg_coords = np.zeros((5, 27, walkers, 5, 3))
 excite_neg_erefs = np.zeros((5, 20000))
 excite_neg_weights = np.zeros((5, 27, walkers))
 for i in range(5):
-    blah = np.load(f'asym_left_excite_state_1d_h3o2_{i+1}.npz')
+    blah = np.load(f'asym_left_excite_state_drifty_full_h3o2_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -188,7 +197,7 @@ excite_pos_coords = np.zeros((5, 27, walkers, 5, 3))
 excite_pos_erefs = np.zeros((5, 20000))
 excite_pos_weights = np.zeros((5, 27, walkers))
 for i in range(5):
-    blah = np.load(f'asym_right_excite_state_1d_h3o2_{i+1}.npz')
+    blah = np.load(f'asym_right_excite_state_drifty_full_h3o2_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -214,7 +223,7 @@ xh_excite_neg_coords = np.zeros((5, 27, walkers, 5, 3))
 xh_excite_neg_erefs = np.zeros((5, 20000))
 xh_excite_neg_weights = np.zeros((5, 27, walkers))
 for i in range(5):
-    blah = np.load(f'XH_left_excite_state_2d_h3o2_{i+1}.npz')
+    blah = np.load(f'XH_left_excite_state_drifty_full_h3o2_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -230,7 +239,7 @@ xh_excite_pos_coords = np.zeros((5, 27, walkers, 5, 3))
 xh_excite_pos_erefs = np.zeros((5, 20000))
 xh_excite_pos_weights = np.zeros((5, 27, walkers))
 for i in range(5):
-    blah = np.load(f'XH_right_excite_state_2d_h3o2_{i+1}.npz')
+    blah = np.load(f'XH_right_excite_state_drifty_full_h3o2_{i+1}.npz')
     coords = blah['coords']
     eref = blah['Eref']
     weights = blah['weights']
@@ -246,6 +255,75 @@ print(average_xh_excite_neg_energy-average_zpe)
 print(np.sqrt(std_zpe**2 + std_xh_excite_neg_energy**2))
 print(average_xh_excite_pos_energy-average_zpe)
 print(np.sqrt(std_zpe**2 + std_xh_excite_pos_energy**2))
+
+# fig, ax = plt.subplots(2, 2, figsize=(15, 15))
+# d = np.zeros((27, 20000, 9))
+# for i in range(27):
+#     d[i] = all_dists(excite_neg_coords[0, i])
+# a = d[:, :, 0]
+# xh = d[:, :, -1]
+# a_p = 42.200232187251913*a - 0.60594644269321474*xh
+# z_p = 41.561937672470521*xh + 1.0206303697659393*a
+#
+# binz=75
+# for i in np.arange(0, 27, 3):
+#     amp, xx = np.histogram(a[i], weights=excite_neg_weights[0, i], bins=binz, range=(-0.7, 0), density=True)
+#     xx = (xx[1:] + xx[:-1])/2
+#     ax[0, 0].plot(xx, amp, label=f'{i}th wvfn')
+#     amp, xx = np.histogram(xh[i], weights=excite_neg_weights[0, i], bins=binz, range=(-1, 1), density=True)
+#     xx = (xx[1:] + xx[:-1]) / 2
+#     ax[1, 0].plot(xx, amp, label=f'{i}th wvfn')
+#     amp, xx = np.histogram(a_p[i], weights=excite_neg_weights[0, i], bins=binz, range=(-20, 0), density=True)
+#     xx = (xx[1:] + xx[:-1]) / 2
+#     ax[0, 1].plot(xx, amp, label=f'{i}th wvfn')
+#     amp, xx = np.histogram(z_p[i], weights=excite_neg_weights[0, i], bins=binz, range=(-40, 40), density=True)
+#     xx = (xx[1:] + xx[:-1]) / 2
+#     ax[1, 1].plot(xx, amp, label=f'{i}th wvfn')
+# ax[0, 0].set_xlabel('a Bohr')
+# ax[1, 0].set_xlabel('xh Bohr')
+# ax[0, 1].set_xlabel("a' ")
+# ax[1, 1].set_xlabel("z' ")
+# ax[1, 0].set_ylim(0, 1.2)
+# ax[1, 1].set_ylim(0, 0.03)
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig('demonstration_of_bad_data3')
+# plt.show()
+#
+# fig, ax = plt.subplots(2, 2, figsize=(15, 15))
+# d = np.zeros((27, 20000, 9))
+# for i in range(27):
+#     d[i] = all_dists(xh_excite_neg_coords[1, i])
+# a = d[:, :, 0]
+# xh = d[:, :, -1]
+# a_p = 42.200232187251913*a - 0.60594644269321474*xh
+# z_p = 41.561937672470521*xh + 1.0206303697659393*a
+#
+# binz=75
+# for i in np.arange(0, 27, 3):
+#     amp, xx = np.histogram(a[i], weights=xh_excite_neg_weights[1, i], bins=binz, range=(-0.7, 0.7), density=True)
+#     xx = (xx[1:] + xx[:-1])/2
+#     ax[0, 0].plot(xx, amp, label=f'{i}th wvfn')
+#     amp, xx = np.histogram(xh[i], weights=xh_excite_neg_weights[1, i], bins=binz, range=(-0.05, 1), density=True)
+#     xx = (xx[1:] + xx[:-1]) / 2
+#     ax[1, 0].plot(xx, amp, label=f'{i}th wvfn')
+#     amp, xx = np.histogram(a_p[i], weights=xh_excite_neg_weights[1, i], bins=binz, range=(-20, 20), density=True)
+#     xx = (xx[1:] + xx[:-1]) / 2
+#     ax[0, 1].plot(xx, amp, label=f'{i}th wvfn')
+#     amp, xx = np.histogram(z_p[i], weights=xh_excite_neg_weights[1, i], bins=binz, range=(-5, 40), density=True)
+#     xx = (xx[1:] + xx[:-1]) / 2
+#     ax[1, 1].plot(xx, amp, label=f'{i}th wvfn')
+# ax[0, 0].set_xlabel('a Bohr')
+# ax[1, 0].set_xlabel('xh Bohr')
+# ax[0, 1].set_xlabel("a' ")
+# ax[1, 1].set_xlabel("z' ")
+# # ax[1, 0].set_ylim(0, 1.2)
+# # ax[1, 1].set_ylim(0, 0.03)
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig('demonstration_of_bad_data4')
+# plt.show()
+
 
 average_xh_excite_energy = np.average(np.array([average_xh_excite_pos_energy, average_xh_excite_neg_energy]))
 std_xh_excite_energy = np.sqrt(std_xh_excite_pos_energy**2 + std_xh_excite_neg_energy**2)
@@ -317,9 +395,9 @@ for i in range(5):
     # xh_combine_weights = np.hstack((xh_excite_pos_weights[i], xh_excite_neg_weights[i]))
 
 binzz = 100
-amp_ground = np.zeros((10, binzz))
-amp_frac1 = np.zeros((10, binzz))
-amp_f0 = np.zeros((10, binzz))
+# amp_f0_ap_dip = np.zeros((10, 3, binzz))
+# amp_f0_zp_dip = np.zeros((10, 3, binzz))
+# amp_f0_ap_axyz = np.zeros((10, 3, binzz))
 term1 = np.zeros((10, 3))
 term1_vec = np.zeros((10, 3))
 term1_ov = np.zeros(10)
@@ -330,20 +408,43 @@ xh_term1 = np.zeros((10, 3))
 xh_term1_vec = np.zeros((10, 3))
 xh_term1_ov = np.zeros(10)
 xh_term1_dis = np.zeros(10)
+xyz = ['x', 'y', 'z']
 for i in range(10):
-    frac = get_da_psi(ground_coords[i], 'mod1')/get_da_psi(ground_coords[i], 'mod')
+    frac = get_da_psi(ground_coords[i], 'a')/get_da_psi(ground_coords[i], None)
     frac2 = get_da_psi(ground_coords[i], 'sp')/get_da_psi(ground_coords[i], None)
     term1_ov[i] = np.dot(ground_weights[i], frac)/np.sum(ground_weights[i])
     xh_term1_ov[i] = np.dot(ground_weights[i], frac2)/np.sum(ground_weights[i])
     dists = all_dists(ground_coords[i])
-    # amp_ground[i], xx = np.histogram(dists[:, 0]*frac, weights=ground_weights[i], bins=binzz, range=(-0.5, 0.5), density=True)
-    # amp_frac1[i], xx = np.histogram(frac, weights=ground_weights[i], bins=binzz, range=(-0.5, 0.5), density=True)
-    # amp_f0[i], xx = np.histogram(dists[:, 0], weights=ground_weights[i], bins=binzz, range=(-0.5, 0.5), density=True)
     term1_dis[i] = np.dot(ground_weights[i], frac*dists[:, 0])/np.sum(ground_weights[i])
     xh_term1_dis[i] = np.dot(ground_weights[i], frac2*dists[:, -1])/np.sum(ground_weights[i])
     term1_dis_a_w_xh[i] = np.dot(ground_weights[i], frac2*dists[:, 0])/np.sum(ground_weights[i])
     term1_dis_xh_w_a[i] = np.dot(ground_weights[i], frac*dists[:, -1])/np.sum(ground_weights[i])
     for j in range(3):
+        plt.hist2d(ground_dips[i, :, j]*au_to_Debye, a_prime(dists[:, 0], dists[:, -1]), bins=binzz, weights=ground_weights[i])
+        if j == 0:
+            plt.xlabel(r'$\rm{\mu_x}$ Debye')
+        elif j == 1:
+            plt.xlabel(r'$\rm{\mu_y}$ Debye')
+        else:
+            plt.xlabel(r'$\rm{\mu_z}$ Debye')
+        plt.ylabel(r"a'")
+        plt.colorbar()
+        plt.tight_layout()
+        plt.savefig(f'f0_ap_dipole_{xyz[j]}_simulation_{i+1}')
+        plt.close()
+        plt.hist2d(ground_dips[i, :, j] * au_to_Debye, z_prime(dists[:, 0], dists[:, -1]), bins=binzz,
+                   weights=ground_weights[i])
+        if j == 0:
+            plt.xlabel(r'$\rm{\mu_x}$ Debye')
+        elif j == 1:
+            plt.xlabel(r'$\rm{\mu_y}$ Debye')
+        else:
+            plt.xlabel(r'$\rm{\mu_z}$ Debye')
+        plt.ylabel(r"z'")
+        plt.colorbar()
+        plt.tight_layout()
+        plt.savefig(f'f0_zp_dipole_{xyz[j]}_simulation_{i + 1}')
+        plt.close()
         term1[i, j] = np.dot(ground_weights[i], frac*ground_dips[i, :, j]*au_to_Debye)/np.sum(ground_weights[i])
         term1_vec[i, j] = np.dot(ground_weights[i], frac * ((ground_coords[i, :, 2, j] - ground_coords[i, :, 1, j]) +
                                                              (ground_coords[i, :, 4, j] - ground_coords[i, :, 3, j]))) \
@@ -352,6 +453,36 @@ for i in range(10):
         mid = (ground_coords[i, :, 3, j] - ground_coords[i, :, 1, j]) / 2
         xh_term1_vec[i, j] = np.dot(ground_weights[i], frac2 * (mid - ground_coords[i, :, 0, j])) \
                              / np.sum(ground_weights[i])
+    plt.hist2d(((ground_coords[i, :, 2, 0] - ground_coords[i, :, 1, 0]) +
+                (ground_coords[i, :, 4, 0] - ground_coords[i, :, 3, 0])),
+               ((ground_coords[i, :, 2, 1] - ground_coords[i, :, 1, 1]) +
+                (ground_coords[i, :, 4, 1] - ground_coords[i, :, 3, 1])),
+               bins=binzz, weights=ground_weights[i])
+
+    plt.xlabel(r"$a_x$ Bohr")
+    plt.ylabel(r"$a_y$ Bohr")
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig(f'f0_ap_a_comp_xy_simulation_{i + 1}')
+    plt.close()
+    plt.hist2d(z_prime(dists[:, 0], dists[:, -1]), dists[:, -2],
+               bins=binzz, weights=ground_weights[i])
+
+    plt.xlabel(r"z' ")
+    plt.ylabel(r"$R_{OO}$ Bohr")
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig(f'f0_zp_vs_Roo_simulation_{i + 1}')
+    plt.close()
+    amp, xx = np.histogram(((ground_coords[i, :, 2, 0] - ground_coords[i, :, 1, 0]) +
+                (ground_coords[i, :, 4, 0] - ground_coords[i, :, 3, 0])), weights=ground_weights[i],
+                           bins=binzz, density=True)
+    xx = (xx[1:] + xx[:-1])/2
+    plt.plot(xx, amp)
+    plt.xlabel(r"$a_z$ Bohr")
+    plt.tight_layout()
+    plt.savefig(f'f0_ap_a_comp_z_simulation_{i+1}')
+    plt.close()
 
 avg_term1_vec = np.average(term1_vec, axis=0)
 std_term1_vec = np.std(term1_vec, axis=0)
@@ -397,7 +528,8 @@ conversion = conv_fac*km_mol
 print(conversion*term1**2*freq)
 print(std_term1_sq_freq*conversion)
 
-
+throw_it_out = [0, 2, 3, 4]
+throw_it_out2 = [0, 1, 3, 4]
 term2 = np.zeros((5, 3))
 amp_excite = np.zeros((5, binzz))
 amp_frac2 = np.zeros((5, binzz))
@@ -422,36 +554,108 @@ for i in range(5):
     combine_dips[i] = np.vstack((excite_neg_dips[i], excite_pos_dips[i]))
     xh_combine_weights[i] = np.hstack((xh_excite_neg_weights[i], xh_excite_pos_weights[i]))
     xh_combine_dips[i] = np.vstack((xh_excite_neg_dips[i], xh_excite_pos_dips[i]))
-    H0 = get_da_psi(combine_coords, 'mod')
+    H0 = get_da_psi(combine_coords, None)
     H0x = get_da_psi(xh_combine_coords, None)
-    H1 = get_da_psi(combine_coords, 'mod1')
+    H1 = get_da_psi(combine_coords, 'a')
     H2 = get_da_psi(xh_combine_coords, 'sp')
     frac = H0/H1
     frac2 = H0x/H2
     term2_ov[i] = np.dot(combine_weights[i], frac)/np.sum(combine_weights[i])
     xh_term2_ov[i] = np.dot(xh_combine_weights[i], frac2)/np.sum(xh_combine_weights[i])
     dists = all_dists(combine_coords)
-    # amp_excite[i], xx = np.histogram(dists[:, 0]*frac, weights=combine_weights[i], bins=binzz, range=(-0.5, 0.5), density=True)
-    # amp_frac2[i], xx = np.histogram(frac, weights=combine_weights[i], bins=binzz, range=(-0.5, 0.5), density=True)
-    # amp_f1[i], xx = np.histogram(dists[:, 0], weights=combine_weights[i], bins=binzz, range=(-0.5, 0.5), density=True)
-    # term2_dis[i] = np.dot(combine_weights[i], frac*dists[:, 0])/np.sum(combine_weights[i])
+    dists_special = dists
     term2_dis[i] = np.average(frac*dists[:, 0], weights=combine_weights[i])
     term2_dis_xh_w_a[i] = np.average(frac*dists[:, -1], weights=combine_weights[i])
     dists = all_dists(xh_combine_coords)
     term2_dis_a_w_xh[i] = np.average(frac2*dists[:, 0], weights=combine_weights[i])
     xh_term2_dis[i] = np.dot(xh_combine_weights[i], frac2*dists[:, -1])/np.sum(xh_combine_weights[i])
     for j in range(3):
+        plt.hist2d(combine_dips[i, :, j] * au_to_Debye, a_prime(dists_special[:, 0], dists_special[:, -1]),
+                   bins=binzz,
+                   weights=combine_weights[i])
+        if j == 0:
+            plt.xlabel(r'$\rm{\mu_x}$ Debye')
+        elif j == 1:
+            plt.xlabel(r'$\rm{\mu_y}$ Debye')
+        else:
+            plt.xlabel(r'$\rm{\mu_z}$ Debye')
+        plt.ylabel(r"a'")
+        plt.colorbar()
+        plt.tight_layout()
+        plt.savefig(f'f1_ap_dipole_{xyz[j]}_simulation_{i + 1}')
+        plt.close()
+        plt.hist2d(combine_dips[i, :, j] * au_to_Debye, z_prime(dists_special[:, 0], dists_special[:, -1]),
+                   bins=binzz,
+                   weights=combine_weights[i])
+        if j == 0:
+            plt.xlabel(r'$\rm{\mu_x}$ Debye')
+        elif j == 1:
+            plt.xlabel(r'$\rm{\mu_y}$ Debye')
+        else:
+            plt.xlabel(r'$\rm{\mu_z}$ Debye')
+        plt.ylabel(r"z'")
+        plt.colorbar()
+        plt.tight_layout()
+        plt.savefig(f'f1_zp_dipole_{xyz[j]}_simulation_{i + 1}')
+        plt.close()
         term2[i, j] = np.dot(combine_weights[i], frac * combine_dips[i, :, j] * au_to_Debye) \
                       / np.sum(combine_weights[i])
         term2_vec[i, j] = np.dot(combine_weights[i], frac * ((combine_coords[:, 2, j] - combine_coords[:, 1, j]) +
-                                                         (combine_coords[:, 4, j] - combine_coords[:, 3, j]))) \
-                      / np.sum(combine_weights[i])
-        xh_term2[i, j] = np.dot(xh_combine_weights[i], frac2*xh_combine_dips[i, :, j] * au_to_Debye)\
+                                                             (combine_coords[:, 4, j] - combine_coords[:, 3, j]))) \
+                          / np.sum(combine_weights[i])
+        xh_term2[i, j] = np.dot(xh_combine_weights[i], frac2*xh_combine_dips[i, :, j] * au_to_Debye) \
                          /np.sum(xh_combine_weights[i])
-        mid = (combine_coords[:, 3, j] - combine_coords[:, 1, j])/2
+        mid = (xh_combine_coords[:, 3, j] - xh_combine_coords[:, 1, j])/2
         xh_term2_vec[i, j] = np.dot(xh_combine_weights[i], frac2 * (mid - xh_combine_coords[:, 0, j])) \
-                      / np.sum(xh_combine_weights[i])
+                             / np.sum(xh_combine_weights[i])
+    plt.hist2d(((combine_coords[:, 2, 0] - combine_coords[:, 1, 0]) +
+                                                     (combine_coords[:, 4, 0] - combine_coords[:, 3, 0])),
+               ((combine_coords[:, 2, 1] - combine_coords[:, 1, 1]) +
+                                                     (combine_coords[:, 4, 1] - combine_coords[:, 3, 1])),
+               bins=binzz, weights=combine_weights[i])
 
+    plt.xlabel(r"$a_x$ Bohr")
+    plt.ylabel(r"$a_y$ Bohr")
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig(f'f1_ap_a_comp_xy_simulation_{i + 1}')
+    plt.close()
+    amp, xx = np.histogram(((combine_coords[:, 2, 0] - combine_coords[:, 1, 0]) +
+                            (combine_coords[:, 4, 0] - combine_coords[:, 3, 0])), weights=combine_weights[i],
+                           bins=binzz, density=True)
+    xx = (xx[1:] + xx[:-1]) / 2
+    plt.plot(xx, amp)
+    plt.xlabel(r"$a_z$ Bohr")
+    plt.tight_layout()
+    plt.savefig(f'f1_ap_a_comp_z_simulation_{i + 1}')
+    plt.close()
+    plt.hist2d(z_prime(dists_special[:, 0], dists_special[:, -1]), dists_special[:, -2],
+               bins=binzz, weights=combine_weights[i])
+
+    plt.xlabel(r"z' ")
+    plt.ylabel(r"$R_{OO}$ Bohr")
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig(f'f1_zp_vs_Roo_in_ap_simulation_{i + 1}')
+    plt.close()
+    plt.hist2d(z_prime(dists[:, 0], dists[:, -1]), dists[:, -2],
+               bins=binzz, weights=xh_combine_weights[i])
+
+    plt.xlabel(r"z' ")
+    plt.ylabel(r"$R_{OO}$ Bohr")
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig(f'f1_zp_vs_Roo_in_zp_simulation_{i + 1}')
+    plt.close()
+
+term2_vec = term2_vec[throw_it_out]
+term2_ov = term2_ov[throw_it_out]
+term2_dis = term2_dis[throw_it_out]
+term2 = term2[throw_it_out]
+xh_term2_vec = xh_term2_vec[throw_it_out2]
+xh_term2_ov = xh_term2_ov[throw_it_out2]
+xh_term2_dis = xh_term2_dis[throw_it_out2]
+xh_term2 = xh_term2[throw_it_out2]
 avg_term2_vec = np.average(term2_vec, axis=0)
 std_term2_vec = np.std(term2_vec, axis=0)
 avg_term2_o = np.average(term2_ov)

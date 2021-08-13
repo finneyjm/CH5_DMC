@@ -410,12 +410,12 @@ test_structure2 = np.array([
 
 # wow_im_tired = True
 # trials = [4, 6, 8, 9]
-for i in range(10):
-    coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        500, 20000, 250, 500, 500, None, [0.05], [0, 2.5721982410729867], [0, 0]
-    )
-    np.savez(f'ground_state_1d_a_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
-             sum_weights=sum_weights, accept=accept, d=des)
+# for i in range(10):
+#     coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         500, 20000, 250, 500, 500, None, [0.05], [0, 2.5721982410729867], [0, 0]
+#     )
+#     np.savez(f'ground_state_1d_a_h3o2_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
 #
 # coords = np.load('coords_for_testing.npy')
 # print(coords.shape)
@@ -491,7 +491,7 @@ asym_left = [0, 1, 2, 3, 4]
 # asym_left = [0]
 for i in asym_left:
     coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        500, 20000, 250, 500, 500, 'a', [-0.05], [0, 2.5721982410729867], [0, 0]
+        20000, 20000, 250, 500, 500, 'a', [-0.05], [0, 2.5721982410729867], [0, 0]
     )
     np.savez(f'Asym_excite_state_1d_a_h3o2_left_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, d=des)
@@ -500,7 +500,7 @@ asym_right = [0, 1, 2, 3, 4]
 # asym_right = [0]
 for i in asym_right:
     coords, weights, time, Eref_array, sum_weights, accept, des = run(
-        500, 20000, 250, 500, 500, 'a', [0.05], [0, 2.5721982410729867], [0, 0]
+        20000, 20000, 250, 500, 500, 'a', [0.05], [0, 2.5721982410729867], [0, 0]
     )
     np.savez(f'Asym_excite_state_1d_a_h3o2_right_{i+1}', coords=coords, weights=weights, time=time, Eref=Eref_array,
              sum_weights=sum_weights, accept=accept, d=des)

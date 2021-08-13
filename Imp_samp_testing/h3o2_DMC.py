@@ -36,16 +36,16 @@ new_struct = np.array([
     [5.20071798, 0.80543847, 1.55595785]
 ])
 
-small_grid_points = 200
+small_grid_points = 600
 Roo_grid = np.linspace(3.9, 5.8, small_grid_points)
 sp_grid = np.linspace(-1.5, 1.5, small_grid_points)
 sp_grid = np.linspace(-65, 65, small_grid_points)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
-two_d_wvfns = np.load('small_grid_2d_h3o2_bigger_grid.npz')['wvfns']
-two_d_wvfns = np.load('2d_h3o2_new_def.npz')['wvfns']
+two_d_wvfns = np.load('small_grid_2d_h3o2_biggest_grid.npz')['wvfns']
+# two_d_wvfns = np.load('2d_h3o2_new_def.npz')['wvfns']
 big_Roo_grid = np.linspace(4, 5.4, 1000)
 big_sp_grid = np.linspace(-1.2, 1.2, 1000)
-big_sp_grid = np.linspace(-50, 50, 1000)
+# big_sp_grid = np.linspace(-50, 50, 1000)
 # big_Roo_grid = np.linspace(3.9, 5.8, 100)
 # big_sp_grid = np.linspace(-1.5, 1.5, 100)
 X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
@@ -67,7 +67,7 @@ z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).
 # np.save('z_ground_no_der', z_ground_no_der)
 # ind = np.argwhere(z_ground_no_der < 1e-5)
 z_ground_no_der[z_ground_no_der < 1e-6] = 0
-np.save('z_ground_no_der_new_def', z_ground_no_der)
+np.save('z_ground_no_der_big', z_ground_no_der)
 # np.load('z_ground_no_der.npy')
 
 # z_ground_dx1 = z_ground_dx1/z_ground_no_der
@@ -126,7 +126,7 @@ interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
 z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh).T
 # ind = np.argwhere(z_excite_xh_no_der < 1e-6)
 z_excite_xh_no_der[np.abs(z_excite_xh_no_der) < 1e-6] = 0
-np.save('z_excite_xh_no_der_new_def', z_excite_xh_no_der)
+np.save('z_excite_xh_no_der_big', z_excite_xh_no_der)
 # np.save('z_excite_xh_no_der', z_excite_xh_no_der)
 
 
