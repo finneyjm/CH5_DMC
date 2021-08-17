@@ -42,35 +42,35 @@ X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 X2, Y2 = np.meshgrid(sp_grid, Roo_grid)
 # two_d_wvfns = np.load('../../2d_h3o2_new_def_600_points.npz')['wvfns']
 
-z_ground_no_der = np.load('z_ground_no_der_new_def.npy')
+z_ground_no_der = np.load('z_ground_no_der_big_no_cutoff.npy')
 
-# ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-#                                                        z_ground_no_der.flatten())
+ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                       z_ground_no_der.flatten())
 # wvfn = two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid)))
 # wvfn[:, int(small_grid_points/2):] = np.abs(wvfn[:, int(small_grid_points/2):])
 # wvfn[:, :int(small_grid_points/2)] = -np.abs(wvfn[:, :int(small_grid_points/2)])
-z_excite_xh_no_der = np.load('z_excite_xh_no_der_new_def.npy')
+z_excite_xh_no_der = np.load('z_excite_xh_no_der_big_no_cutoff.npy')
 
-# excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
-#                                                           z_excite_xh_no_der.flatten())
+excite_xh_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+                                                          z_excite_xh_no_der.flatten())
 
 
-Tpsi_o_psi1 = np.load('kinetic_energy_matrix_zp_Roo_ground.npy')
+Tpsi_o_psi1 = np.load('kinetic_energy_matrix_zp_Roo_ground_no_cutoff.npy')
 
-wvfn = np.load('small_grid_2d_h3o2_biggest_grid.npz')['wvfns'][:, 0]
-import matplotlib.pyplot as plt
-fig, ax = plt.subplots(3)
-ax[0].plot(X2[280, :], Tpsi_o_psi1.reshape((600, 600))[280, :])
-ax[1].plot(X2[280, :], (Tpsi_o_psi1*wvfn).reshape((600, 600))[280, :])
-ax[2].plot(X2[280, :], wvfn.reshape((600, 600))[280, :])
-plt.xlabel("z'")
-# plt.colorbar()
-plt.show()
+# wvfn = np.load('2d_h3o2_new_def_600_points_no_cutoff.npz')['wvfns'][:, 0]
+# import matplotlib.pyplot as plt
+# fig, ax = plt.subplots(3)
+# ax[0].plot(X2[280, :], Tpsi_o_psi1.reshape((600, 600))[280, :])
+# ax[1].plot(X2[280, :], (Tpsi_o_psi1*wvfn).reshape((600, 600))[280, :])
+# ax[2].plot(X2[280, :], wvfn.reshape((600, 600))[280, :])
+# plt.xlabel("z'")
+# # plt.colorbar()
+# plt.show()
 
 ground_T = interpolate.CloughTocher2DInterpolator(list(zip(X2.flatten(), Y2.flatten())),
                                                   Tpsi_o_psi1)
 
-Tpsi_o_psi2 = np.load('kinetic_energy_matrix_zp_Roo_excite.npy')
+Tpsi_o_psi2 = np.load('kinetic_energy_matrix_zp_Roo_excite_no_cutoff.npy')
 
 excite_xh_T = interpolate.CloughTocher2DInterpolator(list(zip(X2.flatten(), Y2.flatten())),
                                                      Tpsi_o_psi2)
@@ -266,9 +266,10 @@ plt.plot(z_p, better_T*har2wave, label='Better Local Kinetic Energy')
 plt.xlabel(r"z'")
 plt.ylabel(r'Energy cm$^-1$')
 plt.tight_layout()
+plt.ylim(-40000, 40000)
 
 plt.legend()
-# plt.savefig('Local_energy_ground_sp')
+plt.savefig('Local_energy_ground_sp_tpsi')
 plt.show()
 # e_loc = e_loc.reshape((len(grid_a), len(grid_sp)))
 # mesh = np.array(np.meshgrid(a_p, z_p))

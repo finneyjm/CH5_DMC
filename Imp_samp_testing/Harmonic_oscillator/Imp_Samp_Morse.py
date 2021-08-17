@@ -476,7 +476,7 @@ psi.coords = np.linspace(0.65*ang2bohr, 1.65*ang2bohr, 500)
 psi = potential(psi)
 psi = E_loc(psi)
 wvfn = psi_t(psi.coords, psi.shift, psi.psit)
-d = drift(psi.coords, psi.shift, psi.psit)
+d = drift(psi.coords, psi.shift, psi.psit)*sigmaOH**2/2
 
 
 import matplotlib.pyplot as plt
@@ -489,7 +489,7 @@ ax[0, 1].set_ylabel(r'$\rm{\Phi_T(\rm{r_{OH}})}$', fontsize=20)
 ax[1, 0].plot(psi.coords/ang2bohr, psi.El*har2wave, color='blue', linestyle='--', label=r'$\rm{\Phi_{0}^mon} (\rm{r_{OH}})$')
 ax[1, 0].set_ylabel(r'E$_{\rm{L}}$($\rm{r_{OH}}$) [/cm$^{-1}$]', fontsize=20)
 ax[1, 1].plot(psi.coords/ang2bohr, d/ang2bohr, color='blue', linestyle='--', label=r'$\rm{\Phi_{0}^{mon}} (\rm{r_{OH}})$')
-ax[1, 1].set_ylabel(r'D($\rm{r_{OH}}$) [/$\rm{\AA^{-1}}$]', fontsize=20)
+ax[1, 1].set_ylabel(r'D($\rm{r_{OH}}$)$\rm{\Delta\tau}$ [/$\rm{\AA}$]', fontsize=20)
 
 ax[0, 0].set_xlabel(r'$\rm{r_{OH}}$ [/$\rm{\AA}$]', fontsize=20)
 ax[0, 1].set_xlabel(r'$\rm{r_{OH}}$ [/$\rm{\AA}$]', fontsize=20)
@@ -498,12 +498,12 @@ ax[1, 0].set_xlabel(r'$\rm{r_{OH}}$ [/$\rm{\AA}$]', fontsize=20)
 
 ax[0, 0].set_ylim(0, 10000)
 ax[1, 0].set_ylim(0, 10000)
-ax[1, 1].set_ylim(-25, 30)
+ax[1, 1].set_ylim(-0.008, 0.012)
 
 psi.shift = shift2
 psi = E_loc(psi)
 wvfn = psi_t(psi.coords, psi.shift, psi.psit)
-d = drift(psi.coords, psi.shift, psi.psit)
+d = drift(psi.coords, psi.shift, psi.psit)*sigmaOH**2/2
 #
 ax[0, 1].plot(psi.coords/ang2bohr, wvfn, color='orange', label=r'$\rm{\Phi_{0}^mon} (\rm{r_{OH} - \delta})$')
 ax[1, 0].plot(psi.coords/ang2bohr, psi.El*har2wave, color='orange', label=r'$\rm{\Phi_{0}^mon} (\rm{r_{OH} - \delta})$')
@@ -511,7 +511,7 @@ ax[1, 1].plot(psi.coords/ang2bohr, d/ang2bohr, color='orange', label=r'$\rm{\Phi
 
 
 wvfn1 = anharm_psi(psi.coords)
-d = anharm_drift(psi.coords, wvfn1)
+d = anharm_drift(psi.coords, wvfn1)*sigmaOH**2/2
 psi.El = anharm_E_loc(psi.coords, psi.V, wvfn1)
 wvfn1 = wvfn1/np.max(wvfn1)*np.max(wvfn)
 
@@ -520,7 +520,7 @@ ax[1, 0].plot(psi.coords/ang2bohr, psi.El*har2wave, color='black', linestyle='da
 ax[1, 1].plot(psi.coords/ang2bohr, d/ang2bohr, color='black', linestyle='dashdot', label=r'$\rm{\Phi_0^{dim}}(\rm{r_{OH}})$')
 
 wvfn = excite_psi_t(psi.coords, 0, psi.psit)
-d = excite_drift(psi.coords, 0, psi.psit)
+d = excite_drift(psi.coords, 0, psi.psit)*sigmaOH**2/2
 psi.El = excite_E_loc(psi.coords, psi.V, 0, psi.psit)
 #
 ax[0, 1].plot(psi.coords/ang2bohr, wvfn, color='green', linestyle='--', label=r'$\rm{\Phi_{1}^{mon}}$ Not Shifted')
@@ -531,7 +531,7 @@ ax[1, 1].plot(psi.coords[np.argmax(d):]/ang2bohr, d[np.argmax(d):]/ang2bohr, col
 #
 
 wvfn = excite_psi_t(psi.coords, psi.shift, psi.psit)
-d = excite_drift(psi.coords, psi.shift, psi.psit)
+d = excite_drift(psi.coords, psi.shift, psi.psit)*sigmaOH**2/2
 psi.El = excite_E_loc(psi.coords, psi.V, psi.shift, psi.psit)
 #
 ax[0, 1].plot(psi.coords/ang2bohr, wvfn, color='red', label=r'$\rm{\Phi_{T, 1}}$ Shifted')
@@ -540,7 +540,7 @@ ax[1, 1].plot(psi.coords[:np.argmax(d)]/ang2bohr, d[:np.argmax(d)]/ang2bohr, col
 ax[1, 1].plot(psi.coords[np.argmax(d):]/ang2bohr, d[np.argmax(d):]/ang2bohr, color='red')
 
 wvfn1 = anharm_excite_psi(psi.coords)
-d = anharm_excite_drift(psi.coords, wvfn1)
+d = anharm_excite_drift(psi.coords, wvfn1)*sigmaOH**2/2
 psi.El = anharm_excite_E_loc(psi.coords, psi.V, wvfn1)
 wvfn1 = wvfn1/np.max(wvfn1)*np.max(wvfn)
 #

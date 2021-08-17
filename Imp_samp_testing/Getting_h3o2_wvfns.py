@@ -329,8 +329,8 @@ grid1 = np.linspace(-1.5, 1.5, 2000)
 # grid_sp = np.linspace(-1.5, 1.5, 2000)
 # grid_a = grid1/np.sqrt(2)
 A = np.array([[42.200232187251913, -0.60594644269321474], [1.0206303697659393, 41.561937672470521]])
-fancy_grid = np.linspace(-30, 30, 2000)
-eh = np.matmul(np.linalg.inv(A), np.vstack((fancy_grid, np.zeros(2000))))
+fancy_grid = np.linspace(-30, 30, 500)
+eh = np.matmul(np.linalg.inv(A), np.vstack((fancy_grid, np.zeros(500))))
 grid_sp = eh[1]
 grid_a = eh[0]
 en_combo, eig_combo, V_combo = run(1, linear_struct, 'linear combo', grid_sp, r1=grid_a)

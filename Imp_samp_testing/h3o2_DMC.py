@@ -41,11 +41,11 @@ Roo_grid = np.linspace(3.9, 5.8, small_grid_points)
 sp_grid = np.linspace(-1.5, 1.5, small_grid_points)
 sp_grid = np.linspace(-65, 65, small_grid_points)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
-two_d_wvfns = np.load('small_grid_2d_h3o2_biggest_grid.npz')['wvfns']
-# two_d_wvfns = np.load('2d_h3o2_new_def.npz')['wvfns']
+# two_d_wvfns = np.load('small_grid_2d_h3o2_biggest_grid.npz')['wvfns']
+two_d_wvfns = np.load('2d_h3o2_new_def_600_points_no_cutoff.npz')['wvfns']
 big_Roo_grid = np.linspace(4, 5.4, 1000)
-big_sp_grid = np.linspace(-1.2, 1.2, 1000)
-# big_sp_grid = np.linspace(-50, 50, 1000)
+# big_sp_grid = np.linspace(-1.2, 1.2, 1000)
+big_sp_grid = np.linspace(-50, 50, 1000)
 # big_Roo_grid = np.linspace(3.9, 5.8, 100)
 # big_sp_grid = np.linspace(-1.5, 1.5, 100)
 X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
@@ -54,11 +54,21 @@ X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 
 interp_ground = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 0].reshape((len(Roo_grid), len(sp_grid))), s=1e-6)
 z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
-# z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1).T
-# z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2).T
-# z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1).T
-# z_ground_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=2).T
-# z_ground_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1, dy=1).T
+z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1).T
+z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2).T
+z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1).T
+z_ground_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=2).T
+z_ground_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1, dy=1).T
+
+fig, axes = plt.subplots(3, 2)
+axes[0, 0].contourf(X, Y, z_ground_no_der)
+axes[0, 1].contourf(X, Y, z_ground_dx1_dy1)
+axes[1, 0].contourf(X, Y, z_ground_dx1)
+axes[1, 1].contourf(X, Y, z_ground_dy1)
+axes[2, 0].contourf(X, Y, z_ground_dx2)
+axes[2, 1].contourf(X, Y, z_ground_dy2)
+plt.show()
+
 #
 # np.savez('interp_ground', a=interp_ground[0], b=interp_ground[1], c=interp_ground[2], d=interp_ground[3], e=interp_ground[4])
 # blah = np.load('interp_ground.npz')
@@ -67,7 +77,7 @@ z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).
 # np.save('z_ground_no_der', z_ground_no_der)
 # ind = np.argwhere(z_ground_no_der < 1e-5)
 z_ground_no_der[z_ground_no_der < 1e-6] = 0
-np.save('z_ground_no_der_big', z_ground_no_der)
+np.save('z_ground_no_der_big_no_cutoff', z_ground_no_der)
 # np.load('z_ground_no_der.npy')
 
 # z_ground_dx1 = z_ground_dx1/z_ground_no_der
@@ -126,7 +136,7 @@ interp_excite_xh = interpolate.bisplrep(sp_grid, Roo_grid, wvfn, s=1e-6)
 z_excite_xh_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_excite_xh).T
 # ind = np.argwhere(z_excite_xh_no_der < 1e-6)
 z_excite_xh_no_der[np.abs(z_excite_xh_no_der) < 1e-6] = 0
-np.save('z_excite_xh_no_der_big', z_excite_xh_no_der)
+np.save('z_excite_xh_no_der_big_no_cutoff', z_excite_xh_no_der)
 # np.save('z_excite_xh_no_der', z_excite_xh_no_der)
 
 
