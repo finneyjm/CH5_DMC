@@ -39,10 +39,10 @@ new_struct = np.array([
 small_grid_points = 600
 Roo_grid = np.linspace(3.9, 5.8, small_grid_points)
 sp_grid = np.linspace(-1.5, 1.5, small_grid_points)
-sp_grid = np.linspace(-65, 65, small_grid_points)
+# sp_grid = np.linspace(-65, 65, small_grid_points)
 sp_grid, Roo_grid = np.meshgrid(sp_grid, Roo_grid)
 # two_d_wvfns = np.load('small_grid_2d_h3o2_biggest_grid.npz')['wvfns']
-two_d_wvfns = np.load('2d_h3o2_new_def_600_points_no_cutoff.npz')['wvfns']
+two_d_wvfns = np.load('small_grid_2d_h3o2_biggest_grid_no_cutoff.npz')['wvfns']
 big_Roo_grid = np.linspace(4, 5.4, 1000)
 # big_sp_grid = np.linspace(-1.2, 1.2, 1000)
 big_sp_grid = np.linspace(-50, 50, 1000)
@@ -53,14 +53,18 @@ X, Y = np.meshgrid(big_sp_grid, big_Roo_grid)
 # wvfn = np.abs(wvfn)
 
 interp_ground = interpolate.bisplrep(sp_grid, Roo_grid, two_d_wvfns[:, 0].reshape((len(Roo_grid), len(sp_grid))), s=1e-6)
-z_ground_no_der = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground).T
-z_ground_dx1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1).T
-z_ground_dx2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=2).T
-z_ground_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=1).T
-z_ground_dy2 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dy=2).T
-z_ground_dx1_dy1 = interpolate.bisplev(big_sp_grid, big_Roo_grid, interp_ground, dx=1, dy=1).T
+Roo_grid = np.linspace(3.9, 5.8, small_grid_points)
+sp_grid = np.linspace(-1.5, 1.5, small_grid_points)
+# sp_grid = np.linspace(-65, 65, small_grid_points)
+z_ground_no_der = interpolate.bisplev(sp_grid, Roo_grid, interp_ground).T
+z_ground_dx1 = interpolate.bisplev(sp_grid, Roo_grid, interp_ground, dx=1).T
+z_ground_dx2 = interpolate.bisplev(sp_grid, Roo_grid, interp_ground, dx=2).T
+z_ground_dy1 = interpolate.bisplev(sp_grid, Roo_grid, interp_ground, dy=1).T
+z_ground_dy2 = interpolate.bisplev(sp_grid, Roo_grid, interp_ground, dy=2).T
+z_ground_dx1_dy1 = interpolate.bisplev(sp_grid, Roo_grid, interp_ground, dx=1, dy=1).T
 
 fig, axes = plt.subplots(3, 2)
+X, Y = np.meshgrid(sp_grid, Roo_grid)
 axes[0, 0].contourf(X, Y, z_ground_no_der)
 axes[0, 1].contourf(X, Y, z_ground_dx1_dy1)
 axes[1, 0].contourf(X, Y, z_ground_dx1)

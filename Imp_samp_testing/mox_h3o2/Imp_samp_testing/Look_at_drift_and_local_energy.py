@@ -3,7 +3,7 @@ from Coordinerds.CoordinateSystems import *
 import multiprocessing as mp
 from scipy import interpolate
 from ProtWaterPES import *
-
+from Checking_my_chain_rule import d2psidx2
 A = np.array([[42.200232187251913, -0.60594644269321474], [1.0206303697659393, 41.561937672470521]])
 z_p = np.linspace(-45, 45, 200)
 # z_p = np.zeros(200)
@@ -13,7 +13,7 @@ a_p = np.zeros(200)
 eh = np.matmul(np.linalg.inv(A), np.vstack((a_p, z_p)))
 grid_sp = eh[1]
 # grid_sp = grid_sp - grid_sp
-grid_a = eh[0]
+grid_a = eh[0] - eh[0]
 
 m_OH = 1
 me = 9.10938356e-31
@@ -44,7 +44,7 @@ X2, Y2 = np.meshgrid(sp_grid, Roo_grid)
 
 z_ground_no_der = np.load('z_ground_no_der_big_no_cutoff.npy')
 
-ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X.flatten(), Y.flatten())),
+ground_no_der = interpolate.CloughTocher2DInterpolator(list(zip(X2.flatten(), Y2.flatten())),
                                                        z_ground_no_der.flatten())
 # wvfn = two_d_wvfns[:, 2].reshape((len(Roo_grid), len(sp_grid)))
 # wvfn[:, int(small_grid_points/2):] = np.abs(wvfn[:, int(small_grid_points/2):])
@@ -120,7 +120,7 @@ def get_da_psi(coords, excite):
     # dead2 = dists[:, -1]
     # dead = dists[:, 0]
     if excite == 'sp':
-        # psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dead ** 2))
+        psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dead ** 2))
         psi[:, 1] = excite_xh_no_der(dead2, dists[:, -2])
     elif excite == 'a':
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dead ** 2)) * \
@@ -203,6 +203,12 @@ def local_kinetic(psit):
     return kin
 
 
+def new_local_kinetic(coords, excite):
+    der = d2psidx2(coords, excite)
+    kin = -1. / 2. * np.sum(np.sum(sigma ** 2 / dtau * der, axis=1), axis=1)
+    return kin
+
+
 import matplotlib.pyplot as plt
 new_struct = np.array([
     [0.000000000000000, 0.000000000000000, 0.000000000000000],
@@ -226,6 +232,8 @@ coords = linear_combo_grid(new_struct, grid_sp, grid_a)
 d, psi = drift(coords, 'sp')
 dists = all_dists(coords)
 better_T = excite_xh_T(z_prime(dists[:, 0], dists[:, -1]), dists[:, -2])
+new_T = new_local_kinetic(coords, 'sp')
+
 # d2, psi2 = drift(coordz.reshape((1, 5, 3)), 'sp')
 # dis = all_dists(coordz.reshape((1, 5, 3)))
 # dis_track = all_dists(coords)
@@ -259,10 +267,12 @@ v = pot(coords)
 e_loc = kin+v
 print(v*har2wave)
 print(e_loc*har2wave)
+z_p = eh[1]
 plt.plot(z_p, e_loc*har2wave, label='Local Energy')
 plt.plot(z_p, v*har2wave, label='Potential Energy')
 plt.plot(z_p, kin*har2wave, label='Local Kinetic Energy')
 plt.plot(z_p, better_T*har2wave, label='Better Local Kinetic Energy')
+plt.plot(z_p, new_T*har2wave, label='New Local Kinetic Energy')
 plt.xlabel(r"z'")
 plt.ylabel(r'Energy cm$^-1$')
 plt.tight_layout()

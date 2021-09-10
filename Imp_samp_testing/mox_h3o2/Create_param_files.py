@@ -1,10 +1,10 @@
 sim = ['XH_left', 'XH_right']
 sim = ['ground']
-# sim = ['asym_left', 'asym_right']
+sim = ['asym_left', 'asym_right']
 mod = 'full'
 for i in range(10):
     for type_of_sim in sim:
-        with open(f'brute_force_h3o2_dmc_new_drift_{type_of_sim}_{mod}_{i + 1}_param.py', 'w') as myfile:
+        with open(f'chain_rule_h3o2_dmc_new_drift_{type_of_sim}_{mod}_{i + 1}_param.py', 'w') as myfile:
             myfile.write('import numpy as np\n\n')
             myfile.write('import os\n\n')
             myfile.write('os.chdir("Imp_samp_testing")\n\n')
@@ -54,5 +54,5 @@ for i in range(10):
             elif type_of_sim == 'ground':
                 myfile.write('        20000, 20000, 250, 500, 500, None, test_structure, [0, 2.5721982410729867], [0, 0]\n')
             myfile.write('    )\n')
-            myfile.write(f'np.savez(f"{type_of_sim}_excite_state_drifty_orig_{mod}_h3o2_{i+1}", coords=coords, weights=weights, time=time, Eref=Eref_array,\n')
+            myfile.write(f'np.savez(f"{type_of_sim}_excite_state_chain_rule2_{mod}_h3o2_{i+1}", coords=coords, weights=weights, time=time, Eref=Eref_array,\n')
             myfile.write('             sum_weights=sum_weights, accept=accept, d=des)')

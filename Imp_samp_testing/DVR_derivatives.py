@@ -16,7 +16,7 @@ class Derivatives:
         :param fd: A parameter to indicate if finite difference will be used
         :type fd: True or None
         '''
-        self.vals = vals
+        self.vals = vals.flatten()
         self.fd = fd
         self.grid1 = grid1
         self.grid2 = grid2
@@ -35,7 +35,7 @@ class Derivatives:
         N = len(grid)
         a = grid[0]
         b = grid[-1]
-        dx = 1 / ((float(N)) / (b - a))
+        dx = 1 / ((float(N-1)) / (b - a))
 
         Tii = np.zeros(N)
 
@@ -61,7 +61,7 @@ class Derivatives:
         N = len(grid)
         a = grid[0]
         b = grid[-1]
-        coeff = (1. / ((-1) / (((float(N)) / (b - a)) ** 2)))
+        coeff = (1. / ((-1) / (((float(N-1)) / (b - a)) ** 2)))
 
         Tii = np.zeros(N)
 
@@ -84,7 +84,7 @@ class Derivatives:
         :rtype: np array (2 dimensions)
         '''
         import numpy as np, scipy.sparse as sp
-        dx = (grid[-1] - grid[0]) / (len(grid))
+        dx = (grid[-1] - grid[0]) / (len(grid)-1)
         coeffs = np.array([1 / 12, -2 / 3, 0, 2 / 3, -1 / 12]) / dx
 
         fd_matrix = sp.diags(coeffs, np.arange(-2, 3, 1), shape=(len(grid), len(grid)))
@@ -103,7 +103,7 @@ class Derivatives:
         :rtype: np array (2 dimensions)
         '''
         import numpy as np, scipy.sparse as sp
-        dx = (grid[-1] - grid[0]) / (len(grid))
+        dx = (grid[-1] - grid[0]) / (len(grid)-1)
         coeffs = np.array([-1 / 12, 4 / 3, -5 / 2, 4 / 3, -1 / 12]) / (dx ** 2)
 
         fd_matrix = sp.diags(coeffs, np.arange(-2, 3, 1), shape=(len(grid), len(grid)))
@@ -145,11 +145,7 @@ class Derivatives:
             der = [self.first_derivative(g) for g in gridz]
         else:
             der = [self.first_derivative_fd(g) for g in gridz]
-        der_map = map(sp.csr_matrix, der)
-
-        from functools import reduce
-        d = reduce(self.kron_sum, der_map)
-        return d
+        return der
 
     def sparse_2d_fd_mat_2nd(self, gridz):
         '''
@@ -157,19 +153,38 @@ class Derivatives:
         derivative of the 2d eigen function of interest
         :param gridz: A list of the grids of interest to construct the second derivative matrix
         :type gridz: list (2 dimensions)
-        :return: A sparse representation of the derivative matrix
-        :rtype: sp array
+        :return: The derivative matrix in each grid
+        :rtype: list of np arrays
         '''
-        import scipy.sparse as sp
         if self.fd is None:
             der = [self.second_derivative(g) for g in gridz]
         else:
             der = [self.second_derivative_fd(g) for g in gridz]
-        der_map = map(sp.csr_matrix, der)
+        return der
 
-        from functools import reduce
-        d = reduce(self.kron_sum, der_map)
-        return d
+    @staticmethod
+    def test_marks_function(der):
+        '''
+        This is Mark's function that allows me to efficiently build my derivative matrix when dealing with mixed
+        derivatives. It is very nice and I appreciate his help a lot.
+        :param der: A list of derivative matrices in dx and dy
+        :type der: List of 2d np arrays
+        :return: The big array to dot into the values of the function of interest to get the mixed derivative of
+        dx and dy
+        :rtype: sp array
+        '''
+        import scipy.sparse as sp
+        import numpy as np
+        base_mat = der[0]
+        d1xd1y_chunks = []
+        chunk_size = 10
+        for i in range(int(np.ceil(base_mat.shape[0] / chunk_size))):
+            chunk_start = i * chunk_size
+            chunk_end = (i + 1) * chunk_size
+            submat = base_mat[chunk_start:chunk_end]
+            d1xd1y_chunks.append(sp.kron(submat, der[1]))
+        d1xd1y = sp.vstack(d1xd1y_chunks)
+        return d1xd1y
 
     def derivatives_2d(self):
         '''
@@ -180,29 +195,22 @@ class Derivatives:
         '''
         import scipy.sparse as sp
         gridz1 = [self.grid1, self.grid2]
-        gridz2 = [self.grid2, self.grid1]
-        if self._dx == 1:
-            if self._dy == 1:
-                fd1 = self.sparse_2d_fd_mat_1st(gridz1)
-                fd2 = self.sparse_2d_fd_mat_1st(gridz2)
-                return sp.csr_matrix.dot(fd1, sp.csr_matrix.dot(fd2, self.vals))
-            else:
-                fd = self.sparse_2d_fd_mat_1st(gridz1)
-                return sp.csr_matrix.dot(fd, self.vals)
-        elif self._dy == 1:
-            fd = self.sparse_2d_fd_mat_1st(gridz2)
-            return sp.csr_matrix.dot(fd, self.vals)
-        elif self._dx == 2:
-            fd = self.sparse_2d_fd_mat_2nd(gridz1)
-            return sp.csr_matrix.dot(fd, self.vals)
-        elif self._dy ==2:
-            fd = self.sparse_2d_fd_mat_2nd(gridz2)
-            return sp.csr_matrix.dot(fd, self.vals)
+        if self._dx == 2 or self._dy == 2:
+            der = self.sparse_2d_fd_mat_2nd(gridz1)
+        else:
+            der = self.sparse_2d_fd_mat_1st(gridz1)
+        if self._dx == 1 and self._dy == 1:
+            fd = self.test_marks_function(der)
+        elif self._dx == 1 or self._dx == 2:
+            fd = sp.kron(sp.csr_matrix(der[0]), sp.eye(len(self.grid2)))
+        elif self._dy == 1 or self._dy == 2:
+            fd = sp.kron(sp.eye(len(self.grid1)), sp.csr_matrix(der[1]))
         else:
             print("I can't do those types of derivatives yet")
             raise ValueError
+        return sp.csr_matrix.dot(fd, self.vals)
 
-    def compute_derivative(self, dx, dy=None):
+    def compute_derivative(self, dx=None, dy=None):
         '''
         This function calculates the derivatives of either a 1d or a 2d eigen function on an evenly spaced grid of
         points
@@ -234,4 +242,4 @@ class Derivatives:
                     print("I can't do that derivative yet")
                     raise ValueError
         else:
-            return self.derivatives_2d()
+            return self.derivatives_2d().reshape((len(self.grid1), len(self.grid2)))

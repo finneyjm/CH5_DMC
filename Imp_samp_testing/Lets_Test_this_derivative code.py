@@ -73,11 +73,15 @@ def derivatives_2d(grid1, grid2, order):
         der = [first_derivative(g) for g in grids]
     elif order == 2:
         der = [second_derivative(g) for g in grids]
-    der_map = map(sp.csr_matrix, der)
+    # der_map = map(sp.csr_matrix, der)
 
-    from functools import reduce
-    d = reduce(kron_sum, der_map)
-    return d
+    # d = sp.kron(sp.csr_matrix(der[0]), sp.eye(len(grid2)))
+    # d = sp.kron(sp.eye(len(grid1)), sp.csr_matrix(der[1]))
+    # d = np.kron(sp.csr_matrix(der[0]), sp.csr_matrix(der[1]))
+    #
+    # from functools import reduce
+    # d = reduce(kron_sum, der_map)
+    return der
 
 
 def fd_derivatives_2d(grid1, grid2, order):
@@ -88,28 +92,56 @@ def fd_derivatives_2d(grid1, grid2, order):
         der = [first_derivative_fd(g) for g in grids]
     elif order == 2:
         der = [second_derivative_fd(g) for g in grids]
-    der_map = map(sp.csr_matrix, der)
-
-    from functools import reduce
-    d = reduce(kron_sum, der_map)
+    # der_map = map(sp.csr_matrix, der)
+    d = sp.kron(sp.eye(len(grid1)), sp.csr_matrix(der[1]))
+    # from functools import reduce
+    # d = reduce(kron_sum, der_map)
     return d
 
 
-wvfn = np.load('2d_h3o2_new_def_600_points_no_cutoff.npz')['wvfns']
+def test_marks_function(grid1, grid2, values):
+    import scipy.sparse as sp
+    grids = [grid1, grid2]
+    der = [first_derivative_fd(g) for g in grids]
+    base_mat = der[0]
+    d1xd1y_chunks = []
+    chunk_size = 100
+    for i in range(int(np.ceil(base_mat.shape[0] / chunk_size))):
+        chunk_start = i * chunk_size
+        chunk_end = (i + 1) * chunk_size
+        submat = base_mat[chunk_start:chunk_end]
+        d1xd1y_chunks.append(sp.kron(submat, der[1]))
+    d1xd1y = sp.vstack(d1xd1y_chunks).dot(values)
+    return d1xd1y
 
-sp = np.linspace(-65, 65, 600)
+
+wvfn = np.load('small_grid_2d_h3o2_biggest_grid_no_cutoff.npz')['wvfns']
+
+sp = np.linspace(-1.5, 1.5, 600)
 roo = np.linspace(3.9, 5.8, 600)
 X, Y = np.meshgrid(sp, roo)
 
-derivative1_y = derivatives_2d(roo, sp, 1)
 derivative1_x = derivatives_2d(sp, roo, 1)
-derivative1_fd_x = fd_derivatives_2d(roo, sp, 1)
-derivative1_fd_y = fd_derivatives_2d(sp, roo, 1)
+# derivative1_y = derivatives_2d(sp, roo, 1)
+derivative1_fd_x = fd_derivatives_2d(sp, roo, 1)
+# derivative1_fd_y = fd_derivatives_2d(sp, roo, 1)
+mark_method = test_marks_function(sp, roo, wvfn[:, 0])
 
 import scipy.sparse as sp
+import time
 
+# derivative1_wvfn = sp.csr_matrix.dot(sp.csr_matrix(derivative1_x), wvfn[:, 0])
+start = time.time()
+derivative1_y = sp.kron(sp.csr_matrix(derivative1_x[0]), sp.eye(len(roo)))
+derivative1_x = sp.kron(sp.eye(600), sp.csr_matrix(derivative1_x[1]))
 derivative1_wvfn = sp.csr_matrix.dot(derivative1_y, sp.csr_matrix.dot(derivative1_x, wvfn[:, 0]))
-derivative1_fd_wvfn = sp.csr_matrix.dot(derivative1_fd_y, sp.csr_matrix.dot(derivative1_fd_x, wvfn[:, 0]))
+end = time.time()
+print(f'My method = {end - start}')
+derivative1_fd_wvfn = sp.csr_matrix.dot(derivative1_fd_x, wvfn[:, 0])
+start = time.time()
+derivative1_fd_wvfn = mark_method
+end = time.time()
+print(f'Mark method = {end - start}')
 
 import matplotlib.pyplot as plt
 fig, axes = plt.subplots(4)
@@ -121,12 +153,32 @@ fig.colorbar(im1, ax=axes[0])
 fig.colorbar(im2, ax=axes[1])
 fig.colorbar(im3, ax=axes[2])
 fig.colorbar(im4, ax=axes[3])
-# plt.plot(x, eig[:, 0], label='wave function')
-# plt.plot(x, np.dot(first_derivative(x), eig[:, 0]), label='1st derivative')
-# plt.plot(x, first_derivative_fd(x, eig[:, 0]), label='1st derivative fd')
-# plt.plot(x, np.dot(second_derivative(x), eig[:, 0]), label='2nd derivative')
-# plt.plot(x, second_derivative_fd(x, eig[:, 0]), label='2nd derivative fd')
-# plt.legend()
 plt.show()
 
+wvfn = np.load('small_grid_2d_h3o2_biggest_grid_no_cutoff.npz')['wvfns']
 
+sp = np.linspace(-1.5, 1.5, 600)
+roo = np.linspace(3.9, 5.8, 600)
+X, Y = np.meshgrid(sp, roo)
+
+derivative1_x = derivatives_2d(sp, roo, 1)
+# derivative1_y = derivatives_2d(sp, roo, 1)
+derivative1_fd_x = fd_derivatives_2d(sp, roo, 1)
+# derivative1_fd_y = fd_derivatives_2d(sp, roo, 1)
+
+import scipy.sparse as sp
+
+derivative1_wvfn = sp.csr_matrix.dot(derivative1_x, wvfn[:, 0])
+derivative1_fd_wvfn = sp.csr_matrix.dot(derivative1_fd_x, wvfn[:, 0])
+
+import matplotlib.pyplot as plt
+fig, axes = plt.subplots(4)
+im1 = axes[0].contourf(X, Y, wvfn[:, 0].reshape((600, 600)))
+im2 = axes[1].contourf(X, Y, derivative1_wvfn.reshape((600, 600)))
+im3 = axes[2].contourf(X, Y, derivative1_fd_wvfn.reshape((600, 600)))
+im4 = axes[3].contourf(X, Y, derivative1_wvfn.reshape((600, 600)) - derivative1_fd_wvfn.reshape((600, 600)))
+fig.colorbar(im1, ax=axes[0])
+fig.colorbar(im2, ax=axes[1])
+fig.colorbar(im3, ax=axes[2])
+fig.colorbar(im4, ax=axes[3])
+plt.show()
