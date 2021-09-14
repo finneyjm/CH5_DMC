@@ -18,6 +18,12 @@ def short_intensity_calcs(filename):
     ground_fracs = np.load(f'ground_{filename}_wvfn_fractions.npz')
     ground_dists = ground_fracs['dist']
 
+    def a_prime(a, z):
+        return -0.60594644269321474*z + 42.200232187251913*a
+
+    def z_prime(a, z):
+        return 41.561937672470521*z + 1.0206303697659393*a
+
     def angle1(coords):
         bonds = [[1, 2], [1, 0]]
         cd1 = coords[:, tuple(x[0] for x in np.array(bonds))]
@@ -57,43 +63,56 @@ def short_intensity_calcs(filename):
     frac = ground_fracs['frac1']
     frac2 = ground_fracs['frac2']
     for i in range(grca):
-        term1_ov[i] = np.dot(ground_weights[i], frac[i]) / np.sum(ground_weights[i])
-        xh_term1_ov[i] = np.dot(ground_weights[i], frac2[i]) / np.sum(ground_weights[i])
-        dists = ground_dists
-        term1_dis[i] = np.dot(ground_weights[i], frac[i] * dists[:, 0]) / np.sum(ground_weights[i])
-        xh_term1_dis[i] = np.dot(ground_weights[i], frac2[i] * dists[:, -1]) / np.sum(ground_weights[i])
-        term1_dis_a_w_xh[i] = np.dot(ground_weights[i], frac2[i] * dists[:, 0]) / np.sum(ground_weights[i])
-        term1_dis_xh_w_a[i] = np.dot(ground_weights[i], frac[i] * dists[:, -1]) / np.sum(ground_weights[i])
-        aang1 = np.rad2deg(angle1(ground_coords[i]))
-        aang2 = np.rad2deg(angle2(ground_coords[i]))
-        plt.hist2d(dists[:, 0], aang1 + aang2, bins=binzz, weights=ground_weights[i])
-        plt.xlabel(r'$\rm{a}$')
+        blah = np.where(np.isfinite(frac[i]))
+        term1_ov[i] = np.dot(ground_weights[i, blah].squeeze(), frac[i, blah].squeeze()) \
+                      / np.sum(ground_weights[i, blah].squeeze())
+        xh_term1_ov[i] = np.dot(ground_weights[i, blah].squeeze(), frac2[i, blah].squeeze()) \
+                         / np.sum(ground_weights[i, blah])
+        dists = ground_dists[i, blah].squeeze()
+        term1_dis[i] = np.dot(ground_weights[i, blah].squeeze(), frac[i, blah].squeeze() * dists[:, 0])\
+                       / np.sum(ground_weights[i, blah].squeeze())
+        xh_term1_dis[i] = np.dot(ground_weights[i, blah].squeeze(), frac2[i].squeeze() * dists[:, -1]) \
+                          / np.sum(ground_weights[i, blah].squeeze())
+        term1_dis_a_w_xh[i] = np.dot(ground_weights[i, blah].squeeze(), frac2[i].squeeze() * dists[:, 0]) \
+                              / np.sum(ground_weights[i, blah].squeeze())
+        term1_dis_xh_w_a[i] = np.dot(ground_weights[i, blah].squeeze(), frac[i].squeeze() * dists[:, -1])\
+                              / np.sum(ground_weights[i, blah].squeeze())
+        aang1 = np.rad2deg(angle1(ground_coords[i, blah].squeeze()))
+        aang2 = np.rad2deg(angle2(ground_coords[i, blah].squeeze()))
+        ap = a_prime(dists[:, 0], dists[:, -1])
+        plt.hist2d(ap, aang1 + aang2, bins=binzz, weights=ground_weights[i, blah].squeeze())
+        plt.xlabel(r"$\rm{a'}$")
         plt.ylabel(r'$\rm{\Theta_1 + \Theta_2}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f0_theta12_sum_vs_a_{i+1}')
+        plt.savefig(f'f0_theta12_sum_vs_ap_{i+1}')
         plt.close()
-        plt.hist2d(dists[:, 0], aang1 - aang2, bins=binzz, weights=ground_weights[i])
-        plt.xlabel(r'$\rm{a}$')
+        plt.hist2d(dists[:, 0], aang1 - aang2, bins=binzz, weights=ground_weights[i, blah].squeeze())
+        plt.xlabel(r"$\rm{a'}$")
         plt.ylabel(r'$\rm{\Theta_1 - \Theta_2}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f0_theta12_diff_vs_a_{i + 1}')
+        plt.savefig(f'f0_theta12_diff_vs_ap_{i + 1}')
         plt.close()
         for j in range(3):
-            term1[i, j] = np.dot(ground_weights[i], frac[i] * ground_dips[i, :, j] * au_to_Debye) / np.sum(
-                ground_weights[i])
-            term1_vec[i, j] = np.dot(ground_weights[i],
-                                     frac[i] * ((ground_coords[i, :, 2, j] - ground_coords[i, :, 1, j]) +
-                                                (ground_coords[i, :, 4, j] - ground_coords[i, :, 3, j]))) \
-                              / np.sum(ground_weights[i])
-            xh_term1[i, j] = np.dot(ground_weights[i], frac2[i] * ground_dips[i, :, j] * au_to_Debye) / np.sum(
-                ground_weights[i])
-            mid = (ground_coords[i, :, 3, j] - ground_coords[i, :, 1, j]) / 2
-            xh_term1_vec[i, j] = np.dot(ground_weights[i], frac2[i] * (mid - ground_coords[i, :, 0, j])) \
-                                 / np.sum(ground_weights[i])
+            term1[i, j] = np.dot(ground_weights[i, blah].squeeze(), frac[i, blah].squeeze() *
+                                 ground_dips[i, blah, j].squeeze() * au_to_Debye) / np.sum(
+                ground_weights[i, blah].squeeze())
+            term1_vec[i, j] = np.dot(ground_weights[i, blah].squeeze(),
+                                     frac[i, blah].squeeze() * ((ground_coords[i, blah, 2, j].squeeze()
+                                                                 - ground_coords[i, blah, 1, j].squeeze()) +
+                                                (ground_coords[i, blah, 4, j].squeeze()
+                                                 - ground_coords[i, blah, 3, j].squeeze()))) \
+                              / np.sum(ground_weights[i, blah].squeeze())
+            xh_term1[i, j] = np.dot(ground_weights[i, blah].squeeze(), frac2[i, blah].squeeze()
+                                    * ground_dips[i, blah, j].squeeze() * au_to_Debye) / np.sum(
+                ground_weights[i, blah].squeeze())
+            mid = (ground_coords[i, blah, 3, j].squeeze() - ground_coords[i, blah, 1, j].squeeze()) / 2
+            xh_term1_vec[i, j] = np.dot(ground_weights[i, blah].squeeze(), frac2[i, blah].squeeze()
+                                        * (mid - ground_coords[i, blah, 0, j].squeeze())) \
+                                 / np.sum(ground_weights[i, blah].squeeze())
 
-    np.savez(f'ground_{filename}_wvfn_fractions', frac1=frac, frac2=frac2)
+    # np.savez(f'ground_{filename}_wvfn_fractions', frac1=frac, frac2=frac2)
     avg_term1_vec = np.average(term1_vec, axis=0)
     std_term1_vec = np.std(term1_vec, axis=0)
     avg_term1_o = np.average(term1_ov)
@@ -145,11 +164,11 @@ def short_intensity_calcs(filename):
     std_xh_excite_neg_energy = XH_left['std_zpe']
 
     XH_right = np.load(f'XH_right_{filename}_eck_dips.npz')
-    xh_excite_pos_coords = XH_left['coords']
-    xh_excite_pos_weights = XH_left['weights']
-    xh_excite_pos_dips = XH_left['dips']
-    average_xh_excite_pos_energy = XH_left['a_zpe']
-    std_xh_excite_pos_energy = XH_left['std_zpe']
+    xh_excite_pos_coords = XH_right['coords']
+    xh_excite_pos_weights = XH_right['weights']
+    xh_excite_pos_dips = XH_right['dips']
+    average_xh_excite_pos_energy = XH_right['a_zpe']
+    std_xh_excite_pos_energy = XH_right['std_zpe']
 
     excited_fracs = np.load(f'excited_{filename}_wvfn_fractions.npz')
     dists1 = excited_fracs['dist1']
@@ -184,57 +203,57 @@ def short_intensity_calcs(filename):
     term2_dis_a_w_xh = np.zeros(excite)
     term2_dis_xh_w_a = np.zeros(excite)
     xh_term2_dis = np.zeros(excite)
-    combine_dips = np.zeros((excite, len(excite_pos_coords[0])*2, 3))
-    combine_weights = np.zeros((excite, len(excite_pos_coords[0])*2))
-    xh_combine_dips = np.zeros((excite, len(excite_pos_coords[0])*2, 3))
-    xh_combine_weights = np.zeros((excite, len(excite_pos_coords[0])*2))
     frac = excited_fracs['frac1']
     frac2 = excited_fracs['frac2']
     for i in range(excite):
-        combine_coords = np.vstack((excite_neg_coords[i], excite_pos_coords[i]))
-        xh_combine_coords = np.vstack((xh_excite_neg_coords[i], xh_excite_pos_coords[i]))
-        combine_weights[i] = np.hstack((excite_neg_weights[i], excite_pos_weights[i]))
-        combine_dips[i] = np.vstack((excite_neg_dips[i], excite_pos_dips[i]))
-        xh_combine_weights[i] = np.hstack((xh_excite_neg_weights[i], xh_excite_pos_weights[i]))
-        xh_combine_dips[i] = np.vstack((xh_excite_neg_dips[i], xh_excite_pos_dips[i]))
-        term2_ov[i] = np.dot(combine_weights[i], frac[i]) / np.sum(combine_weights[i])
-        xh_term2_ov[i] = np.dot(xh_combine_weights[i], frac2[i]) / np.sum(xh_combine_weights[i])
-        dists = dists1[i]
-        term2_dis[i] = np.average(frac[i] * dists[:, 0], weights=combine_weights[i])
-        term2_dis_xh_w_a[i] = np.average(frac[i] * dists[:, -1], weights=combine_weights[i])
-        dists = dists2[i]
-        term2_dis_a_w_xh[i] = np.average(frac2[i] * dists[:, 0], weights=combine_weights[i])
-        xh_term2_dis[i] = np.dot(xh_combine_weights[i], frac2[i] * dists[:, -1]) / np.sum(xh_combine_weights[i])
+        blah1 = np.where(np.isfinite(frac[i]))
+        blah2 = np.where(np.isfinite(frac2[i]))
+        combine_coords = np.vstack((excite_neg_coords[i], excite_pos_coords[i]))[blah1].squeeze()
+        xh_combine_coords = np.vstack((xh_excite_neg_coords[i], xh_excite_pos_coords[i]))[blah2].squeeze()
+        combine_weights = np.hstack((excite_neg_weights[i], excite_pos_weights[i]))[blah1].squeeze()
+        combine_dips = np.vstack((excite_neg_dips[i], excite_pos_dips[i]))[blah1].squeeze()
+        xh_combine_weights = np.hstack((xh_excite_neg_weights[i], xh_excite_pos_weights[i]))[blah2].squeeze()
+        xh_combine_dips = np.vstack((xh_excite_neg_dips[i], xh_excite_pos_dips[i]))[blah2].squeeze()
+        term2_ov[i] = np.dot(combine_weights, frac[i, blah1].squeeze()) / np.sum(combine_weights)
+        xh_term2_ov[i] = np.dot(xh_combine_weights, frac2[i, blah2].squeeze()) / np.sum(xh_combine_weights)
+        dists = dists1[i, blah1].squeeze()
+        term2_dis[i] = np.average(frac[i, blah1].squeeze() * dists[:, 0], weights=combine_weights)
+        term2_dis_xh_w_a[i] = np.average(frac[i, blah1].squeeze() * dists[:, -1], weights=combine_weights)
+        dists = dists2[i, blah2].squeeze()
+        term2_dis_a_w_xh[i] = np.average(frac2[i, blah2].squeeze() * dists[:, 0], weights=xh_combine_weights)
+        xh_term2_dis[i] = np.dot(xh_combine_weights, frac2[i, blah2].squeeze() * dists[:, -1]) \
+                          / np.sum(xh_combine_weights)
         aang1 = np.rad2deg(angle1(combine_coords))
         aang2 = np.rad2deg(angle2(combine_coords))
-        plt.hist2d(dists1[i, :, 0], aang1 + aang2, bins=binzz, weights=combine_weights[i])
-        plt.xlabel(r'$\rm{a}$')
+        ap = a_prime(dists1[i, blah1, 0].squeeze(), dists1[i, blah1, 0].squeeze())
+        plt.hist2d(ap, aang1 + aang2, bins=binzz, weights=combine_weights)
+        plt.xlabel(r"$\rm{a'}$")
         plt.ylabel(r'$\rm{\Theta_1 + \Theta_2}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f1_theta12_sum_vs_a_{i + 1}')
+        plt.savefig(f'f1_theta12_sum_vs_ap_{i + 1}')
         plt.close()
-        plt.hist2d(dists1[i, :, 0], aang1 - aang2, bins=binzz, weights=combine_weights[i])
-        plt.xlabel(r'$\rm{a}$')
+        plt.hist2d(ap, aang1 - aang2, bins=binzz, weights=combine_weights)
+        plt.xlabel(r"$\rm{a'}$")
         plt.ylabel(r'$\rm{\Theta_1 - \Theta_2}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f1_theta12_diff_vs_a_{i + 1}')
+        plt.savefig(f'f1_theta12_diff_vs_ap_{i + 1}')
         plt.close()
         for j in range(3):
-            term2[i, j] = np.dot(combine_weights[i], frac[i] * combine_dips[i, :, j] * au_to_Debye) \
-                          / np.sum(combine_weights[i])
-            term2_vec[i, j] = np.dot(combine_weights[i],
-                                     frac[i] * ((combine_coords[:, 2, j] - combine_coords[:, 1, j]) +
+            term2[i, j] = np.dot(combine_weights, frac[i, blah1].squeeze() * combine_dips[:, j] * au_to_Debye) \
+                          / np.sum(combine_weights)
+            term2_vec[i, j] = np.dot(combine_weights,
+                                     frac[i, blah1].squeeze() * ((combine_coords[:, 2, j] - combine_coords[:, 1, j]) +
                                                 (combine_coords[:, 4, j] - combine_coords[:, 3, j]))) \
-                              / np.sum(combine_weights[i])
-            xh_term2[i, j] = np.dot(xh_combine_weights[i], frac2[i] * xh_combine_dips[i, :, j] * au_to_Debye) \
-                             / np.sum(xh_combine_weights[i])
+                              / np.sum(combine_weights)
+            xh_term2[i, j] = np.dot(xh_combine_weights, frac2[i, blah2].squeeze() * xh_combine_dips[:, j] * au_to_Debye) \
+                             / np.sum(xh_combine_weights)
             mid = (xh_combine_coords[:, 3, j] - xh_combine_coords[:, 1, j]) / 2
-            xh_term2_vec[i, j] = np.dot(xh_combine_weights[i], frac2[i] * (mid - xh_combine_coords[:, 0, j])) \
-                                 / np.sum(xh_combine_weights[i])
+            xh_term2_vec[i, j] = np.dot(xh_combine_weights, frac2[i, blah2].squeeze() * (mid - xh_combine_coords[:, 0, j])) \
+                                 / np.sum(xh_combine_weights)
 
-    np.savez(f'excited_{filename}_wvfn_fractions', frac1=frac, frac2=frac2)
+    # np.savez(f'excited_{filename}_wvfn_fractions', frac1=frac, frac2=frac2)
     avg_term2_vec = np.average(term2_vec, axis=0)
     std_term2_vec = np.std(term2_vec, axis=0)
     avg_term2_o = np.average(term2_ov)
@@ -340,12 +359,14 @@ def short_intensity_calcs(filename):
 def intensity_calcs(filename):
     import numpy as np
     try:
-        np.load(f'ground_{filename}_wvfn_fractions.npz')
-        short_intensity_calcs(filename)
+        np.load(f'excited_{filename}_wvfn_fractions.npz')
+        print('loading in previous calculations')
     except:
+        print('starting from scratch')
         from H3O2_intensities import full_intensity_calcs
         full_intensity_calcs(filename)
+    short_intensity_calcs(filename)
 
 
-intensity_calcs('excite_state_drifty_full_h3o2')
+intensity_calcs('excite_state_chain_rule2_full_h3o2')
 
