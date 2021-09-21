@@ -80,20 +80,42 @@ def short_intensity_calcs(filename):
         aang1 = np.rad2deg(angle1(ground_coords[i, blah].squeeze()))
         aang2 = np.rad2deg(angle2(ground_coords[i, blah].squeeze()))
         ap = a_prime(dists[:, 0], dists[:, -1])
-        plt.hist2d(ap, aang1 + aang2, bins=binzz, weights=ground_weights[i, blah].squeeze())
-        plt.xlabel(r"$\rm{a'}$")
-        plt.ylabel(r'$\rm{\Theta_1 + \Theta_2}$')
+        plt.hist2d(dists[:, 0], ground_coords[i, blah, 0, 0].squeeze(), bins=binzz, weights=ground_weights[i, blah].squeeze())
+        plt.xlabel(r"$\rm{a}$")
+        plt.ylabel(r'$\rm{r_{Hx}}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f0_theta12_sum_vs_ap_{i+1}')
+        plt.savefig(f'f0_{filename}_a_vs_rhx_{i + 1}')
         plt.close()
-        plt.hist2d(dists[:, 0], aang1 - aang2, bins=binzz, weights=ground_weights[i, blah].squeeze())
-        plt.xlabel(r"$\rm{a'}$")
-        plt.ylabel(r'$\rm{\Theta_1 - \Theta_2}$')
+        plt.hist2d(dists[:, 0], ground_coords[i, blah, 0, 1].squeeze(), bins=binzz, weights=ground_weights[i, blah].squeeze())
+        plt.xlabel(r"$\rm{a}$")
+        plt.ylabel(r'$\rm{r_{Hy}}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f0_theta12_diff_vs_ap_{i + 1}')
+        plt.savefig(f'f0_{filename}_a_vs_rhy_{i + 1}')
         plt.close()
+        plt.hist2d(dists[:, 0], ground_coords[i, blah, 0, 2].squeeze(), bins=binzz, weights=ground_weights[i, blah].squeeze())
+        plt.xlabel(r"$\rm{a}$")
+        plt.ylabel(r'$\rm{r_{Hz}}$')
+        plt.colorbar()
+        plt.tight_layout()
+        plt.savefig(f'f0_{filename}_a_vs_rhz_{i + 1}')
+        plt.close()
+
+        # plt.hist2d(ap, aang1 + aang2, bins=binzz, weights=ground_weights[i, blah].squeeze())
+        # plt.xlabel(r"$\rm{a'}$")
+        # plt.ylabel(r'$\rm{\Theta_1 + \Theta_2}$')
+        # plt.colorbar()
+        # plt.tight_layout()
+        # plt.savefig(f'f0_{filename}_theta12_sum_vs_ap_{i+1}')
+        # plt.close()
+        # plt.hist2d(dists[:, 0], aang1 - aang2, bins=binzz, weights=ground_weights[i, blah].squeeze())
+        # plt.xlabel(r"$\rm{a'}$")
+        # plt.ylabel(r'$\rm{\Theta_1 - \Theta_2}$')
+        # plt.colorbar()
+        # plt.tight_layout()
+        # plt.savefig(f'f0_{filename}_theta12_diff_vs_ap_{i + 1}')
+        # plt.close()
         for j in range(3):
             term1[i, j] = np.dot(ground_weights[i, blah].squeeze(), frac[i, blah].squeeze() *
                                  ground_dips[i, blah, j].squeeze() * au_to_Debye) / np.sum(
@@ -112,7 +134,6 @@ def short_intensity_calcs(filename):
                                         * (mid - ground_coords[i, blah, 0, j].squeeze())) \
                                  / np.sum(ground_weights[i, blah].squeeze())
 
-    # np.savez(f'ground_{filename}_wvfn_fractions', frac1=frac, frac2=frac2)
     avg_term1_vec = np.average(term1_vec, axis=0)
     std_term1_vec = np.std(term1_vec, axis=0)
     avg_term1_o = np.average(term1_ov)
@@ -226,20 +247,42 @@ def short_intensity_calcs(filename):
         aang1 = np.rad2deg(angle1(combine_coords))
         aang2 = np.rad2deg(angle2(combine_coords))
         ap = a_prime(dists1[i, blah1, 0].squeeze(), dists1[i, blah1, 0].squeeze())
-        plt.hist2d(ap, aang1 + aang2, bins=binzz, weights=combine_weights)
-        plt.xlabel(r"$\rm{a'}$")
-        plt.ylabel(r'$\rm{\Theta_1 + \Theta_2}$')
+        plt.hist2d(dists1[i, blah1, 0].squeeze(), combine_coords[:, 0, 0], bins=binzz, weights=combine_weights)
+        plt.xlabel(r"$\rm{a}$")
+        plt.ylabel(r'$\rm{r_{Hx}}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f1_theta12_sum_vs_ap_{i + 1}')
+        plt.savefig(f'f1_{filename}_a_vs_rhx_{i + 1}')
         plt.close()
-        plt.hist2d(ap, aang1 - aang2, bins=binzz, weights=combine_weights)
-        plt.xlabel(r"$\rm{a'}$")
-        plt.ylabel(r'$\rm{\Theta_1 - \Theta_2}$')
+        plt.hist2d(dists1[i, blah1, 0].squeeze(), combine_coords[:, 0, 1], bins=binzz, weights=combine_weights)
+        plt.xlabel(r"$\rm{a}$")
+        plt.ylabel(r'$\rm{r_{Hy}}$')
         plt.colorbar()
         plt.tight_layout()
-        plt.savefig(f'f1_theta12_diff_vs_ap_{i + 1}')
+        plt.savefig(f'f1_{filename}_a_vs_rhy_{i + 1}')
         plt.close()
+        plt.hist2d(dists1[i, blah1, 0].squeeze(), combine_coords[:, 0, 2], bins=binzz, weights=combine_weights)
+        plt.xlabel(r"$\rm{a}$")
+        plt.ylabel(r'$\rm{r_{Hz}}$')
+        plt.colorbar()
+        plt.tight_layout()
+        plt.savefig(f'f1_{filename}_a_vs_rhz_{i + 1}')
+        plt.close()
+
+        # plt.hist2d(ap, aang1 + aang2, bins=binzz, weights=combine_weights)
+        # plt.xlabel(r"$\rm{a'}$")
+        # plt.ylabel(r'$\rm{\Theta_1 + \Theta_2}$')
+        # plt.colorbar()
+        # plt.tight_layout()
+        # plt.savefig(f'f1_{filename}_theta12_sum_vs_ap_{i + 1}')
+        # plt.close()
+        # plt.hist2d(ap, aang1 - aang2, bins=binzz, weights=combine_weights)
+        # plt.xlabel(r"$\rm{a'}$")
+        # plt.ylabel(r'$\rm{\Theta_1 - \Theta_2}$')
+        # plt.colorbar()
+        # plt.tight_layout()
+        # plt.savefig(f'f1_{filename}_theta12_diff_vs_ap_{i + 1}')
+        # plt.close()
         for j in range(3):
             term2[i, j] = np.dot(combine_weights, frac[i, blah1].squeeze() * combine_dips[:, j] * au_to_Debye) \
                           / np.sum(combine_weights)
@@ -253,7 +296,6 @@ def short_intensity_calcs(filename):
             xh_term2_vec[i, j] = np.dot(xh_combine_weights, frac2[i, blah2].squeeze() * (mid - xh_combine_coords[:, 0, j])) \
                                  / np.sum(xh_combine_weights)
 
-    # np.savez(f'excited_{filename}_wvfn_fractions', frac1=frac, frac2=frac2)
     avg_term2_vec = np.average(term2_vec, axis=0)
     std_term2_vec = np.std(term2_vec, axis=0)
     avg_term2_o = np.average(term2_ov)
@@ -356,7 +398,7 @@ def short_intensity_calcs(filename):
     print(f'term2 xh dis with a excite = {avg_term2_d_xh_w_a} {std_term2_d_xh_w_a}')
 
 
-def intensity_calcs(filename):
+def intensity_calcs(filename, wvfn_type):
     import numpy as np
     try:
         np.load(f'excited_{filename}_wvfn_fractions.npz')
@@ -364,9 +406,9 @@ def intensity_calcs(filename):
     except:
         print('starting from scratch')
         from H3O2_intensities import full_intensity_calcs
-        full_intensity_calcs(filename)
+        full_intensity_calcs(filename, wvfn_type)
     short_intensity_calcs(filename)
 
 
-intensity_calcs('excite_state_chain_rule2_full_h3o2')
+intensity_calcs('excite_state_chain_rule2_biggest_full_h3o2', 'linear_combo')
 

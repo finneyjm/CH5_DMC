@@ -337,6 +337,7 @@ en_combo, eig_combo, V_combo = run(1, linear_struct, 'linear combo', grid_sp, r1
 import matplotlib.pyplot as plt
 dead = -0.60594644269321474*grid_sp + 42.200232187251913*grid_a
 
+
 def Harmonic_w(x, state):
     omega_asym = 3815.044564 / har2wave
     mw = omega_asym

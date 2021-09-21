@@ -292,6 +292,17 @@ def dthetadx2(coords, angs, shift):
     return np.dot(chain, coeffs)
 
 
+water_coord = np.array([[0., 0., 0.],
+                        [1.81005599, 0., 0.],
+                        [-0.45344658, 1.75233806, 0.]
+                            ]) * 1.01
+
+blah = d2psidx2(np.array([water_coord]*1), None, [0, 0, 0])
+hahahahahahaha = 7
+
+
+
+
 def drift(coords, excite, shift):
     return 2*dpsidx(coords, excite, shift)
 
