@@ -36,15 +36,15 @@ class Walkers(object):
 def psi_t(coords, excite, shift, interp, atoms):
     psi = np.zeros((len(coords), 3))
     dists = oh_dists(coords)
-    r1 = 0.9616036495623883 * ang2bohr
-    r2 = 0.9616119936423067 * ang2bohr
+    r1 = 1.8100552720044216
+    r2 = 1.8100552155510128
     req = [r1, r2]
     dists = dists - req
 
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
     anti = anti - shift[0]
-    sym = sym - shift[0]
+    sym = sym - shift[1]
     psi[:, 0] = interpolate.splev(anti, interp[0], der=0)
     psi[:, 1] = interpolate.splev(sym, interp[1], der=0)
     psi[:, 2] = angle_function(coords, excite, shift, atoms)
@@ -86,14 +86,15 @@ def d2psidx2(coords, excite, shift, interp, atoms):
 
 def dpsidrtheta(coords, excite, dists, shift, interp, atoms):
     collect = np.zeros((len(coords), 3))
-    r1 = 0.9616036495623883 * ang2bohr
-    r2 = 0.9616119936423067 * ang2bohr
+    r1 = 1.8100552720044216
+    r2 = 1.8100552155510128
+    # r2 = r1
     req = [r1, r2]
     dists = dists - req
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
     anti = anti - shift[0]
-    sym = sym - shift[0]
+    sym = sym - shift[1]
     collect[:, 0] = interpolate.splev(anti, interp[0], der=1)/interpolate.splev(anti, interp[0], der=0)
     collect[:, 1] = interpolate.splev(sym, interp[1], der=1)/interpolate.splev(sym, interp[1], der=0)
     collect[:, 2] = dangle(coords, excite, shift, atoms)
@@ -102,14 +103,15 @@ def dpsidrtheta(coords, excite, dists, shift, interp, atoms):
 
 def d2psidrtheta(coords, excite, dists, shift, interp, atoms):
     collect = np.zeros((len(coords), 3))
-    r1 = 0.9616036495623883 * ang2bohr
-    r2 = 0.9616119936423067 * ang2bohr
+    r1 = 1.8100552720044216
+    r2 = 1.8100552155510128
+    # r2 = r1
     req = [r1, r2]
     dists = dists - req
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
     anti = anti - shift[0]
-    sym = sym - shift[0]
+    sym = sym - shift[1]
     collect[:, 0] = interpolate.splev(anti, interp[0], der=2)/interpolate.splev(anti, interp[0], der=0)
     collect[:, 1] = interpolate.splev(sym, interp[1], der=2)/interpolate.splev(sym, interp[1], der=0)
     collect[:, 2] = d2angle(coords, excite, shift, atoms)
@@ -137,9 +139,9 @@ def angle(coords):
 def angle_function(coords, excite, shift, atoms):
     angs = angle(coords)
     angs = angs - shift[2]
-    r1 = 0.9616036495623883*ang2bohr
-    r2 = 0.9616119936423067*ang2bohr
-    theta = np.deg2rad(104.1747712)
+    r1 = 1.8100552720044216
+    r2 = 1.8100552155510128
+    theta = np.deg2rad(104.50800290215986)
     muH = 1 / m_H
     muO = 1 / m_O
     muD = 1 / m_D
@@ -168,9 +170,9 @@ def angle_function(coords, excite, shift, atoms):
 def dangle(coords, excite, shift, atoms):
     angs = angle(coords)
     angs = angs - shift[-1]
-    r1 = 0.9616036495623883 * ang2bohr
-    r2 = 0.9616119936423067 * ang2bohr
-    theta = np.deg2rad(104.1747712)
+    r1 = 1.8100552720044216
+    r2 = 1.8100552155510128
+    theta = np.deg2rad(104.50800290215986)
     muH = 1 / m_H
     muO = 1 / m_O
     muD = 1 / m_D
@@ -199,9 +201,9 @@ def dangle(coords, excite, shift, atoms):
 def d2angle(coords, excite, shift, atoms):
     angs = angle(coords)
     angs = angs - shift[-1]
-    r1 = 0.9616036495623883 * ang2bohr
-    r2 = 0.9616119936423067 * ang2bohr
-    theta = np.deg2rad(104.1747712)
+    r1 = 1.8100552720044216
+    r2 = 1.8100552155510128
+    theta = np.deg2rad(104.50800290215986)
     muH = 1 / m_H
     muO = 1 / m_O
     muD = 1 / m_D
@@ -514,8 +516,11 @@ def drift_fd(coords, excite, shift, interp, atoms):
 
 
 from Coordinerds.CoordinateSystems import *
+
+
 def linear_combo_stretch_grid(r1, r2, coords):
     re = np.linalg.norm(coords[0]-coords[1])
+    re2 = np.linalg.norm(coords[0]-coords[2])
     coords = np.array([coords] * 1)
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
                                                                         ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
@@ -523,7 +528,7 @@ def linear_combo_stretch_grid(r1, r2, coords):
     N = len(r1)
     zmat = np.array([zmat]*N).squeeze()
     zmat[:, 0, 1] = re + r1
-    zmat[:, 1, 1] = re + r2
+    zmat[:, 1, 1] = re2 + r2
     new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
     return new_coords
 
@@ -544,11 +549,7 @@ sym = np.load('symmetric_stretch_water_wvfns.npz')
 interp_anti = interpolate.splrep(anti['grid'], anti['excite'], s=0)
 interp_sym = interpolate.splrep(sym['grid'], sym['ground'], s=0)
 interp = [interp_anti, interp_sym]
-molecule = np.array([
-                        [0.,          0.,          0.],
-                        [1.81005527,  0.00002,          0.],
-                    [-0.4534464, 1.75233737, 0.],
-])
+molecule = np.load('monomer_coords.npy')
 
 anti = np.linspace(-0.75, 0.75, 50)
 sym = np.zeros(50)
@@ -557,7 +558,7 @@ eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
 r1 = eh[0]
 r2 = eh[1]
 
-theta = np.deg2rad(104.1747712)
+theta = np.deg2rad(104.50800290215986)
 grid = grid_angle(theta-1, theta+1, 50, molecule)
 
 # grid = linear_combo_stretch_grid(r1, r2, molecule)
@@ -565,7 +566,7 @@ grid = grid_angle(theta-1, theta+1, 50, molecule)
 # grid = np.array([molecule]*50)
 
 psi = Walkers(50, molecule, None, [0, 0, 0], ['O', 'H', 'H'], interp)
-psi.coords = grid
+# psi.coords = grid
 
 d, _ = drift(psi.coords, None, [0, 0, 0], ['O', 'H', 'H'], interp)
 psi = pot(psi)

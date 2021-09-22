@@ -58,6 +58,7 @@ def oh_dists(coords):
 def linear_combo_stretch_grid(r1, r2, coords):
     re = np.linalg.norm(coords[0]-coords[1])
     re2 = np.linalg.norm(coords[0]-coords[2])
+    # re2 = re
     coords = np.array([coords] * 1)
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
                                                                         ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
@@ -165,39 +166,39 @@ def angle(coords):
     return ang1.T
 
 
-theta = np.deg2rad(104.1747712)
-g = grid_angle(theta-1, theta+1, 50, water)
-struct1 = g[20]
-struct2 = g[30]
-
-anti = np.linspace(-1, 1, 50)
-sym = np.linspace(-1, 1, 50)
-A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
-eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
-r1 = eh[0]
-r2 = eh[1]
-
-g1 = linear_combo_stretch_grid(r1, r2, struct1)
-struct1 = g1[20]
-
-g2 = linear_combo_stretch_grid(r1, r2, struct2)
-struct2 = g2[30]
-
-print(struct1)
-
-dists = oh_dists(np.array([struct1]*1))
-anti = 1 / np.sqrt(2) * (dists[:, 1] - dists[:, 0])
-sym = 1 / np.sqrt(2) * (dists[:, 1] + dists[:, 0])
-ang = angle(np.array([struct1]*1))
-print(anti, sym, ang)
-
-print(struct2)
-
-dists = oh_dists(np.array([struct2]*1))
-anti = 1 / np.sqrt(2) * (dists[:, 1] - dists[:, 0])
-sym = 1 / np.sqrt(2) * (dists[:, 1] + dists[:, 0])
-ang = angle(np.array([struct2]*1))
-print(anti, sym, ang)
+# theta = np.deg2rad(104.1747712)
+# g = grid_angle(theta-1, theta+1, 50, water)
+# struct1 = g[20]
+# struct2 = g[30]
+#
+# anti = np.linspace(-1, 1, 50)
+# sym = np.linspace(-1, 1, 50)
+# A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
+# eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
+# r1 = eh[0]
+# r2 = eh[1]
+#
+# g1 = linear_combo_stretch_grid(r1, r2, struct1)
+# struct1 = g1[20]
+#
+# g2 = linear_combo_stretch_grid(r1, r2, struct2)
+# struct2 = g2[30]
+#
+# print(struct1)
+#
+# dists = oh_dists(np.array([struct1]*1))
+# anti = 1 / np.sqrt(2) * (dists[:, 1] - dists[:, 0])
+# sym = 1 / np.sqrt(2) * (dists[:, 1] + dists[:, 0])
+# ang = angle(np.array([struct1]*1))
+# print(anti, sym, ang)
+#
+# print(struct2)
+#
+# dists = oh_dists(np.array([struct2]*1))
+# anti = 1 / np.sqrt(2) * (dists[:, 1] - dists[:, 0])
+# sym = 1 / np.sqrt(2) * (dists[:, 1] + dists[:, 0])
+# ang = angle(np.array([struct2]*1))
+# print(anti, sym, ang)
 
 
 import matplotlib.pyplot as plt
@@ -220,7 +221,7 @@ lin_combo_grid = linear_combo_stretch_grid(r1, r2, water)
 # m2 = 1/(-2/r**2*(1/m_H - 1/m_O - np.cos(ang)/m_O) - np.sqrt(2)*np.sin(ang)/(r*m_O))
 # m1 = 1/(1/m_O + 1/m_H + np.cos(ang)/m_O - np.sin(ang)/(r*m_O))
 # anti_freq = 3944.27284814
-anti_gmat_one_over = 1702.9703137654326
+anti_gmat_one_over = 1702.9703138358866
 # m1 = anti_freq/2
 en_wat, eig_wat, v = run(lin_combo_grid, anti[0], anti[-1], anti_gmat_one_over, 'water')
 print((en_wat[1]-en_wat[0])*har2wave)
@@ -250,7 +251,7 @@ lin_combo_grid = linear_combo_stretch_grid(r1, r2, water)
 # m1 = 1/(1/m_O + 1/m_H + np.cos(ang)/m_O - np.sin(ang)/(r*m_O))
 # m2 = 1/(2/r**2*(1/m_H + 1/m_O - np.cos(ang)/m_O) - np.sqrt(2)*np.sin(ang)/(r*m_O))
 # sym_freq = 3832.70931812
-sym_gmat_one_over = 1754.307807821817
+sym_gmat_one_over = 1754.3078077470518
 en_wat, eig_wat, v = run(lin_combo_grid, sym[0], sym[-1], sym_gmat_one_over, 'water')
 print((en_wat[1]-en_wat[0])*har2wave)
 np.savez('symmetric_stretch_water_wvfns', grid=sym, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
