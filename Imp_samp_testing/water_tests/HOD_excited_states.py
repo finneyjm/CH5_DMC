@@ -26,7 +26,7 @@ ang2bohr = 1.e-10/5.291772106712e-11
 
 mw_d = m_OD * omega_OD/har2wave
 mw_h = m_OH * omega_OH/har2wave
-mw_d = mw_h
+# mw_d = mw_h
 
 coords_initial = np.array([[0.000000000000000, 0.000000000000000, 0.000000000000000],
                            [0.957840000000000, 0.000000000000000, 0.000000000000000],
@@ -90,19 +90,16 @@ def d2psidx2(coords, excite, shift):
     dists = oh_dists(coords)
     drx = drdx(coords, dists, shift)
     dthet = dthetadx(coords, shift)
-    # dthet = np.zeros(dthet.shape)
     dr1 = np.concatenate((drx, dthet[..., None]), axis=-1)
     drx2 = drdx2(coords, dists, shift)
     dthet2 = dthetadx2(coords, angle(coords), shift)
-    # dthet2 = np.zeros(dthet2.shape)
     dr2 = np.concatenate((drx2, dthet2[..., None]), axis=-1)
     first_dir = dpsidrtheta(coords, excite, dists, shift)
-    first_dir[:, -1] = np.zeros(first_dir[:, -1].shape)
     second_dir = d2psidrtheta(coords, excite, dists, shift)
-    second_dir[:, -1] = np.zeros(second_dir[:, -1].shape)
     part1 = np.matmul(dr2, first_dir[:, None, :, None]).squeeze()
     part2 = np.matmul(dr1**2, second_dir[:, None, :, None]).squeeze()
-    part3 = np.matmul(dr1*dr1[..., [1, 2, 0]], first_dir[:, None, :, None]*first_dir[:, None, [1, 2, 0], None]).squeeze()
+    part3 = np.matmul(dr1*dr1[..., [1, 2, 0]], first_dir[:, None, :, None]
+                      *first_dir[:, None, [1, 2, 0], None]).squeeze()
     return part1+part2+2*part3
 
 
@@ -292,6 +289,39 @@ def dthetadx2(coords, angs, shift):
     return np.dot(chain, coeffs)
 
 
+
+from Coordinerds.CoordinateSystems import *
+
+
+def linear_combo_stretch_grid(r1, r2, coords):
+    re = np.linalg.norm(coords[0]-coords[1])
+    re2 = np.linalg.norm(coords[0]-coords[2])
+    re = 0.9616036495623883 * ang2bohr
+    re2 = 0.9616119936423067 * ang2bohr
+
+    coords = np.array([coords] * 1)
+    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
+                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
+                                                                                   [2, 0, 1, 0]])).coords
+    N = len(r1)
+    zmat = np.array([zmat]*N).squeeze()
+    zmat[:, 0, 1] = re + r1
+    zmat[:, 1, 1] = re2 + r2
+    new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+    return new_coords
+
+molecule = np.load('monomer_coords.npy')
+
+anti = np.linspace(-0.75, 0.75, 200)
+sym = np.zeros(200)
+A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
+eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
+r1 = eh[0]
+r2 = eh[1]
+
+grid = linear_combo_stretch_grid(r1, r2, molecule)
+
+blah = d2psidx2(grid, None, [0, 0, 0])
 water_coord = np.array([[0., 0., 0.],
                         [1.81005599, 0., 0.],
                         [-0.45344658, 1.75233806, 0.]
@@ -336,6 +366,7 @@ def Kinetic(Psi, Fqx):
 def get_pot(coords):
     V = wm.PatrickShinglePotential(coords)
     return V
+
 
 def Potential(Psi):
     coords = np.array_split(Psi.coords, mp.cpu_count()-1)
