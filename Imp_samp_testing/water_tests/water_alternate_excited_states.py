@@ -61,6 +61,7 @@ def psi_t(coords, excite, shift, atoms):
     dists = dists - shift[:2]
     if excite == 'asym' or excite == 'sym':
         psi = np.zeros((len(coords), 2))
+        psi[:, 0] = angle_function(coords, excite, shift, atoms)
         term1 = (mw1 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw1 * dists[:, 0] ** 2)) * \
                 (2 * mw1) ** (1 / 2) * dists[:, 0]
         term1_2 = (mw2 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw2 * dists[:, 1] ** 2))
@@ -68,14 +69,14 @@ def psi_t(coords, excite, shift, atoms):
         term2_2 = (mw2 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw2 * dists[:, 1] ** 2)) * \
                  (2 * mw2) ** (1 / 2) * dists[:, 1]
         if excite == 'asym':
-            psi[:, 1] = 1/np.sqrt(2)*(term2*term2_2 - term1*term1_2)
+            psi[:, 1] = 1/np.sqrt(2)*(term1*term1_2 - term2*term2_2)
         else:
             psi[:, 1] = 1/np.sqrt(2)*(term1*term1_2 + term2*term2_2)
     else:
         psi = np.zeros((len(coords), 3))
+        psi[:, 0] = angle_function(coords, excite, shift, atoms)
         psi[:, 1] = (mw1 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw1 * dists[:, 0] ** 2))
         psi[:, 2] = (mw2 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw2 * dists[:, 1] ** 2))
-    psi[:, 0] = angle_function(coords, excite, shift, atoms)
     return np.prod(psi, axis=-1)
 
 
@@ -87,12 +88,18 @@ def dpsidx(coords, excite, shift, atoms):
     collect = dpsidrtheta(coords, excite, dists, shift, atoms)
 
     if excite == 'asym' or excite == 'sym':
-        term1 = np.matmul(dr, collect[:, None, [0, 1, 2], None]).squeeze()
-        term2 = np.matmul(dr, collect[:, None, [0, 3, 4], None]).squeeze()
+        psi = psi_t(coords, excite, shift, atoms)
+        psip = psi_parts(coords, excite, dists, shift, atoms)
+        term1 = np.matmul(dr, collect[:, None, [0, 1, 2], None]).squeeze() * \
+                np.prod(psip[:, [0, 1, 2]], axis=-1)[:, None, None]
+        term2 = np.matmul(dr, collect[:, None, [0, 3, 4], None]).squeeze() * \
+                np.prod(psip[:, [0, 3, 4]], axis=-1)[:, None, None]
         if excite == 'asym':
-            dpsi = 1/np.sqrt(2)*(term2 - term1)
+            dpsi = 1/np.sqrt(2)*(term1 - term2)
+            dpsi = dpsi / np.broadcast_to(psi[:, None, None], (dpsi.shape))
         else:
             dpsi = 1/np.sqrt(2)*(term1 + term2)
+            dpsi = dpsi / np.broadcast_to(psi[:, None, None], (dpsi.shape))
     else:
         dpsi = np.matmul(dr, collect[:, None, :, None]).squeeze()
 
@@ -100,6 +107,8 @@ def dpsidx(coords, excite, shift, atoms):
 
 
 def d2psidx2(coords, excite, shift, atoms):
+    # import pyvibdmc as pv
+    # check = pv.ChainRuleHelper.dth_dx(coords, [[1, 0, 2]])
     dists = oh_dists(coords)
     drx = drdx(coords, dists, shift)
     dthet = dthetadx(coords, shift)
@@ -111,20 +120,30 @@ def d2psidx2(coords, excite, shift, atoms):
     second_dir = d2psidrtheta(coords, excite, dists, shift, atoms)
 
     if excite == 'asym' or excite == 'sym':
-        part1 = np.matmul(dr2, first_dir[:, None, [0, 1, 2], None]).squeeze()
-        part2 = np.matmul(dr1**2, second_dir[:, None, [0, 1, 2], None]).squeeze()
+        psi = psi_t(coords, excite, shift, atoms)
+        psip = psi_parts(coords, excite, dists, shift, atoms)
+        part1 = np.matmul(dr2, first_dir[:, None, [0, 1, 2], None]).squeeze() * \
+                np.prod(psip[:, [0, 1, 2]], axis=-1)[:, None, None]
+        part2 = np.matmul(dr1**2, second_dir[:, None, [0, 1, 2], None]).squeeze() * \
+                np.prod(psip[:, [0, 1, 2]], axis=-1)[:, None, None]
         part3 = np.matmul(dr1*dr1[..., [1, 2, 0]], first_dir[:, None, [0, 1, 2], None]
-                          *first_dir[:, None, [1, 2, 0], None]).squeeze()
+                          *first_dir[:, None, [1, 2, 0], None]).squeeze() * \
+                np.prod(psip[:, [0, 1, 2]], axis=-1)[:, None, None]
         term1 = part1 + part2 + 2*part3
-        part1 = np.matmul(dr2, first_dir[:, None, [0, 3, 4], None]).squeeze()
-        part2 = np.matmul(dr1 ** 2, second_dir[:, None, [0, 3, 4], None]).squeeze()
-        part3 = np.matmul(dr1 * dr1[..., [1, 2, 0]], first_dir[:, None, [0, 3, 4], None]
-                          * first_dir[:, None, [3, 4, 0], None]).squeeze()
-        term2 = part1 + part2 + 2*part3
+        part1_2 = np.matmul(dr2, first_dir[:, None, [0, 3, 4], None]).squeeze() * \
+                np.prod(psip[:, [0, 3, 4]], axis=-1)[:, None, None]
+        part2_2 = np.matmul(dr1 ** 2, second_dir[:, None, [0, 3, 4], None]).squeeze() * \
+                np.prod(psip[:, [0, 3, 4]], axis=-1)[:, None, None]
+        part3_2 = np.matmul(dr1 * dr1[..., [1, 2, 0]], first_dir[:, None, [0, 3, 4], None]
+                          * first_dir[:, None, [3, 4, 0], None]).squeeze() * \
+                np.prod(psip[:, [0, 3, 4]], axis=-1)[:, None, None]
+        term2 = part1_2 + part2_2 + 2*part3_2
         if excite == 'asym':
-            dpsi = 1 / np.sqrt(2) * (term2 - term1)
+            dpsi = 1 / np.sqrt(2) * (term1 - term2)
+            dpsi = dpsi / np.broadcast_to(psi[:, None, None], (dpsi.shape))
         else:
             dpsi = 1 / np.sqrt(2) * (term1 + term2)
+            dpsi = dpsi / np.broadcast_to(psi[:, None, None], (dpsi.shape))
     else:
         part1 = np.matmul(dr2, first_dir[:, None, [0, 1, 2], None]).squeeze()
         part2 = np.matmul(dr1 ** 2, second_dir[:, None, [0, 1, 2], None]).squeeze()
@@ -133,6 +152,37 @@ def d2psidx2(coords, excite, shift, atoms):
         dpsi = part1 + part2 + 2*part3
 
     return dpsi
+
+
+def psi_parts(coords, excite, dists, shift, atoms):
+    r1 = 0.9616036495623883 * ang2bohr
+    r2 = 0.9616119936423067 * ang2bohr
+    req = [r1, r2]
+    dists = dists - req
+    if atoms[1].upper() == 'H':
+        if atoms[2].upper() == 'H':
+            mw1 = mw_h
+            mw2 = mw_h
+        else:
+            mw1 = mw_h
+            mw2 = mw_d
+    else:
+        if atoms[2].upper() == 'H':
+            mw1 = mw_d
+            mw2 = mw_h
+        else:
+            mw1 = mw_d
+            mw2 = mw_d
+    dists = dists - shift[:2]
+    psi = np.zeros((len(coords), 5))
+    psi[:, 0] = angle_function(coords, excite, shift, atoms)
+    psi[:, 1] = (mw1 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw1 * dists[:, 0] ** 2)) * \
+                (2 * mw1) ** (1 / 2) * dists[:, 0]
+    psi[:, 2] = (mw2 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw2 * dists[:, 1] ** 2))
+    psi[:, 3] = (mw1 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw1 * dists[:, 0] ** 2))
+    psi[:, 4] = (mw2 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw2 * dists[:, 1] ** 2)) * \
+                (2 * mw2) ** (1 / 2) * dists[:, 1]
+    return psi
 
 
 def dpsidrtheta(coords, excite, dists, shift, atoms):
@@ -161,11 +211,12 @@ def dpsidrtheta(coords, excite, dists, shift, atoms):
         psi[:, 2] = -mw2*dists[:, 1]
         psi[:, 3] = -mw1*dists[:, 0]
         psi[:, 4] = (1 - mw2*dists[:, 1]**2)/dists[:, 1]
+        psi[:, 0] = dangle(coords, excite, shift, atoms)
     else:
         psi = np.zeros((len(coords), 3))
+        psi[:, 0] = dangle(coords, excite, shift, atoms)
         psi[:, 1] = -mw1*dists[:, 0]
         psi[:, 2] = -mw2*dists[:, 1]
-    psi[:, 0] = dangle(coords, excite, shift, atoms)
     return psi
 
 
@@ -195,11 +246,12 @@ def d2psidrtheta(coords, excite, dists, shift, atoms):
         psi[:, 2] = mw2**2*dists[:, 1]**2 - mw2
         psi[:, 3] = mw1**2*dists[:, 0]**2 - mw1
         psi[:, 4] = mw2*(mw2*dists[:, 1]**2 - 3)
+        psi[:, 0] = d2angle(coords, excite, shift, atoms)
     else:
         psi = np.zeros((len(coords), 3))
+        psi[:, 0] = d2angle(coords, excite, shift, atoms)
         psi[:, 1] = mw1**2*dists[:, 0]**2 - mw1
         psi[:, 2] = mw2**2*dists[:, 1]**2 - mw2
-    psi[:, 0] = d2angle(coords, excite, shift, atoms)
     return psi
 
 
@@ -373,13 +425,22 @@ def dthetadx2(coords, angs, shift):
     return np.dot(chain, coeffs)
 
 
+def drift(coords, excite, shift, atoms):
+    coordz = np.array_split(coords, mp.cpu_count()-1)
+    psi = pool.starmap(psi_t, zip(coordz, repeat(excite), repeat(shift), repeat(atoms)))
+    psi = np.concatenate(psi)
+    der = 2*np.concatenate(pool.starmap(dpsidx, zip(coordz, repeat(excite), repeat(shift),
+                                                    repeat(atoms))))
+    return der, psi
+
+
 def local_kinetic(Psi, sigma):
     coords = np.array_split(Psi.coords, mp.cpu_count()-1)
     d2psi = pool.starmap(d2psidx2, zip(coords, repeat(Psi.excite), repeat(Psi.shift),
                                        repeat(Psi.atoms)))
     d2psi = np.concatenate(d2psi)
     kin = -1/2 * np.sum(np.sum(sigma**2/dtau*d2psi, axis=1), axis=1)
-    return kin, d2psi
+    return kin
 
 
 def get_pot(coords):
@@ -395,108 +456,169 @@ def pot(Psi):
 
 
 def E_loc(Psi, sigma):
-    kin, d2psi = local_kinetic(Psi, sigma)
+    kin = local_kinetic(Psi, sigma)
     Psi.El = kin + Psi.V
-    return Psi, d2psi
+    return Psi
+
+
+def metropolis(Fqx, Fqy, x, y, psi_1, psi_2, sigma):
+    psi_ratio = (psi_2/psi_1)**2
+    a = np.exp(1. / 2. * (Fqx + Fqy) * (sigma ** 2 / 4. * (Fqx - Fqy) - (y - x)))
+    a = np.prod(np.prod(a, axis=1), axis=1) * psi_ratio
+    remove = np.argwhere(psi_2 * psi_1 < 0)
+    a[remove] = 0.
+    return a
+
+
+# Random walk of all the walkers
+def Kinetic(Psi, Fqx, sigma):
+    Drift = sigma**2/2.*Fqx
+    randomwalk = np.random.normal(0.0, sigma, size=(len(Psi.coords), sigma.shape[0], sigma.shape[1]))
+    y = randomwalk + Drift + np.array(Psi.coords)
+    Fqy, psi = drift(y, Psi.excite, Psi.shift, Psi.atoms)
+    a = metropolis(Fqx, Fqy, Psi.coords, y, Psi.psit, psi, sigma)
+    check = np.random.random(size=len(Psi.coords))
+    accept = np.argwhere(a > check)
+    Psi.coords[accept] = y[accept]
+    Fqx[accept] = Fqy[accept]
+    Psi.psit[accept] = psi[accept]
+    acceptance = float(len(accept)/len(Psi.coords))*100.
+    return Psi, Fqx, acceptance
+
+
+def E_ref_calc(Psi):
+    alpha = 1. / (2. * dtau)
+    P0 = sum(Psi.weights_i)
+    P = sum(Psi.weights)
+    E_ref = sum(Psi.weights*Psi.El)/P - alpha*np.log(P/P0)
+    return E_ref
+
+
+def Weighting(Eref, Psi, DW, Fqx):
+    Psi.weights = Psi.weights * np.exp(-(Psi.El - Eref) * dtau)
+    threshold = 0.01
+    max_thresh = 20
+    death = np.argwhere(Psi.weights < threshold)
+    for i in death:
+        ind = np.argmax(Psi.weights)
+        if DW is True:
+            Biggo_num = int(Psi.walkers[ind])
+            Psi.walkers[i[0]] = Biggo_num
+        Biggo_weight = float(Psi.weights[ind])
+        Biggo_pos = np.array(Psi.coords[ind])
+        Biggo_pot = float(Psi.V[ind])
+        Biggo_el = float(Psi.El[ind])
+        Biggo_force = np.array(Fqx[ind])
+        Psi.weights[i[0]] = Biggo_weight/2.
+        Psi.weights[ind] = Biggo_weight/2.
+        Psi.coords[i[0]] = Biggo_pos
+        Psi.V[i[0]] = Biggo_pot
+        Psi.El[i[0]] = Biggo_el
+        Fqx[i[0]] = Biggo_force
+
+    death = np.argwhere(Psi.weights > max_thresh)
+    for i in death:
+        ind = np.argmin(Psi.weights)
+        if DW is True:
+            Biggo_num = float(Psi.walkers[i[0]])
+            Psi.walkers[ind] = Biggo_num
+        Biggo_weight = float(Psi.weights[i[0]])
+        Biggo_pos = np.array(Psi.coords[i[0]])
+        Biggo_pot = float(Psi.V[i[0]])
+        Biggo_el = float(Psi.El[i[0]])
+        Biggo_force = np.array(Fqx[i[0]])
+        Psi.weights[i[0]] = Biggo_weight / 2.
+        Psi.weights[ind] = Biggo_weight / 2.
+        Psi.coords[ind] = Biggo_pos
+        Psi.V[ind] = Biggo_pot
+        Psi.El[ind] = Biggo_el
+        Fqx[ind] = Biggo_force
+    return Psi
+
+
+def descendants(Psi):
+    d = np.bincount(Psi.walkers, weights=Psi.weights)
+    while len(d) < len(Psi.coords):
+        d = np.append(d, 0.)
+    return d
+
+
+def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_struct,
+        initial_shifts, shift_rate, atoms):
+    DW = False
+    psi = Walkers(N_0, initial_struct, excite, initial_shifts, atoms)
+    sigma = np.zeros((3, 3))
+    sigma[0] = np.array([[np.sqrt(dtau/m_O)] * 3])
+    if atoms[1].upper() == 'H':
+        sigma[1] = np.array([[np.sqrt(dtau/m_H)]*3])
+    else:
+        sigma[1] = np.array([[np.sqrt(dtau/m_D)]*3])
+    if atoms[2].upper() == 'H':
+        sigma[2] = np.array([[np.sqrt(dtau/m_H)]*3])
+    else:
+        sigma[2] = np.array([[np.sqrt(dtau/m_D)]*3])
+
+    Fqx, psi.psit = drift(psi.coords, psi.excite, psi.shift, psi.atoms)
+    num_o_collections = int((time_steps - equilibration) / (propagation + wait_time)) + 1
+    timez = np.zeros(time_steps)
+    sum_weights = np.zeros(time_steps)
+    accept = np.zeros(time_steps)
+    coords = np.zeros(np.append(num_o_collections, psi.coords.shape))
+    weights = np.zeros(np.append(num_o_collections, psi.weights.shape))
+    des = np.zeros(np.append(num_o_collections, psi.weights.shape))
+
+    num = 0
+    prop = float(propagation)
+    wait = float(wait_time)
+    Eref_array = np.zeros(time_steps)
+
+    shift = np.zeros((time_steps + 1, len(psi.shift)))
+    shift[0] = psi.shift
+    shift_rate = np.array(shift_rate)
+    psi.shift = np.array(psi.shift)
+    for i in range(int(time_steps)):
+        if i % 1000 == 0:
+            print(i, flush=True)
+
+        if DW is False:
+            prop = float(propagation)
+            wait -= 1.
+        else:
+            prop -= 1.
+
+        if i == 0:
+            psi = pot(psi)
+            psi = E_loc(psi, sigma)
+            Eref = E_ref_calc(psi)
+
+        psi, Fqx, acceptance = Kinetic(psi, Fqx, sigma)
+        shift[i + 1] = psi.shift
+        psi = pot(psi)
+        psi = E_loc(psi, sigma)
+
+        psi = Weighting(Eref, psi, DW, Fqx)
+        Eref = E_ref_calc(psi)
+
+        Eref_array[i] = Eref
+        timez[i] = i + 1
+        sum_weights[i] = np.sum(psi.weights)
+        accept[i] = acceptance
+
+        if i >= 5000:
+            psi.shift = psi.shift + shift_rate
+
+        if i >= int(equilibration) - 1 and wait <= 0. < prop:
+            DW = True
+            wait = float(wait_time)
+            Psi_tau = copy.deepcopy(psi)
+            coords[num] = Psi_tau.coords
+            weights[num] = Psi_tau.weights
+        elif prop == 0:
+            DW = False
+            des[num] = descendants(psi)
+            num += 1
+
+    return coords, weights, timez, Eref_array, sum_weights, accept, des
 
 
 pool = mp.Pool(mp.cpu_count()-1)
-
-
-def all_da_psi(coords, excite, shift, atoms):
-    dx = 1e-3
-    psi = np.zeros((len(coords), 3, 3, 3))
-    psi[:, 1] = np.broadcast_to(psi_t(coords, excite, shift, atoms)[:, None, None],
-                                (len(coords), 3, 3))
-    for atom in range(3):
-        for xyz in range(3):
-            coords[:, atom, xyz] -= dx
-            psi[:, 0, atom, xyz] = psi_t(coords, excite, shift, atoms)
-            coords[:, atom, xyz] += 2*dx
-            psi[:, 2, atom, xyz] = psi_t(coords, excite, shift, atoms)
-            coords[:, atom, xyz] -= dx
-    return psi
-
-
-def local_kinetic_finite(Psi):
-    dx = 1e-3
-    d2psidx2 = ((Psi.psit[:, 0] - 2. * Psi.psit[:, 1] + Psi.psit[:, 2]) / dx ** 2) / Psi.psit[:, 1]
-    kin = -1. / 2. * np.sum(np.sum(sigma ** 2 / dtau * d2psidx2, axis=1), axis=1)
-    return kin, d2psidx2
-
-
-from Coordinerds.CoordinateSystems import *
-
-
-def linear_combo_stretch_grid(r1, r2, coords):
-    re = np.linalg.norm(coords[0]-coords[1])
-    re2 = np.linalg.norm(coords[0]-coords[2])
-    re = 0.9616036495623883 * ang2bohr
-    re2 = 0.9616119936423067 * ang2bohr
-
-    coords = np.array([coords] * 1)
-    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
-                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
-                                                                                   [2, 0, 1, 0]])).coords
-    N = len(r1)
-    zmat = np.array([zmat]*N).squeeze()
-    zmat[:, 0, 1] = re + r1
-    zmat[:, 1, 1] = re2 + r2
-    new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-    return new_coords
-
-
-def drift_fd(coords, excite, shift, atoms):
-    dx = 1e-3
-    psi = all_da_psi(coords, excite, shift, atoms)
-    der = (psi[:, 2] - psi[:, 0])/dx/psi[:, 1]
-    return der, psi
-
-
-def grid_angle(a, b, num, coords):
-    spacing = np.linspace(a, b, num)
-    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
-                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
-                                                                                   [2, 0, 1, 0]])).coords
-    g = np.array([zmat]*num)
-    g[:, 1, 3] = spacing
-    new_coords = CoordinateSet(g, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-    return new_coords
-
-
-molecule = np.load('monomer_coords.npy')
-
-anti = np.linspace(-0.75, 0.75, 200)
-sym = np.zeros(200)
-A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
-eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
-r1 = eh[0]
-r2 = eh[1]
-
-grid = linear_combo_stretch_grid(r1, r2, molecule)
-
-psi = Walkers(50, molecule, 'asym', [0, 0, 0], ['O', 'D', 'H'])
-psi.coords = grid
-
-# d, _ = drift(psi.coords, 'sym', [0, 0, 0], ['O', 'H', 'H'], interp)
-psi = pot(psi)
-sigma = np.zeros((3, 3))
-sigma[0] = np.array([[np.sqrt(dtau / m_O)] * 3])
-sigma[1] = np.array([[np.sqrt(dtau / m_H)] * 3])
-sigma[2] = np.array([[np.sqrt(dtau / m_H)] * 3])
-
-psi, d2psi = E_loc(psi, sigma)
-
-fd_d, psi.psit = drift_fd(psi.coords, psi.excite, psi.shift, psi.atoms)
-# asdf, d2psi_fd = local_kinetic_finite(psi)
-fd_eloc, d2psi_fd = local_kinetic_finite(psi)
-fd_eloc = fd_eloc + psi.V
-# theta = np.linspace(theta-1, theta+1, 50)
-# anti = np.rad2deg(theta)
-# anti = sym
-import matplotlib.pyplot as plt
-plt.plot(anti, psi.V*har2wave, label='potential')
-plt.plot(anti, psi.El*har2wave, label='local energy')
-plt.plot(anti, fd_eloc*har2wave, label='fd local energy')
-plt.legend()
-plt.show()

@@ -87,6 +87,9 @@ def dpsidx(coords, excite, shift):
 
 
 def d2psidx2(coords, excite, shift):
+    import pyvibdmc as pv
+    check = pv.ChainRuleHelper.dth_dx(coords, [[1, 0, 2]])
+
     dists = oh_dists(coords)
     drx = drdx(coords, dists, shift)
     dthet = dthetadx(coords, shift)
@@ -310,10 +313,34 @@ def linear_combo_stretch_grid(r1, r2, coords):
     new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
     return new_coords
 
+
 molecule = np.load('monomer_coords.npy')
 
+
+def local_kinetic_finite(Psi):
+    dx = 1e-3
+    d2psidx2 = ((Psi[:, 0] - 2. * Psi[:, 1] + Psi[:, 2]) / dx ** 2) / Psi[:, 1]
+    # kin = -1. / 2. * np.sum(np.sum(sigma ** 2 / dtau * d2psidx2, axis=1), axis=1)
+    return d2psidx2
+
+
+def all_da_psi(coords, excite, shift):
+    dx = 1e-3
+    psi = np.zeros((len(coords), 3, 3, 3))
+    psi[:, 1] = np.broadcast_to(np.prod(psi_t(coords, excite, shift), axis=-1)[:, None, None],
+                                (len(coords), 3, 3))
+    for atom in range(3):
+        for xyz in range(3):
+            coords[:, atom, xyz] -= dx
+            psi[:, 0, atom, xyz] = np.prod(psi_t(coords, excite, shift), axis=-1)
+            coords[:, atom, xyz] += 2*dx
+            psi[:, 2, atom, xyz] = np.prod(psi_t(coords, excite, shift), axis=-1)
+            coords[:, atom, xyz] -= dx
+    return psi
+
+
 anti = np.linspace(-0.75, 0.75, 200)
-sym = np.zeros(200)
+sym = np.zeros(200) + 0.02
 A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
 eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
 r1 = eh[0]
@@ -321,16 +348,35 @@ r2 = eh[1]
 
 grid = linear_combo_stretch_grid(r1, r2, molecule)
 
-blah = d2psidx2(grid, None, [0, 0, 0])
+psi1 = psi_t(grid, 'oh', [0, 0, 0])
+
+blah = d2psidx2(grid, 'oh', [0, 0, 0])*psi1
+
+psi2 = psi_t(grid, 'od', [0, 0, 0])
+
+blah2 = d2psidx2(grid, 'od', [0, 0, 0])*psi2
+
+full_psi = np.prod(1/np.sqrt(2)*(psi2 - psi1), axis=-1)
+
+test = (blah2 - blah)/np.sqrt(2)/full_psi[:, None, None]
+
+psi = all_da_psi(grid, 'oh', [0, 0, 0])
+
+blah_fd = local_kinetic_finite(psi)
+
+psi = all_da_psi(grid, 'od', [0, 0, 0])
+
+blah_fd2 = local_kinetic_finite(psi)
+
+test_fd = (blah_fd2 - blah_fd)/np.sqrt(2)
+
 water_coord = np.array([[0., 0., 0.],
                         [1.81005599, 0., 0.],
                         [-0.45344658, 1.75233806, 0.]
                             ]) * 1.01
 
-blah = d2psidx2(np.array([water_coord]*1), None, [0, 0, 0])
+blah = d2psidx2(np.array([water_coord]*1), 'od', [0, 0, 0])
 hahahahahahaha = 7
-
-
 
 
 def drift(coords, excite, shift):
