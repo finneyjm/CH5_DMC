@@ -34,31 +34,39 @@ class Walkers(object):
 
 
 def psi_t(coords, excite, shift, interp, atoms):
-    psi = np.zeros((len(coords), 3))
+    psi = np.ones((len(coords), 3))
     dists = oh_dists(coords)
-    r1 = 1.8100552720044216
-    r2 = 1.8100552155510128
-    req = [r1, r2]
-    dists = dists - req
+    r1 = 0.95784 * ang2bohr
+    r2 = 0.95783997 * ang2bohr
+    # req = [r1, r2]
+    # dists = dists - req
 
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
     anti = anti - shift[0]
     sym = sym - shift[1]
     psi[:, 0] = interpolate.splev(anti, interp[0], der=0)
-    psi[:, 1] = interpolate.splev(sym, interp[1], der=0)
-    psi[:, 2] = angle_function(coords, excite, shift, atoms)
+    # psi[:, 1] = interpolate.splev(sym, interp[1], der=0)
+    # psi[:, 2] = angle_function(coords, excite, shift, atoms)
     return psi
+
+
+# def dpsidx(coords, excite, shift, interp, atoms):
+#     dists = oh_dists(coords)
+#     drx = drdx(coords, dists, shift)
+#     drx = duvdx(drx)
+#     dthet = dthetadx(coords, shift)
+#     dr = np.concatenate((drx, dthet[..., None]), axis=-1)
+#     collect = dpsidrtheta(coords, excite, dists, shift, interp, atoms)
+#     return np.matmul(dr, collect[:, None, :, None]).squeeze()
 
 
 def dpsidx(coords, excite, shift, interp, atoms):
     dists = oh_dists(coords)
     drx = drdx(coords, dists, shift)
-    drx = duvdx(drx)
-    dthet = dthetadx(coords, shift)
-    dr = np.concatenate((drx, dthet[..., None]), axis=-1)
-    collect = dpsidrtheta(coords, excite, dists, shift, interp, atoms)
-    return np.matmul(dr, collect[:, None, :, None]).squeeze()
+    drx = duvdx(drx)[..., 0]
+    collect = dpsidrtheta(coords, excite, dists, shift, interp, atoms)[:, 0]
+    return np.matmul(drx[..., None], collect[:, None, None, None]).squeeze()
 
 
 def duvdx(drx):
@@ -66,55 +74,68 @@ def duvdx(drx):
                                         (drx[..., 0, None] + drx[..., 1, None])), axis=-1)
 
 
+# def d2psidx2(coords, excite, shift, interp, atoms):
+#     dists = oh_dists(coords)
+#     drx = drdx(coords, dists, shift)
+#     drx = duvdx(drx)
+#     dthet = dthetadx(coords, shift)
+#     dr1 = np.concatenate((drx, dthet[..., None]), axis=-1)
+#     drx2 = drdx2(coords, dists, shift)
+#     drx2 = duvdx(drx2)
+#     dthet2 = dthetadx2(coords, angle(coords), shift)
+#     dr2 = np.concatenate((drx2, dthet2[..., None]), axis=-1)
+#     first_dir = dpsidrtheta(coords, excite, dists, shift, interp, atoms)
+#     second_dir = d2psidrtheta(coords, excite, dists, shift, interp, atoms)
+#     part1 = np.matmul(dr2, first_dir[:, None, :, None]).squeeze()
+#     part2 = np.matmul(dr1**2, second_dir[:, None, :, None]).squeeze()
+#     part3 = np.matmul(dr1*dr1[..., [1, 2, 0]], first_dir[:, None, :, None]*first_dir[:, None, [1, 2, 0], None]).squeeze()
+#     return part1+part2+2*part3
+
+
 def d2psidx2(coords, excite, shift, interp, atoms):
     dists = oh_dists(coords)
     drx = drdx(coords, dists, shift)
-    drx = duvdx(drx)
-    dthet = dthetadx(coords, shift)
-    dr1 = np.concatenate((drx, dthet[..., None]), axis=-1)
+    drx = duvdx(drx)[..., 0]
     drx2 = drdx2(coords, dists, shift)
-    drx2 = duvdx(drx2)
-    dthet2 = dthetadx2(coords, angle(coords), shift)
-    dr2 = np.concatenate((drx2, dthet2[..., None]), axis=-1)
-    first_dir = dpsidrtheta(coords, excite, dists, shift, interp, atoms)
-    second_dir = d2psidrtheta(coords, excite, dists, shift, interp, atoms)
-    part1 = np.matmul(dr2, first_dir[:, None, :, None]).squeeze()
-    part2 = np.matmul(dr1**2, second_dir[:, None, :, None]).squeeze()
-    part3 = np.matmul(dr1*dr1[..., [1, 2, 0]], first_dir[:, None, :, None]*first_dir[:, None, [1, 2, 0], None]).squeeze()
-    return part1+part2+2*part3
+    drx2 = duvdx(drx2)[..., 0]
+    first_dir = dpsidrtheta(coords, excite, dists, shift, interp, atoms)[:, 0]
+    second_dir = d2psidrtheta(coords, excite, dists, shift, interp, atoms)[:, 0]
+    part1 = np.matmul(drx2[..., None], first_dir[:, None, None, None]).squeeze()
+    part2 = np.matmul((drx**2)[..., None], second_dir[:, None, None, None]).squeeze()
+    return part1 + part2
 
 
 def dpsidrtheta(coords, excite, dists, shift, interp, atoms):
     collect = np.zeros((len(coords), 3))
-    r1 = 1.8100552720044216
-    r2 = 1.8100552155510128
+    r1 = 0.95784 * ang2bohr
+    r2 = 0.95783997 * ang2bohr
     # r2 = r1
-    req = [r1, r2]
-    dists = dists - req
+    # req = [r1, r2]
+    # dists = dists - req
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
     anti = anti - shift[0]
     sym = sym - shift[1]
     collect[:, 0] = interpolate.splev(anti, interp[0], der=1)/interpolate.splev(anti, interp[0], der=0)
-    collect[:, 1] = interpolate.splev(sym, interp[1], der=1)/interpolate.splev(sym, interp[1], der=0)
-    collect[:, 2] = dangle(coords, excite, shift, atoms)
+    # collect[:, 1] = interpolate.splev(sym, interp[1], der=1)/interpolate.splev(sym, interp[1], der=0)
+    # collect[:, 2] = dangle(coords, excite, shift, atoms)
     return collect
 
 
 def d2psidrtheta(coords, excite, dists, shift, interp, atoms):
     collect = np.zeros((len(coords), 3))
-    r1 = 1.8100552720044216
-    r2 = 1.8100552155510128
+    r1 = 0.95784 * ang2bohr
+    r2 = 0.95783997 * ang2bohr
     # r2 = r1
-    req = [r1, r2]
-    dists = dists - req
+    # req = [r1, r2]
+    # dists = dists - req
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
     anti = anti - shift[0]
     sym = sym - shift[1]
     collect[:, 0] = interpolate.splev(anti, interp[0], der=2)/interpolate.splev(anti, interp[0], der=0)
-    collect[:, 1] = interpolate.splev(sym, interp[1], der=2)/interpolate.splev(sym, interp[1], der=0)
-    collect[:, 2] = d2angle(coords, excite, shift, atoms)
+    # collect[:, 1] = interpolate.splev(sym, interp[1], der=2)/interpolate.splev(sym, interp[1], der=0)
+    # collect[:, 2] = d2angle(coords, excite, shift, atoms)
     return collect
 
 
@@ -139,8 +160,8 @@ def angle(coords):
 def angle_function(coords, excite, shift, atoms):
     angs = angle(coords)
     angs = angs - shift[2]
-    r1 = 1.8100552720044216
-    r2 = 1.8100552155510128
+    r1 = 0.9616036495623883 * ang2bohr
+    r2 = 0.9616119936423067 * ang2bohr
     theta = np.deg2rad(104.50800290215986)
     muH = 1 / m_H
     muO = 1 / m_O
@@ -170,8 +191,8 @@ def angle_function(coords, excite, shift, atoms):
 def dangle(coords, excite, shift, atoms):
     angs = angle(coords)
     angs = angs - shift[-1]
-    r1 = 1.8100552720044216
-    r2 = 1.8100552155510128
+    r1 = 0.9616036495623883 * ang2bohr
+    r2 = 0.9616119936423067 * ang2bohr
     theta = np.deg2rad(104.50800290215986)
     muH = 1 / m_H
     muO = 1 / m_O
@@ -201,8 +222,8 @@ def dangle(coords, excite, shift, atoms):
 def d2angle(coords, excite, shift, atoms):
     angs = angle(coords)
     angs = angs - shift[-1]
-    r1 = 1.8100552720044216
-    r2 = 1.8100552155510128
+    r1 = 0.9616036495623883 * ang2bohr
+    r2 = 0.9616119936423067 * ang2bohr
     theta = np.deg2rad(104.50800290215986)
     muH = 1 / m_H
     muO = 1 / m_O
@@ -307,19 +328,22 @@ def local_kinetic(Psi, sigma):
 
 
 def metropolis(Fqx, Fqy, x, y, psi_1, psi_2, sigma):
-    psi_ratio = np.prod((psi_2/psi_1)**2, axis=1)
-    a = np.exp(1. / 2. * (Fqx + Fqy) * (sigma ** 2 / 4. * (Fqx - Fqy) - (y - x)))
-    a = np.prod(np.prod(a, axis=1), axis=1) * psi_ratio
+    psi_ratio = np.prod((psi_2/psi_1)**2, axis=-1)
+    a_full = np.exp(1. / 2. * (Fqx + Fqy) * (sigma ** 2 / 4. * (Fqx - Fqy) - (y - x)))
+    a = np.prod(np.prod(a_full, axis=1), axis=1) * psi_ratio
     remove = np.argwhere(psi_2 * psi_1 < 0)
     a[remove] = 0.
+    # a = np.ones(len(x))
     return a
 
 
 # Random walk of all the walkers
 def Kinetic(Psi, Fqx, sigma):
-    Drift = sigma**2/2.*Fqx
     randomwalk = np.random.normal(0.0, sigma, size=(len(Psi.coords), sigma.shape[0], sigma.shape[1]))
-    y = randomwalk + Drift + np.array(Psi.coords)
+    Drift = sigma**2/2.*Fqx
+    x = np.array(Psi.coords) + randomwalk + Drift
+    # Fqx, psi_check = drift(x, Psi.excite, Psi.shift, Psi.atoms, Psi.interp)
+    y = x
     Fqy, psi = drift(y, Psi.excite, Psi.shift, Psi.atoms, Psi.interp)
     a = metropolis(Fqx, Fqy, Psi.coords, y, Psi.psit, psi, sigma)
     check = np.random.random(size=len(Psi.coords))
@@ -486,6 +510,28 @@ def run(N_0, time_steps, propagation, equilibration, wait_time, excite, initial_
 pool = mp.Pool(mp.cpu_count()-1)
 
 
+anti = np.load('antisymmetric_stretch_water_wvfns_sym_105.npz')
+sym = np.load('symmetric_stretch_water_wvfns.npz')
+
+test_structure = np.array([
+        [0.,  0., 0.],
+        [1.81005527, 0.,  0.],
+        [-0.96710612, 1.89501907, 0.],
+])
+
+# interp_anti = interpolate.splrep(anti['grid'], np.abs(anti['ground']), s=0)
+# interp_sym = interpolate.splrep(sym['grid'], np.abs(sym['ground']), s=0)
+# interp = [interp_anti, interp_sym]
+#
+# coords, weights, time, Eref_array, sum_weights, accept, des = run(
+#         1000, 2000, 25, 50, 50, None, test_structure, [0, 0, 0], [0, 0, 0],
+#         ['O', 'H', 'H'], interp)
+# np.savez(f"test_ground_state_h2o_chain_rule_full_1", coords=coords, weights=weights, time=time, Eref=Eref_array,
+#              sum_weights=sum_weights, accept=accept, d=des)
+#
+# blah = np.load('test_ground_state_h2o_chain_rule_full_1.npz')
+# print(np.mean(blah['Eref'][500:]*har2wave))
+
 def all_da_psi(coords, excite, shift, interp, atoms):
     dx = 1e-3
     psi = np.zeros((len(coords), 3, 3, 3))
@@ -501,18 +547,19 @@ def all_da_psi(coords, excite, shift, interp, atoms):
     return psi
 
 
-def local_kinetic_finite(Psi):
+def local_kinetic_finite(Psi, sigma):
     dx = 1e-3
-    d2psidx2 = ((Psi.psit[:, 0] - 2. * Psi.psit[:, 1] + Psi.psit[:, 2]) / dx ** 2) / Psi.psit[:, 1]
+    d2psidx2 = ((Psi[:, 0] - 2. * Psi[:, 1] + Psi[:, 2]) / dx ** 2) / Psi[:, 1]
+    # d2psidx2 = ((Psi[:, 0] - 2. * Psi[:, 1] + Psi[:, 2]) / dx ** 2)
     kin = -1. / 2. * np.sum(np.sum(sigma ** 2 / dtau * d2psidx2, axis=1), axis=1)
     return kin
 
 
-def drift_fd(coords, excite, shift, interp, atoms):
+def drift_fd(psi):
     dx = 1e-3
-    psi = all_da_psi(coords, excite, shift, interp, atoms)
     der = (psi[:, 2] - psi[:, 0])/dx/psi[:, 1]
-    return der, psi
+    # der = (psi[:, 2] - psi[:, 0])/dx
+    return der
 
 
 from Coordinerds.CoordinateSystems import *
@@ -544,52 +591,179 @@ def grid_angle(a, b, num, coords):
     return new_coords
 
 
+def grid_dis(a, b, num, coords, r):
+    spacing = np.linspace(a, b, num)
+    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
+                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
+                                                                                   [2, 0, 1, 0]])).coords
+    g = np.array([zmat]*num)
+    g[:, r-1, 1] = spacing
+    new_coords = CoordinateSet(g, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+    return new_coords
+
+
 anti = np.load('antisymmetric_stretch_water_wvfns.npz')
 sym = np.load('symmetric_stretch_water_wvfns.npz')
-interp_anti = interpolate.splrep(anti['grid'], anti['excite'], s=0)
-interp_sym = interpolate.splrep(sym['grid'], sym['ground'], s=0)
-interp = [interp_anti, interp_sym]
+
+anti2 = np.load('antisymmetric_stretch_water_wvfns_sym_105.npz')
+
 molecule = np.load('monomer_coords.npy')
 
-anti = np.linspace(-0.75, 0.75, 50)
-sym = np.zeros(50)
-A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
-eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
-r1 = eh[0]
-r2 = eh[1]
+import pyvibdmc as pv
 
-theta = np.deg2rad(104.50800290215986)
-grid = grid_angle(theta-1, theta+1, 50, molecule)
+num_points = 200
+mode = 'asym'
+excite = None
 
-# grid = linear_combo_stretch_grid(r1, r2, molecule)
+if excite == 'ang':
+    interp_anti = interpolate.splrep(anti['grid'], anti['ground'], s=0)
+    interp_sym = interpolate.splrep(sym['grid'], sym['ground'], s=0)
+    interp = [interp_anti, interp_sym]
+elif excite == 'asym':
+    interp_anti = interpolate.splrep(anti['grid'], anti['excite'], s=0)
+    interp_sym = interpolate.splrep(sym['grid'], sym['ground'], s=0)
+    interp = [interp_anti, interp_sym]
+elif excite == 'sym':
+    interp_anti = interpolate.splrep(anti['grid'], anti['ground'], s=0)
+    interp_sym = interpolate.splrep(sym['grid'], sym['excite'], s=0)
+    interp = [interp_anti, interp_sym]
+else:
+    interp_anti = interpolate.splrep(anti['grid'], anti['ground'], s=0)
+    interp_sym = interpolate.splrep(sym['grid'], sym['ground'], s=0)
+    interp = [interp_anti, interp_sym]
+    interp_anti2 = interpolate.splrep(anti2['grid'], anti2['ground'], s=0)
+    interp2 = [interp_anti2, interp_sym]
 
-# grid = np.array([molecule]*50)
+if mode == 'sym':
+    sym = np.linspace(-0.75, 0.75, num_points)
+    anti = np.zeros(num_points) + 0.15
+    A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
+    eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
+    r1 = eh[0]
+    r2 = eh[1]
+    grid = linear_combo_stretch_grid(r1, r2, molecule)
+    aang = angle(grid)/2
+    rot_mat = pv.MolRotator.gen_rot_mats(-aang, 2)
+    grid = pv.MolRotator.rotate_geoms(rot_mat, grid)
+    g = sym
+    label = 's Bohr'
+elif mode == 'asym':
+    anti = np.linspace(-0.75, 0.75, num_points)
+    sym = np.zeros(num_points) + 0.15
+    A = 1 / np.sqrt(2) * np.array([[-1, 1], [1, 1]])
+    eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
+    r1 = eh[0]
+    r2 = eh[1]
+    grid = linear_combo_stretch_grid(r1, r2, molecule)
+    aang = angle(grid) / 2
+    rot_mat = pv.MolRotator.gen_rot_mats(-aang, 2)
+    grid = pv.MolRotator.rotate_geoms(rot_mat, grid)
+    g = anti
+    label = 'a Bohr'
+elif mode == '2d':
+    a = np.linspace(-0.75, 0.75, num_points)
+    s = np.linspace(-0.75, 0.75, num_points)
+    anti, sym = np.meshgrid(a, s)
+    A = 1 / np.sqrt(2) * np.array([[-1, 1], [1, 1]])
+    eh = np.matmul(np.linalg.inv(A), np.vstack((anti.flatten(), sym.flatten())))
+    r1 = eh[0]
+    r2 = eh[1]
+    grid = linear_combo_stretch_grid(r1, r2, molecule)
+    aang = angle(grid) / 2
+    rot_mat = pv.MolRotator.gen_rot_mats(-aang, 2)
+    grid = pv.MolRotator.rotate_geoms(rot_mat, grid)
+elif mode == 'ang':
+    theta = np.deg2rad(104.50800290215986)
+    grid = grid_angle(theta-1, theta+1, num_points, molecule)
+    aang = angle(grid) / 2
+    rot_mat = pv.MolRotator.gen_rot_mats(-aang, 2)
+    grid = pv.MolRotator.rotate_geoms(rot_mat, grid)
+    g = np.rad2deg(np.linspace(theta-1, theta+1, num_points))
+elif mode == 'r1':
+    grid = grid_dis(1, 3, num_points, molecule, 1)
+    aang = angle(grid) / 2
+    rot_mat = pv.MolRotator.gen_rot_mats(-aang, 2)
+    grid = pv.MolRotator.rotate_geoms(rot_mat, grid)
+    g = np.linspace(1, 3, num_points)
+    label = 'r1 Bohr'
+elif mode == 'r2':
+    grid = grid_dis(1, 3, num_points, molecule, 2)
+    aang = angle(grid) / 2
+    rot_mat = pv.MolRotator.gen_rot_mats(-aang, 2)
+    grid = pv.MolRotator.rotate_geoms(rot_mat, grid)
+    g = np.linspace(1, 3, num_points)
+    label = 'r2 Bohr'
 
-psi = Walkers(50, molecule, None, [0, 0, 0], ['O', 'H', 'H'], interp)
-# psi.coords = grid
 
-d, _ = drift(psi.coords, None, [0, 0, 0], ['O', 'H', 'H'], interp)
+psi = Walkers(num_points, molecule, excite, [0, 0, 0], ['O', 'H', 'H'], interp)
+psi.coords = grid
+
+d, _ = drift(psi.coords, excite, [0, 0, 0], ['O', 'H', 'H'], interp)
 psi = pot(psi)
 sigma = np.zeros((3, 3))
 sigma[0] = np.array([[np.sqrt(dtau / m_O)] * 3])
 sigma[1] = np.array([[np.sqrt(dtau / m_H)] * 3])
 sigma[2] = np.array([[np.sqrt(dtau / m_H)] * 3])
 
+d = d*sigma**2/2
+
 psi = E_loc(psi, sigma)
-# _, d2psi = local_kinetic(psi, sigma)
-
-fd_d, psi.psit = drift_fd(psi.coords, psi.excite, psi.shift, psi.interp, psi.atoms)
-# asdf, d2psi_fd = local_kinetic_finite(psi)
-fd_eloc = local_kinetic_finite(psi) + psi.V
-theta = np.linspace(theta-1, theta+1, 50)
-anti = theta
+psi_fd = all_da_psi(psi.coords, psi.excite, psi.shift, interp2, psi.atoms)
+eloc_fd = local_kinetic_finite(psi_fd, sigma) + psi.V
+d_fd = drift_fd(psi_fd)*sigma**2/2
 import matplotlib.pyplot as plt
-plt.plot(anti, psi.V*har2wave, label='potential')
-plt.plot(anti, psi.El*har2wave, label='local energy')
-plt.plot(anti, fd_eloc*har2wave, label='fd local energy')
-plt.legend()
-plt.show()
+atom = ['O', 'H1', 'H2']
+xyz = ['x', 'y', 'z']
+if mode == '2d':
+    for i in range(3):
+        for j in range(3):
+            fig, axes = plt.subplots(3)
+            cb0 = axes[0].contourf(anti, sym, d[:, i, j].reshape((num_points, num_points))/ang2bohr)
+            cb1 = axes[1].contourf(anti, sym, d_fd[:, i, j].reshape((num_points, num_points))/ang2bohr)
+            cb2 = axes[2].contourf(anti, sym, (d[:, i, j]-d_fd[:, i, j]).reshape((num_points,
+                                                                                  num_points))/ang2bohr)
+            plt.colorbar(cb0, ax=axes[0])
+            plt.colorbar(cb1, ax=axes[1])
+            plt.colorbar(cb2, ax=axes[2])
+            fig.suptitle(f'Drift of {atom[i]}{xyz[j]}')
+            plt.show()
+else:
+    for i in range(3):
+        for j in range(3):
+            plt.plot(g, d[:, i, j]/ang2bohr, label=f'{atom[i]}{xyz[j]}')
+            # plt.plot(g, d_fd[:, i, j] / ang2bohr, label=f'{atom[i]}{xyz[j]} fd')
+    if mode == 'ang':
+        plt.xlabel(r'$\rm{\theta}^{\circ}$')
+    else:
+        plt.xlabel(label)
+    plt.ylabel(r'D [/$\rm{\AA}$]')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(f'Drift_of_{mode}_with_{excite}_excite_lin_combo')
+    # plt.show()
+    plt.close()
 
-
-
+if mode == '2d':
+    fig, axes = plt.subplots(3)
+    cb0 = axes[0].contourf(anti, sym, psi.El.reshape((num_points, num_points))*har2wave)
+    cb1 = axes[1].contourf(anti, sym, eloc_fd.reshape((num_points, num_points))*har2wave)
+    cb2 = axes[2].contourf(anti, sym, (psi.El-eloc_fd).reshape((num_points, num_points))*har2wave)
+    plt.colorbar(cb0, ax=axes[0])
+    plt.colorbar(cb1, ax=axes[1])
+    plt.colorbar(cb2, ax=axes[2])
+    plt.show()
+else:
+    plt.plot(g, psi.V*har2wave, label='potential')
+    plt.plot(g, psi.El*har2wave, label='local energy')
+    plt.plot(g, eloc_fd*har2wave, label=r'local energy s = <s>')
+    if mode == 'ang':
+        plt.xlabel(r'$\rm{\theta}^{\circ}$')
+    else:
+        plt.xlabel(label)
+    plt.ylabel(r'Energy [/cm$^{-1}$]')
+    plt.ylim(-1000, 10000)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(f'Local_energy_of_{mode}_with_{excite}_excite_lin_combo')
+    plt.show()
 

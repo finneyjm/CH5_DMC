@@ -186,7 +186,7 @@ line, = ax.plot(g/ang2bohr, np.average(eigs, axis=0), color='blue')
 Ohs = np.array([min, max, avg-std, avg+std, avg])
 bp = ax.boxplot(Ohs, positions=[np.max(eig)/2], widths=[0.01], vert=0, manage_ticks=False)
 plt.xlabel(r'r$_{\rm{CH}}$ [/$\rm\AA$]', fontsize=20)
-plt.ylabel(r'$\rm{\Psi_0^{avg} (r_{CH})}$', fontsize=20)
+plt.ylabel(r'$\rm{\Phi_0^{avg} (r_{CH})}$', fontsize=20)
 plt.xlim(0.5, 2.0)
 # plt.legend((line, bp['boxes'][0]), (r'$\rm{\Psi_0^{avg} (r_{CH})}$', r'r$_{\rm{CH}}$ in CH$_5^+$'),
 #            loc='upper right', fontsize=12)

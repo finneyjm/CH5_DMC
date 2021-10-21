@@ -154,9 +154,9 @@ class DipHolder:
 
 get_dip = DipHolder.get_dip
 
-geo = np.load('test_geometry.npy')
-pot = get_pot(geo.reshape((1, 5, 3)))
-asdf = 4
+# geo = np.load('test_geometry.npy')
+# pot = get_pot(geo.reshape((1, 5, 3)))
+# asdf = 4
 
 
 def dip(coords):
@@ -272,12 +272,12 @@ def Kinetic_Calc(grid1, grid2, red_m1, red_m2):
     def kron_sum(der):
         '''Computes a Kronecker sum to build our Kronecker-Delta tensor product expression'''
         n_1 = len(der[1])  # len of grid 1
-        n_2 = len(der[0])  # len of grid 2
+        # n_2 = len(der[0])  # len of grid 2
         ident_1 = sp.eye(n_1)  # the identity matrix of grid 1
         # ident_2 = sp.eye(n_2)  # the identity matrix of grid 2
 
         # returns the sum of a sparse kin matrix 1 with a completely block diagonal kin matrix 2
-        return sp.kron(sp.csr_matrix(der[1]), ident_1) + sp.kron(ident_1, sp.csr_matrix(der[0]))
+        return sp.kron(sp.csr_matrix(der[0]), ident_1) + sp.kron(ident_1, sp.csr_matrix(der[1]))
 
     from functools import reduce
     T = kron_sum(kinetic)

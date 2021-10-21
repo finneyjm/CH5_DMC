@@ -320,7 +320,7 @@ molecule = np.load('monomer_coords.npy')
 def local_kinetic_finite(Psi):
     dx = 1e-3
     d2psidx2 = ((Psi[:, 0] - 2. * Psi[:, 1] + Psi[:, 2]) / dx ** 2) / Psi[:, 1]
-    # kin = -1. / 2. * np.sum(np.sum(sigma ** 2 / dtau * d2psidx2, axis=1), axis=1)
+    kin = -1. / 2. * np.sum(np.sum(sigma ** 2 / dtau * d2psidx2, axis=1), axis=1)
     return d2psidx2
 
 

@@ -29,11 +29,10 @@ def grid_angle(a, b, num, coords):
     return new_coords
 
 
-def grid_dis(a, b, num, coords):
+def grid_dis(a, b, num, coords, order):
     spacing = np.linspace(a, b, num)
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
-                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
-                                                                                   [2, 0, 1, 0]])).coords
+                                                                        ordering=order).coords
     g = np.array([zmat]*num)
     g[:, 0, 1] = spacing
     new_coords = CoordinateSet(g, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
@@ -58,6 +57,8 @@ def oh_dists(coords):
 def linear_combo_stretch_grid(r1, r2, coords):
     re = np.linalg.norm(coords[0]-coords[1])
     re2 = np.linalg.norm(coords[0]-coords[2])
+    # re = 0.9616036495623883 * ang2bohr
+    # re2 = 0.9616119936423067 * ang2bohr
     # re2 = re
     coords = np.array([coords] * 1)
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
@@ -65,8 +66,8 @@ def linear_combo_stretch_grid(r1, r2, coords):
                                                                                    [2, 0, 1, 0]])).coords
     N = len(r1)
     zmat = np.array([zmat]*N).squeeze()
-    zmat[:, 0, 1] = re + r1
-    zmat[:, 1, 1] = re2 + r2
+    zmat[:, 0, 1] = r1
+    zmat[:, 1, 1] = r2
     new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
     return new_coords
 
@@ -115,7 +116,7 @@ def potential_hydronium(grid):
 
 def kin(grid, a, b, m_red):
     N = len(grid)
-    coeff = (1/((2*m_red)/(((float(N)-1)/(b-a))**2)))
+    coeff = (1/((2*m_red)/(((float(N-1))/(b-a))**2)))
 
     Tii = np.zeros(N)
 
@@ -203,40 +204,94 @@ def angle(coords):
 
 import matplotlib.pyplot as plt
 import scipy.sparse as sp
+from scipy import interpolate
+
+re = 0.95784 * ang2bohr
+re2 = 0.95783997 * ang2bohr
+# re = re2
 num_points = 2000
-anti = np.linspace(-1, 1, num_points)
+anti = np.linspace(-1.5, 1.5, num_points)
 # anti = np.zeros(num_points)
 # sym = np.linspace(-1, 1, num_points)
-sym = np.zeros(num_points)
+sym = np.zeros(num_points) + (re + re2)/np.sqrt(2)*1.07
+sym = np.zeros(num_points) + 2.581443555556687
+print((re + re2)/np.sqrt(2))
+print((re + re2)/np.sqrt(2)*1.07)
 A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
+# A = np.array([[-1, 1], [1, 1]])
 eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
 r1 = eh[0]
 r2 = eh[1]
 
 lin_combo_grid = linear_combo_stretch_grid(r1, r2, water)
 
-# ang = angle(np.array([water]*1)).squeeze()
+
+def anti_harmonic_wvfn(g, mass):
+    freq = 3755.1/har2wave
+    mw = mass*freq
+    return (mw / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw * g ** 2))
+
+
+def second_dir_anti_harm(g, mass):
+    wvfn = anti_harmonic_wvfn(g, mass)
+    freq = 3755.1 / har2wave
+    mw = mass * freq
+    return wvfn * (mw**2*g**2 - mw)
+
+
+ang = angle(np.array([water]*1)).squeeze()
 # r = 0.9616036495623883*ang2bohr
 # m1 = 1/(1/m_H + (1+np.cos(ang))/m_O - np.sqrt(2)*np.sin(ang)/(r*m_O))
 # m2 = 1/(-2/r**2*(1/m_H - 1/m_O - np.cos(ang)/m_O) - np.sqrt(2)*np.sin(ang)/(r*m_O))
 # m1 = 1/(1/m_O + 1/m_H + np.cos(ang)/m_O - np.sin(ang)/(r*m_O))
 # anti_freq = 3944.27284814
 anti_gmat_one_over = 1702.9703138358866
+ang = np.deg2rad(104.1747712)
+anti_gmat_one_over = 1/(1/OH_red - np.cos(ang)/m_O)
+freq = 3755.1
 # m1 = anti_freq/2
 en_wat, eig_wat, v = run(lin_combo_grid, anti[0], anti[-1], anti_gmat_one_over, 'water')
 print((en_wat[1]-en_wat[0])*har2wave)
-np.savez('antisymmetric_stretch_water_wvfns', grid=anti, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
-# ind = np.argmin(v)
-# dx = (anti[-1] - anti[0])/num_points
-# coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
-# fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
-# second_der = np.dot(fd_mat, v)[3:-3]
-# freqs = np.sqrt(g_el*second_der)*har2wave
-# print(1/2*freqs[ind])
+np.savez('antisymmetric_stretch_water_wvfns_sym_105', grid=anti, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
+plt.plot(anti, v*har2wave, label='pot')
+# plt.plot(anti, eig_wat[:, 0])
+plt.plot(anti, (eig_wat[:, 0]*200000 + en_wat[0]*har2wave), label='wvfn')
+plt.plot(anti, np.array([(en_wat[0]*har2wave)]*num_points), label='ZPE')
+interp = interpolate.splrep(anti, eig_wat[:, 0], s=0)
+second_dir = interpolate.splev(anti, interp, der=2)
+plt.plot(anti, second_dir*20000, label='second derivative of wvfn')
+# interp2 = interpolate.splrep(second_dir[:1000], anti[:1000], s=0)
+where_zero = np.array([-0.180365]*100)
+plt.plot(where_zero, np.linspace(-2000, 20000, 100), color='black', label='second dir = 0')
+where_zero = np.array([0.180365]*100)
+plt.plot(where_zero, np.linspace(-2000, 20000, 100), color='black', label='second dir = 0')
+# plt.plot(where_zero, np.linspace(-2000, 20000, num_points), label='second dir = 0')
+# plt.plot(anti, anti_harmonic_wvfn(anti, anti_gmat_one_over)*6400 + freq/2,
+#          label='Harmonic wvfn')
+# plt.plot(anti, second_dir_anti_harm(anti, anti_gmat_one_over)*6400, label='second dir Harm')
+
+# plt.plot(anti*ang2bohr, (eig_wat[:, 0]*200000+en_wat[0]*har2wave), label='corrected wvfn')
+# interp = interpolate.splrep(anti*ang2bohr, eig_wat[:, 0], s=0)
+# second_dir = interpolate.splev(anti*ang2bohr, interp, der=2)
+# plt.plot(anti*ang2bohr, second_dir*20000, label='corrected second derivative of wvfn')
+# plt.plot(anti*np.sqrt(2), anti_harmonic_wvfn(anti, anti_gmat_one_over)*6400 + freq/2,
+#          label='corrected Harmonic wvfn')
+# plt.plot(anti*np.sqrt(2), second_dir_anti_harm(anti, anti_gmat_one_over)*6400, label='corrected second dir Harm')
+plt.legend()
+plt.ylim(-2000, 20000)
+plt.show()
+
+ind = np.argmin(v)
+dx = (anti[-1] - anti[0])/num_points
+coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
+fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
+second_der = np.dot(fd_mat, v)[3:-3]
+freqs = np.sqrt(1/anti_gmat_one_over*second_der)*har2wave
+print(freqs[ind])
 
 # anti = np.linspace(-1, 1, num_points)
 anti = np.zeros(num_points)
-sym = np.linspace(-1, 1, num_points)
+sym = np.linspace(-1.5, 1.5, num_points) + (re + re2)/np.sqrt(2)
 # sym = np.zeros(num_points)
 A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
 eh = np.matmul(np.linalg.inv(A), np.vstack((anti, sym)))
@@ -245,24 +300,26 @@ r2 = eh[1]
 
 lin_combo_grid = linear_combo_stretch_grid(r1, r2, water)
 
-# ang = angle(np.array([water]*1)).squeeze()
-# r = 0.9616036495623883*ang2bohr
+ang = angle(np.array([water]*1)).squeeze()
+r = 0.9616036495623883*ang2bohr
 # m1 = 1/(1/m_H + (1+np.cos(ang))/m_O - np.sqrt(2)*np.sin(ang)/(r*m_O))
 # m1 = 1/(1/m_O + 1/m_H + np.cos(ang)/m_O - np.sin(ang)/(r*m_O))
 # m2 = 1/(2/r**2*(1/m_H + 1/m_O - np.cos(ang)/m_O) - np.sqrt(2)*np.sin(ang)/(r*m_O))
-# sym_freq = 3832.70931812
+sym_freq = 3832.70931812
 sym_gmat_one_over = 1754.3078077470518
+sym_gmat_one_over = 1/(1/OH_red + np.cos(ang)/m_O)
 en_wat, eig_wat, v = run(lin_combo_grid, sym[0], sym[-1], sym_gmat_one_over, 'water')
 print((en_wat[1]-en_wat[0])*har2wave)
 np.savez('symmetric_stretch_water_wvfns', grid=sym, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
+print(np.dot(eig_wat[:, 0]**2, sym))
 
-# ind = np.argmin(v)
-# dx = (sym[-1] - sym[0])/num_points
-# coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
-# fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
-# second_der = np.dot(fd_mat, v)[3:-3]
-# freqs = np.sqrt(g_el*second_der)*har2wave
-# print(1/2*freqs[ind])
+ind = np.argmin(v)
+dx = (sym[-1] - sym[0])/num_points
+coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
+fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
+second_der = np.dot(fd_mat, v)[3:-3]
+freqs = np.sqrt(1/sym_gmat_one_over*second_der)*har2wave
+print(1/2*freqs[ind])
 
 
 shift = 1.818131256952169-1.8097886540600667
@@ -294,7 +351,7 @@ fig, ax = plt.subplots()
 line, = ax.plot(g, eig_water[:, 0], color='blue', label='Ground State Wave Function')
 bp = ax.boxplot(Ohs, positions=[np.max(eig_water[:, 0])/2], widths=[0.01], vert=0, manage_ticks=False)
 plt.xlabel(r'r$_{\rm{OH}}$ [/$\rm\AA$]', fontsize=20)
-plt.ylabel(r'$\rm{\Psi_0^{HOH}(r_{OH})}$', fontsize=20)
+plt.ylabel(r'$\rm{\Phi_0^{HOH}(r_{OH})}$', fontsize=20)
 plt.xlim(0.5, 2.0)
 # plt.legend((line, bp['boxes'][0]), (r'$\rm{\Psi_0^{HOH}(r_{OH})}$', r'r$_{\rm{OH}}$ in (H$_2$O)$_{n=1-6}$'),
 #            loc='upper right', fontsize=12)

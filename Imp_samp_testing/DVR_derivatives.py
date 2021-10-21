@@ -140,7 +140,6 @@ class Derivatives:
         :return: A sparse representation of the derivative matrix
         :rtype: sp array
         '''
-        import scipy.sparse as sp
         if self.fd is None:
             der = [self.first_derivative(g) for g in gridz]
         else:
