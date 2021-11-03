@@ -213,8 +213,8 @@ num_points = 2000
 anti = np.linspace(-1.5, 1.5, num_points)
 # anti = np.zeros(num_points)
 # sym = np.linspace(-1, 1, num_points)
-sym = np.zeros(num_points) + (re + re2)/np.sqrt(2)*1.07
-sym = np.zeros(num_points) + 2.581443555556687
+sym = np.zeros(num_points) + (re + re2)/np.sqrt(2)
+# sym = np.zeros(num_points) + 2.581443555556687
 print((re + re2)/np.sqrt(2))
 print((re + re2)/np.sqrt(2)*1.07)
 A = 1/np.sqrt(2)*np.array([[-1, 1], [1, 1]])
@@ -252,7 +252,7 @@ freq = 3755.1
 # m1 = anti_freq/2
 en_wat, eig_wat, v = run(lin_combo_grid, anti[0], anti[-1], anti_gmat_one_over, 'water')
 print((en_wat[1]-en_wat[0])*har2wave)
-np.savez('antisymmetric_stretch_water_wvfns_sym_105', grid=anti, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
+np.savez('antisymmetric_stretch_water_wvfns', grid=anti, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
 plt.plot(anti, v*har2wave, label='pot')
 # plt.plot(anti, eig_wat[:, 0])
 plt.plot(anti, (eig_wat[:, 0]*200000 + en_wat[0]*har2wave), label='wvfn')

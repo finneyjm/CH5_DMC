@@ -99,7 +99,7 @@ def Kinetic_Calc(grid1, grid2, red_m1, red_m2):
 
 def get_pot(grid, grid1, grid2):
     pot = potential_bare_water(grid)
-    # pot[pot>32000/har2wave] = 32000/har2wave
+    # pot[pot>100000/har2wave] = 100000/har2wave
     import scipy.sparse as sp
     return sp.diags([pot], [0]), pot.reshape((len(grid1), len(grid2)))
 
@@ -132,7 +132,7 @@ def run(anti, sym, anti_mass, sym_mass, structure):
     if np.max(Eig[:, 0]) < 0.005:
         Eig[:, 0] *= -1.
     for i in range(Eig.shape[1]):
-        Eig[:, i] = Eig[:, i].reshape((len(anti), len(sym))).T.flatten()
+        Eig[:, i] = Eig[:, i]
     return En, Eig, extraV
 
 
@@ -140,7 +140,7 @@ num_points = 100
 re = 0.95784 * ang2bohr
 re2 = 0.95783997 * ang2bohr
 anti = np.linspace(-0.85, 0.85, num_points)
-sym = np.linspace(-0.55, 1.15, num_points) + (re + re2)/np.sqrt(2)
+sym = np.linspace(-0.85, 1.15, num_points) + (re + re2)/np.sqrt(2)
 ang = np.deg2rad(104.1747712)
 anti_gmat_one_over = 1/(1/OH_red - np.cos(ang)/m_O)
 sym_gmat_one_over = 1/(1/OH_red + np.cos(ang)/m_O)
@@ -154,13 +154,13 @@ print(f'freq 2 = {(en_wat[2]-en_wat[0])*har2wave}')
 
 
 np.savez('2d_anti_sym_stretch_water_wvfns', grid=[anti, sym], ground=eig_wat[:, 0],
-         excite_anti=eig_wat[:, 1], excite_sym=eig_wat[:, 2])
+         excite_anti=eig_wat[:, 2], excite_sym=eig_wat[:, 1])
 
 import matplotlib.pyplot as plt
 
-X, Y = np.meshgrid(anti, sym)
+X, Y = np.meshgrid(anti, sym, indexing='ij')
 fig, axes = plt.subplots(2, 2)
-yeet0 = axes[0, 0].contourf(X, Y, v.reshape((len(anti), len(sym))).T*har2wave)
+yeet0 = axes[0, 0].contourf(X, Y, v*har2wave)
 axes[0, 0].set_xlabel('a (Bohr)')
 axes[0, 0].set_ylabel('s (Bohr)')
 fig.colorbar(yeet0, ax=axes[0, 0])

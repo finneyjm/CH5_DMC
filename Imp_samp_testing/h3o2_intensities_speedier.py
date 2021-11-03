@@ -410,5 +410,9 @@ def intensity_calcs(filename, wvfn_type):
     short_intensity_calcs(filename)
 
 
-intensity_calcs('excite_state_chain_rule2_biggest_full_h3o2', 'linear_combo')
+# intensity_calcs('excite_state_chain_rule2_biggest_full_h3o2', 'linear_combo')
 
+import DMC_Tools as dt
+
+ground = dt.DMCIntensities(filename='ground_excite_state_chain_rule2_biggest_full_h3o2',
+                           )
