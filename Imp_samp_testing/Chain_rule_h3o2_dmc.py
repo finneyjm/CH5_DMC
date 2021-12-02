@@ -365,12 +365,9 @@ get_pot = PotHolder.get_pot
 
 
 def pot(Psi):
-    #start = time.time()
     coords = np.array_split(Psi.coords, mp.cpu_count()-1)
     V = pool.map(get_pot, coords)
     Psi.V = np.concatenate(V)
-    #end = time.time()
-    #print(f'potential = {end-start}', flush=True)
     return Psi
 
 
