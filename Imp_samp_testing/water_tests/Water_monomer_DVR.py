@@ -245,26 +245,26 @@ ang = angle(np.array([water]*1)).squeeze()
 # m2 = 1/(-2/r**2*(1/m_H - 1/m_O - np.cos(ang)/m_O) - np.sqrt(2)*np.sin(ang)/(r*m_O))
 # m1 = 1/(1/m_O + 1/m_H + np.cos(ang)/m_O - np.sin(ang)/(r*m_O))
 # anti_freq = 3944.27284814
-anti_gmat_one_over = 1702.9703138358866
+# anti_gmat_one_over = 1702.9703138358866
 ang = np.deg2rad(104.1747712)
 anti_gmat_one_over = 1/(1/OH_red - np.cos(ang)/m_O)
-freq = 3755.1
+# freq = 3755.1
 # m1 = anti_freq/2
 en_wat, eig_wat, v = run(lin_combo_grid, anti[0], anti[-1], anti_gmat_one_over, 'water')
 print((en_wat[1]-en_wat[0])*har2wave)
 np.savez('antisymmetric_stretch_water_wvfns', grid=anti, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
-plt.plot(anti, v*har2wave, label='pot')
+# plt.plot(anti, v*har2wave, label='pot')
 # plt.plot(anti, eig_wat[:, 0])
-plt.plot(anti, (eig_wat[:, 0]*200000 + en_wat[0]*har2wave), label='wvfn')
-plt.plot(anti, np.array([(en_wat[0]*har2wave)]*num_points), label='ZPE')
-interp = interpolate.splrep(anti, eig_wat[:, 0], s=0)
-second_dir = interpolate.splev(anti, interp, der=2)
-plt.plot(anti, second_dir*20000, label='second derivative of wvfn')
+# plt.plot(anti, (eig_wat[:, 0]*200000 + en_wat[0]*har2wave), label='wvfn')
+# plt.plot(anti, np.array([(en_wat[0]*har2wave)]*num_points), label='ZPE')
+# interp = interpolate.splrep(anti, eig_wat[:, 0], s=0)
+# second_dir = interpolate.splev(anti, interp, der=2)
+# plt.plot(anti, second_dir*20000, label='second derivative of wvfn')
 # interp2 = interpolate.splrep(second_dir[:1000], anti[:1000], s=0)
-where_zero = np.array([-0.180365]*100)
-plt.plot(where_zero, np.linspace(-2000, 20000, 100), color='black', label='second dir = 0')
-where_zero = np.array([0.180365]*100)
-plt.plot(where_zero, np.linspace(-2000, 20000, 100), color='black', label='second dir = 0')
+# where_zero = np.array([-0.180365]*100)
+# plt.plot(where_zero, np.linspace(-2000, 20000, 100), color='black', label='second dir = 0')
+# where_zero = np.array([0.180365]*100)
+# plt.plot(where_zero, np.linspace(-2000, 20000, 100), color='black', label='second dir = 0')
 # plt.plot(where_zero, np.linspace(-2000, 20000, num_points), label='second dir = 0')
 # plt.plot(anti, anti_harmonic_wvfn(anti, anti_gmat_one_over)*6400 + freq/2,
 #          label='Harmonic wvfn')
@@ -277,17 +277,17 @@ plt.plot(where_zero, np.linspace(-2000, 20000, 100), color='black', label='secon
 # plt.plot(anti*np.sqrt(2), anti_harmonic_wvfn(anti, anti_gmat_one_over)*6400 + freq/2,
 #          label='corrected Harmonic wvfn')
 # plt.plot(anti*np.sqrt(2), second_dir_anti_harm(anti, anti_gmat_one_over)*6400, label='corrected second dir Harm')
-plt.legend()
-plt.ylim(-2000, 20000)
-plt.show()
+# plt.legend()
+# plt.ylim(-2000, 20000)
+# plt.show()
 
-ind = np.argmin(v)
-dx = (anti[-1] - anti[0])/num_points
-coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
-fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
-second_der = np.dot(fd_mat, v)[3:-3]
-freqs = np.sqrt(1/anti_gmat_one_over*second_der)*har2wave
-print(freqs[ind])
+# ind = np.argmin(v)
+# dx = (anti[-1] - anti[0])/num_points
+# coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
+# fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
+# second_der = np.dot(fd_mat, v)[3:-3]
+# freqs = np.sqrt(1/anti_gmat_one_over*second_der)*har2wave
+# print(freqs[ind])
 
 # anti = np.linspace(-1, 1, num_points)
 anti = np.zeros(num_points)
@@ -300,26 +300,27 @@ r2 = eh[1]
 
 lin_combo_grid = linear_combo_stretch_grid(r1, r2, water)
 
-ang = angle(np.array([water]*1)).squeeze()
-r = 0.9616036495623883*ang2bohr
+# ang = angle(np.array([water]*1)).squeeze()
+# r = 0.9616036495623883*ang2bohr
 # m1 = 1/(1/m_H + (1+np.cos(ang))/m_O - np.sqrt(2)*np.sin(ang)/(r*m_O))
 # m1 = 1/(1/m_O + 1/m_H + np.cos(ang)/m_O - np.sin(ang)/(r*m_O))
 # m2 = 1/(2/r**2*(1/m_H + 1/m_O - np.cos(ang)/m_O) - np.sqrt(2)*np.sin(ang)/(r*m_O))
-sym_freq = 3832.70931812
-sym_gmat_one_over = 1754.3078077470518
+# sym_freq = 3832.70931812
+# sym_gmat_one_over = 1754.3078077470518
+ang = np.deg2rad(104.1747712)
 sym_gmat_one_over = 1/(1/OH_red + np.cos(ang)/m_O)
 en_wat, eig_wat, v = run(lin_combo_grid, sym[0], sym[-1], sym_gmat_one_over, 'water')
 print((en_wat[1]-en_wat[0])*har2wave)
 np.savez('symmetric_stretch_water_wvfns', grid=sym, ground=eig_wat[:, 0], excite=eig_wat[:, 1])
 print(np.dot(eig_wat[:, 0]**2, sym))
 
-ind = np.argmin(v)
-dx = (sym[-1] - sym[0])/num_points
-coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
-fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
-second_der = np.dot(fd_mat, v)[3:-3]
-freqs = np.sqrt(1/sym_gmat_one_over*second_der)*har2wave
-print(1/2*freqs[ind])
+# ind = np.argmin(v)
+# dx = (sym[-1] - sym[0])/num_points
+# coeffs = np.array([1/90, -3/20, 3/2, -49/18, 3/2, -3/20, 1/90])/dx**2
+# fd_mat = sp.diags(coeffs, np.arange(-3, 4, 1), shape=(len(v), len(v))).toarray()
+# second_der = np.dot(fd_mat, v)[3:-3]
+# freqs = np.sqrt(1/sym_gmat_one_over*second_der)*har2wave
+# print(1/2*freqs[ind])
 
 
 shift = 1.818131256952169-1.8097886540600667

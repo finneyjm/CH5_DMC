@@ -51,13 +51,13 @@ class EckartsSpinz:
                       "is on a 2d plane please")
                 raise ValueError
             self._indz = self._indz[:2]
-            self.little_fs = self.little_fs[:, self._indz, :]
+            self.little_fs = self.little_fs[:, :, self._indz]
         else:
             if len(self._missing_ind) > 0:
                 print("This bad boy is a planar structure. Please pass the planar flag so the algorithm "
                       "can work properly")
                 raise ValueError
-        self.biggo_fs = np.matmul(self.little_fs, self.little_fs.transpose((0, 2, 1)))  # calculates the F matrix
+        self.biggo_fs = np.matmul(self.little_fs.transpose((0, 2, 1)), self.little_fs)  # calculates the F matrix
         # from equations 3.4b and 3.4e
 
     def get_eigs(self):
@@ -77,7 +77,7 @@ class EckartsSpinz:
         eig_1o2 = 1/np.sqrt(self._eigs)[:, None, :]
         eigvsT = np.transpose(self._eigvs, (0, 2, 1))
         big_F_m1o2 = (eig_1o2*self._eigvs)@eigvsT  # calculates F^(-1/2) through a similarity transform
-                                                   # used in equations 3.4a and 3.4d to get our f unit vectors
+                                                   # used in equations 3.4a and 3.4c to get our f unit vectors
         if self.planar is None:
             self.f_vecs = np.matmul(self.little_fs, big_F_m1o2)
             mas = np.where(np.around(np.linalg.det(self.f_vecs)) == -1)
@@ -85,7 +85,7 @@ class EckartsSpinz:
                 print("well, something's wrong")
                 raise ValueError
         else:
-            self.f_vecs[:, :, self._indz] = np.matmul(self.little_fs.transpose((0, 2, 1)), big_F_m1o2)
+            self.f_vecs[:, :, self._indz] = np.matmul(self.little_fs, big_F_m1o2)
             if self._missing_ind[0] == 1:  # f_3 is equal to f_z cross f_x
                 self.f_vecs[:, :, self._missing_ind[0]] = np.cross(self.f_vecs[:, :, self._indz[1]],
                                                                     self.f_vecs[:, :, self._indz[0]])
@@ -105,9 +105,9 @@ class EckartsSpinz:
         :rtype: np array
         '''
         self.get_transformed_fs()
-        transform = self.f_vecs@np.transpose(self.coords, (0, 2, 1))
-        # return self.coords@self.f_vecs
-        return transform.transpose((0, 2, 1))
+        # transform = self.f_vecs@np.transpose(self.coords, (0, 2, 1))
+        return self.coords@self.f_vecs
+        # return transform.transpose((0, 2, 1))
 
     def return_f_vecs(self):
         '''

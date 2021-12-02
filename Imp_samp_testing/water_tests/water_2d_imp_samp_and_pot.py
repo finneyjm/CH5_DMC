@@ -8,7 +8,7 @@ from scipy import interpolate
 
 wvfns = np.load('2d_anti_sym_stretch_water_wvfns.npz')
 gridz = wvfns['grid']
-ground = wvfns['excite_anti'].reshape((len(gridz[0]), len(gridz[1])))
+ground = wvfns['excite_sym'].reshape((len(gridz[0]), len(gridz[1])))
 
 ground_ders = Derivatives(ground, grid1=gridz[0], grid2=gridz[1])
 z_ground_dx1 = ground_ders.compute_derivative(dx=1)/ground
@@ -37,6 +37,7 @@ def psi_t(coords):
     dists = oh_dists(coords)
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
+    sym = sym - 0.015741
     psi[:, 0] = interp(anti, sym, ground_no_der)
     return np.prod(psi, axis=1)
 
@@ -72,6 +73,7 @@ def dpsidrtheta(coords, dists):
     collect = np.zeros((len(coords), 2))
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
+    sym = sym - 0.015741
     collect[:, 0] = interp(anti, sym, ground_dx1)
     collect[:, 1] = interp(anti, sym, ground_dy1)
     return collect
@@ -81,6 +83,7 @@ def d2psidrtheta(coords, dists):
     collect = np.zeros((len(coords), 3))
     anti = 1/np.sqrt(2)*(dists[:, 1] - dists[:, 0])
     sym = 1/np.sqrt(2)*(dists[:, 1] + dists[:, 0])
+    sym = sym - 0.015741
     collect[:, 0] = interp(anti, sym, ground_dx2)
     collect[:, 1] = interp(anti, sym, ground_dy2)
     collect[:, 2] = interp(anti, sym, ground_dx1_dy1)

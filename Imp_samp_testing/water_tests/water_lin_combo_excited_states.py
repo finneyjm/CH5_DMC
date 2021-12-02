@@ -318,7 +318,6 @@ def metropolis(Fqx, Fqy, x, y, psi_1, psi_2, sigma):
     a = np.prod(np.prod(a_full, axis=1), axis=1) * psi_ratio
     remove = np.argwhere(psi_2 * psi_1 < 0)
     a[remove] = 0.
-    # a = np.ones(len(x))
     return a
 
 
@@ -327,7 +326,6 @@ def Kinetic(Psi, Fqx, sigma):
     randomwalk = np.random.normal(0.0, sigma, size=(len(Psi.coords), sigma.shape[0], sigma.shape[1]))
     Drift = sigma**2/2.*Fqx
     x = np.array(Psi.coords) + randomwalk + Drift
-    # Fqx, psi_check = drift(x, Psi.excite, Psi.shift, Psi.atoms, Psi.interp)
     y = x
     Fqy, psi = drift(y, Psi.excite, Psi.shift, Psi.atoms, Psi.interp)
     a = metropolis(Fqx, Fqy, Psi.coords, y, Psi.psit, psi, sigma)

@@ -62,10 +62,11 @@ class waveFunction:
             psi[:, 2] = (mw2 / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw2 * dists[:, 1] ** 2))
         return np.prod(psi, axis=-1)
 
-    def psi_t_2d(self, coords, excite, filename=None):
+    def psi_t_2d(self, coords, excite, filename=None, sym_shift=0):
         dists = self.oh_dists(coords)
         anti = 1 / np.sqrt(2) * (dists[:, 1] - dists[:, 0])
         sym = 1 / np.sqrt(2) * (dists[:, 1] + dists[:, 0])
+        sym = sym - sym_shift
         if self.wvfn_loaded is not True:
             self.load_dvr_wvfn(filename)
         psi = self.interp(anti, sym, self.psi_wvfn)
@@ -299,7 +300,7 @@ class DMCIntensities:
         '''
         frac = np.zeros((self.coords.shape[0], self.coords.shape[1]))
         for i in range(self.num_sims):
-            if self.excite_wvfn is None:
+            if self.excite_wvfn is False:
                 h0 = self.psit(self.coords[i], excite=None, **wvfn_kwargs)
                 h1 = self.psit2(self.coords[i], excite, **wvfn_kwargs)
                 frac[i] = h1/h0
@@ -367,6 +368,7 @@ class DMCIntensities:
         self.a_o = avg_term1_o
         self.std_dis = std_term1_dis
         self.a_dis = avg_term1_dis
+        self.term1 = term1
         self.avg_dipole_components = avg_dipole_components
         self.std_dipole_components = std_dipole_components
         self.std_int = std_int_wo_freq

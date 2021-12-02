@@ -19,11 +19,6 @@ OD_red = (m_O*m_D) / (m_O + m_D)
 
 
 def linear_combo_stretch_grid(r1, r2, coords):
-    # re = np.linalg.norm(coords[0]-coords[1])
-    # re2 = np.linalg.norm(coords[0]-coords[2])
-    # re = 0.9616036495623883 * ang2bohr
-    # re2 = 0.9616119936423067 * ang2bohr
-    # re2 = re
     coords = np.array([coords] * 1)
     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
                                                                         ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
@@ -91,7 +86,6 @@ def Kinetic_Calc(grid1, grid2, red_m1, red_m2):
         ident_1 = sp.eye(n_1)  # the identity matrix of grid 1
         return sp.kron(sp.csr_matrix(der[0]), ident_1) + sp.kron(ident_1, sp.csr_matrix(der[1]))
 
-    from functools import reduce
     T = kron_sum(kinetic)
     print('threw those matrices into our sparse matrix')
     return T
@@ -131,11 +125,10 @@ def run(anti, sym, anti_mass, sym_mass, structure):
 
     if np.max(Eig[:, 0]) < 0.005:
         Eig[:, 0] *= -1.
-    for i in range(Eig.shape[1]):
-        Eig[:, i] = Eig[:, i]
-    return En, Eig, extraV
+    return En, Eig, extraV, grid
 
 
+from Potential.Water_monomer_pot_fns import dipole_h2o
 num_points = 100
 re = 0.95784 * ang2bohr
 re2 = 0.95783997 * ang2bohr
@@ -144,13 +137,65 @@ sym = np.linspace(-0.85, 1.15, num_points) + (re + re2)/np.sqrt(2)
 ang = np.deg2rad(104.1747712)
 anti_gmat_one_over = 1/(1/OH_red - np.cos(ang)/m_O)
 sym_gmat_one_over = 1/(1/OH_red + np.cos(ang)/m_O)
-en_wat, eig_wat, v = run(anti, sym, anti_gmat_one_over, sym_gmat_one_over, water)
+X, Y = np.meshgrid(anti, sym, indexing='ij')
+
+en_wat, eig_wat, v, coords = run(anti, sym, anti_gmat_one_over, sym_gmat_one_over, water)
 
 print(f'ground state energy = {en_wat[0]*har2wave}')
 
 print(f'freq 1 = {(en_wat[1]-en_wat[0])*har2wave}')
 
 print(f'freq 2 = {(en_wat[2]-en_wat[0])*har2wave}')
+
+
+anti2 = np.zeros(300)
+sym2 = np.linspace(-0.5, 0.85, 300) + (re + re2)/np.sqrt(2)
+A = 1 / np.sqrt(2) * np.array([[-1, 1], [1, 1]])
+eh = np.matmul(np.linalg.inv(A), np.vstack((anti2.flatten(), sym2.flatten())))
+r1 = eh[0]
+r2 = eh[1]
+structures = linear_combo_stretch_grid(r1, r2, water)
+np.savez('test_water_structures_sym', grid=sym2, coords=structures)
+
+
+import DMC_Tools as dt
+
+mass = np.array([m_O, m_H, m_H])
+ref = np.load('monomer_coords.npy')
+MOM = dt.MomentOfSpinz(ref, mass)
+ref = MOM.coord_spinz()
+eck = dt.EckartsSpinz(ref, coords, mass, planar=True)
+coords = np.ma.masked_invalid(eck.get_rotated_coords())
+
+
+dips = dipole_h2o(coords)
+freq = 3752.632316881249
+freq_std = 1.0858576310252577
+
+au_to_Debye = 1 / 0.3934303
+conv_fac = 4.702e-7
+km_mol = 5.33e6
+conversion = conv_fac * km_mol
+
+t_mom = np.zeros(3)
+for dip in range(3):
+    t_mom[dip] = np.dot(eig_wat[:, 2], dips[:, dip]*eig_wat[:, 0]*au_to_Debye)
+
+intens = np.linalg.norm(t_mom)
+print(f'intensity = {intens**2*conversion*freq} +/- {freq_std*intens**2*conversion}')
+
+t_mom = np.zeros(3)
+for dip in range(3):
+    t_mom[dip] = np.dot(eig_wat[:, 1], dips[:, dip]*eig_wat[:, 0]*au_to_Debye)
+
+intens = np.linalg.norm(t_mom)
+freq = (en_wat[1]-en_wat[0])*har2wave
+print(f'intensity = {intens**2*conversion*freq}')
+
+print(np.dot(eig_wat[:, 1], Y.flatten()*eig_wat[:, 0]))
+
+print(np.dot(eig_wat[:, 2], X.flatten()*eig_wat[:, 0]))
+# print(f'intensity_full = {}')
 
 
 np.savez('2d_anti_sym_stretch_water_wvfns', grid=[anti, sym], ground=eig_wat[:, 0],
