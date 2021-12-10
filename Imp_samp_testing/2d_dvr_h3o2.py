@@ -287,4 +287,40 @@ def run(grid1, grid2, mass1, mass2, structure, sp_description=None):
     return En, Eig, extraV
 
 
+grid_points = 100
+Roo_grid = np.linspace(3.9, 5.8, grid_points)
+sp_grid = np.linspace(-1.5, 1.5, grid_points)
+
+en, eig, v = run(sp_grid, Roo_grid, m_red_sp, m_red_OO, new_struct)
+
+np.savez('h3o2_2d_wvfn', gridz=[sp_grid, Roo_grid], wvfns=eig, energies=en, pot=v)
+
+import DMC_Tools as dt
+
+ground = dt.Derivatives(eig[:, 0].reshape((100, 100)), sp_grid, Roo_grid)
+dx1 = ground.compute_derivative(dx=1)/eig[:, 0].reshape((100, 100))
+dy1 = ground.compute_derivative(dy=1)/eig[:, 0].reshape((100, 100))
+dx2 = ground.compute_derivative(dx=2)/eig[:, 0].reshape((100, 100))
+dy2 = ground.compute_derivative(dy=2)/eig[:, 0].reshape((100, 100))
+dx1_dy1 = ground.compute_derivative(dx=1, dy=1)/eig[:, 0].reshape((100, 100))
+
+np.save('z_ground_dx1_2d_h3o2', dx1)
+np.save('z_ground_dy1_2d_h3o2', dy1)
+np.save('z_ground_dx2_2d_h3o2', dx2)
+np.save('z_ground_dy2_2d_h3o2', dy2)
+np.save('z_ground_dx1_dy1_2d_h3o2', dx1_dy1)
+
+xh = dt.Derivatives(eig[:, 2].reshape((100, 100)), sp_grid, Roo_grid)
+dx1 = xh.compute_derivative(dx=1)/eig[:, 2].reshape((100, 100))
+dy1 = xh.compute_derivative(dy=1)/eig[:, 2].reshape((100, 100))
+dx2 = xh.compute_derivative(dx=2)/eig[:, 2].reshape((100, 100))
+dy2 = xh.compute_derivative(dy=2)/eig[:, 2].reshape((100, 100))
+dx1_dy1 = xh.compute_derivative(dx=1, dy=1)/eig[:, 2].reshape((100, 100))
+
+np.save('z_xh_dx1_2d_h3o2', dx1)
+np.save('z_xh_dy1_2d_h3o2', dy1)
+np.save('z_xh_dx2_2d_h3o2', dx2)
+np.save('z_xh_dy2_2d_h3o2', dy2)
+np.save('z_xh_dx1_dy1_2d_h3o2', dx1_dy1)
+
 

@@ -4,7 +4,7 @@ import numpy as np
 import multiprocessing as mp
 import os
 os.chdir('ProtWaterPES')
-from .ProtWaterPES.ProtonatedWaterPot import Potential
+from ProtWaterPES.ProtonatedWaterPot import Potential
 os.chdir('../')
 from itertools import repeat
 import time

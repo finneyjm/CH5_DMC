@@ -1,12 +1,17 @@
 from Potential.Water_monomer_pot_fns import PatrickShinglePotential
 import numpy as np
 from scipy import interpolate
+import DMC_Tools as dt
 
 
 def psi_t(coords, kwargs):
     excite = kwargs['excite']
     interp = kwargs['interp']
     shift = kwargs['shift']
+    mass = kwargs['mass']
+    water = np.load('paf_monomer_coords.npy')
+    eck = dt.EckartsSpinz(water, coords, mass, planar=True)
+    coords = eck.get_rotated_coords()
     try:
         timestep = kwargs['timestep']
         # print(timestep)
@@ -23,9 +28,9 @@ def psi_t(coords, kwargs):
     if shift is not None:
         anti = anti - shift[0]
         sym = sym - shift[1]
-    # psi[:, 0] = interpolate.splev(anti, interp[0], der=0)
+    psi[:, 0] = interpolate.splev(anti, interp[0], der=0)
     psi[:, 1] = interpolate.splev(sym, interp[1], der=0)
-    # psi[:, 2] = angle_function(coords, excite, shift)
+    psi[:, 2] = angle_function(coords, excite, shift)
     return np.prod(psi, axis=1)
 
 
@@ -128,8 +133,8 @@ def harm_d2psi_dx2(coords, excite):
     collect = harm_d2psi_dr(coords, excite)
     dr2 = harm_drdx2(coords, dists)[..., None]
     collect2 = harm_dpsi_dr(coords, excite)
-    return np.matmul(dr**2, collect[:, None, None, None]).squeeze() #\
-           # + np.matmul(dr2, collect2[:, None, None, None]).squeeze()
+    return np.matmul(dr**2, collect[:, None, None, None]).squeeze() \
+           + np.matmul(dr2, collect2[:, None, None, None]).squeeze()
 
 
 def harm_derivatives(coords, kwargs):
@@ -325,9 +330,9 @@ def dpsidrtheta(coords, dists, excite, interp, shift=None):
     if shift is not None:
         anti = anti - shift[0]
         sym = sym - shift[1]
-    # collect[:, 0] = interpolate.splev(anti, interp[0], der=1)/interpolate.splev(anti, interp[0], der=0)
+    collect[:, 0] = interpolate.splev(anti, interp[0], der=1)/interpolate.splev(anti, interp[0], der=0)
     collect[:, 1] = interpolate.splev(sym, interp[1], der=1)/interpolate.splev(sym, interp[1], der=0)
-    # collect[:, 2] = dangle(coords, excite, shift)
+    collect[:, 2] = dangle(coords, excite, shift)
     return collect
 
 
@@ -338,9 +343,9 @@ def d2psidrtheta(coords, dists, excite, interp, shift=None):
     if shift is not None:
         anti = anti - shift[0]
         sym = sym - shift[1]
-    # collect[:, 0] = interpolate.splev(anti, interp[0], der=2)/interpolate.splev(anti, interp[0], der=0)
+    collect[:, 0] = interpolate.splev(anti, interp[0], der=2)/interpolate.splev(anti, interp[0], der=0)
     collect[:, 1] = interpolate.splev(sym, interp[1], der=2)/interpolate.splev(sym, interp[1], der=0)
-    # collect[:, 2] = d2angle(coords, excite, shift)
+    collect[:, 2] = d2angle(coords, excite, shift)
     return collect
 
 
@@ -395,6 +400,10 @@ def full_dpsi_dx(coords, kwargs):
     excite = kwargs['excite']
     interp = kwargs['interp']
     shift = kwargs['shift']
+    mass = kwargs['mass']
+    water = np.load('paf_monomer_coords.npy')
+    eck = dt.EckartsSpinz(water, coords, mass, planar=True)
+    coords = eck.get_rotated_coords()
     try:
         timestep = kwargs['timestep']
         shift_rate = kwargs['shift_rate']
@@ -412,18 +421,18 @@ def get_pot(coords):
     return V
 
 
-from Coordinerds.CoordinateSystems import *
-def linear_combo_stretch_grid(r1, r2, coords):
-    coords = np.array([coords] * 1)
-    zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
-                                                                        ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
-                                                                                   [2, 0, 1, 0]])).coords
-    N = len(r1)
-    zmat = np.array([zmat]*N).squeeze()
-    zmat[:, 0, 1] = r1
-    zmat[:, 1, 1] = r2
-    new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
-    return new_coords
+# from Coordinerds.CoordinateSystems import *
+# def linear_combo_stretch_grid(r1, r2, coords):
+#     coords = np.array([coords] * 1)
+#     zmat = CoordinateSet(coords, system=CartesianCoordinates3D).convert(ZMatrixCoordinates,
+#                                                                         ordering=([[0, 0, 0, 0], [1, 0, 0, 0],
+#                                                                                    [2, 0, 1, 0]])).coords
+#     N = len(r1)
+#     zmat = np.array([zmat]*N).squeeze()
+#     zmat[:, 0, 1] = r1
+#     zmat[:, 1, 1] = r2
+#     new_coords = CoordinateSet(zmat, system=ZMatrixCoordinates).convert(CartesianCoordinates3D).coords
+#     return new_coords
 #
 #
 # def finite_difference_local_kinetic(coords, kwargs, sigma):
@@ -456,19 +465,19 @@ def linear_combo_stretch_grid(r1, r2, coords):
 #     "shift": [0, 0.00, 0],
 #     # "shift_rate": [0, -0.00001, 0]
 # }
-ang2bohr = 1.e-10 / 5.291772106712e-11
-re = 0.95784 * ang2bohr
-re2 = 0.95783997 * ang2bohr
-num_points = 400
-anti = np.zeros(num_points)
-sym = np.linspace(-0.55, 0.85, num_points) + (re + re2)/np.sqrt(2)
-A = 1 / np.sqrt(2) * np.array([[-1, 1], [1, 1]])
-X, Y = np.meshgrid(anti, sym, indexing='ij')
-eh = np.matmul(np.linalg.inv(A), np.vstack((X.flatten(), Y.flatten())))
-r1 = eh[0]
-r2 = eh[1]
-water = np.load('monomer_coords.npy')
-grid = linear_combo_stretch_grid(r1, r2, water)
+# ang2bohr = 1.e-10 / 5.291772106712e-11
+# re = 0.95784 * ang2bohr
+# re2 = 0.95783997 * ang2bohr
+# num_points = 400
+# anti = np.zeros(num_points)
+# sym = np.linspace(-0.55, 0.85, num_points) + (re + re2)/np.sqrt(2)
+# A = 1 / np.sqrt(2) * np.array([[-1, 1], [1, 1]])
+# X, Y = np.meshgrid(anti, sym, indexing='ij')
+# eh = np.matmul(np.linalg.inv(A), np.vstack((X.flatten(), Y.flatten())))
+# r1 = eh[0]
+# r2 = eh[1]
+# water = np.load('monomer_coords.npy')
+# grid = linear_combo_stretch_grid(r1, r2, water)
 # me = 9.10938356e-31
 # Avo_num = 6.0221367e23
 # m_O = 15.994915 / (Avo_num*me*1000)

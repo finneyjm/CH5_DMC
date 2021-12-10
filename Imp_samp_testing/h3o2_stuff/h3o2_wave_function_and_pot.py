@@ -38,7 +38,7 @@ def psi_t(coords, kwargs):
     else:
         psi[:, 0] = (mw_h / np.pi) ** (1. / 4.) * np.exp(-(1. / 2. * mw_h * dists[:, 0] ** 2))
         psi[:, 1] = interp(dists[:, -1], dists[:, -2], interp_func)
-    return psi
+    return np.prod(psi, axis=1)
 
 
 def dpsidasp(coords, excite, dists, dx1, dy1):
@@ -216,6 +216,18 @@ def d2spdx2(coords, sp):
             coords[:, atom, xyz] -= 2*dx
     chain[:, [2, 4]] = np.zeros((len(coords), 2, 3, 5))
     return np.dot(chain, coeffs)
+
+
+def derivatives(coords, kwargs):
+    excite = kwargs['excite']
+    dx1 = kwargs['dx1']
+    dx2 = kwargs['dx2']
+    dy1 = kwargs['dy1']
+    dy2 = kwargs['dy2']
+    dx1_dy1 = kwargs['dx1_dy1']
+    first_derivative = dpsidx(coords, excite, dx1, dy1)
+    second_derivative = d2psidx2(coords, excite, dx1, dy1, dx2, dy2, dx1_dy1)
+    return first_derivative, second_derivative
 
 
 def sp_calc_for_fd(coords):

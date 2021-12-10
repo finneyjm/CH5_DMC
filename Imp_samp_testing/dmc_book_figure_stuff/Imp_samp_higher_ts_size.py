@@ -430,6 +430,7 @@ amp2 = amp2/np.linalg.norm(amp2)
 amp3 = amp3/np.linalg.norm(amp3)
 truth = truth/np.linalg.norm(truth)
 mod = amp*phi1/phi
+mod = mod/np.max(mod)*np.max(truth1)
 mod2 = amp*phi1/phi + amp3*phi/phi1 - phi*phi1
 mod2 = mod2/np.max(mod2)*np.max(truth1)
 # mod = -mod/np.min(mod)*np.max(truth1)
@@ -440,9 +441,9 @@ phi_sq = phi**2/np.linalg.norm(phi**2)
 #
 import matplotlib.pyplot as plt
 # plt.figure(figsize=(12,7))
-# plt.plot(bin/ang2bohr, mod, color='orange', label=r'f$_0$($\rm{\Delta r_{OH}}$)*$\frac{\rm{\Phi_{T, 1}(\Delta r_{OH})}}{\rm{\Phi_{T, 0}(\Delta r_{OH})}}$')
+plt.plot(bin/ang2bohr, mod, color='orange', label=r'f$_0$($\rm{\Delta r_{OH}}$)*$\frac{\rm{\Phi_{T, 1}(\Delta r_{OH})}}{\rm{\Phi_{T, 0}(\Delta r_{OH})}}$')
 # plt.plot(bin/ang2bohr, amp3*phi/phi1, label=r'f$_1$($\rm{\Delta r_{OH}}$)*$\frac{\rm{\Phi_{T, 0}(\Delta r_{OH})}}{\rm{\Phi_{T, 1}(\Delta r_{OH})}}$')
-plt.plot(bin/ang2bohr, mod2, color='green', label=r'Eq. 20')
+# plt.plot(bin/ang2bohr, mod2, color='green', label=r'Eq. 20')
 plt.plot(bin/ang2bohr, truth1, color='black', linestyle='dashdot', label=r'Exact')
 plt.xlabel(r'r$_{\rm{OH}}$ [/$\rm\AA$]', fontsize=20)
 plt.ylabel(r'$\rm{\Psi_1(r_{OH})}$$\rm{\Psi_0(r_{OH})}$', fontsize=20)

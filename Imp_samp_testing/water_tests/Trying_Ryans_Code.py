@@ -16,6 +16,14 @@ test_structure = np.array([
         [-0.4264345438, 0.9968892161, 0.9222274409],
 ])
 
+test_structure2 = np.array([
+            [0.,  0., 0.],
+            [1.81005527, 0.,  0.],
+            [-0.96710612, 1.89501907, 0.],
+])
+
+structures = np.array([test_structure, test_structure2])
+
 me = 9.10938356e-31
 Avo_num = 6.0221367e23
 m_O = 15.994915 / (Avo_num*me*1000)
@@ -26,21 +34,25 @@ anti = np.load('antisymmetric_stretch_water_wvfns.npz')
 sym = np.load('symmetric_stretch_water_wvfns.npz')
 
 interp_anti = interpolate.splrep(anti['grid'], np.abs(anti['ground']), s=0)
-interp_sym = interpolate.splrep(sym['grid'], sym['ground'], s=0)
+interp_sym = interpolate.splrep(sym['grid'], sym['excite'], s=0)
 interp = [interp_anti, interp_sym]
 
+mass = np.array([m_O, m_H, m_H])
+
 kwargs = {
-    "excite": None,
+    "excite": "sym",
     "interp": interp,
     "shift": [0, 0.0, 0],
-    "shift_rate": [0, 0.000000, 0]
+    "shift_rate": [0, 0.000005, 0],
+    "mass": mass
 }
 
 kwargs2 = {
     "excite": "sym",
     "interp": interp,
     "shift": [0, 0.075, 0],
-    "shift_rate": [0, -0.000005, 0]
+    "shift_rate": [0, -0.000005, 0],
+    "mass": mass
 }
 
 kwargs3 = {
@@ -56,7 +68,7 @@ water_pot = pv.Potential(potential_function=pot_func,
                          potential_directory=pot_dir,
                          num_cores=11)
 
-for i in range(1):
+for i in range(2):
     water_imp = pv.ImpSampManager(trial_function='psi_t',
                                   trial_directory=pot_dir,
                                   python_file=py_file,
@@ -64,15 +76,15 @@ for i in range(1):
                                   deriv_function='full_dpsi_dx',
                                   trial_kwargs=kwargs_list[0],
                                   deriv_kwargs=kwargs_list[0],
-                                  # pass_timestep=True
+                                  pass_timestep=True
                                   )
 
-    test_water = pv.DMC_Sim(sim_name=f'1d_imp_samp_sym_testing_eliminating_deriv_parts_{i+1}',
+    test_water = pv.DMC_Sim(sim_name=f'1d_imp_samp_sym_testing_nodes_no_first_deriv_term_{i+1}',
                             output_folder='1d_imp_samp_test',
                             weighting='continuous',
                             cont_wt_thresh=[0.01, 20],
-                            num_walkers=1000,
-                            num_timesteps=10000,
+                            num_walkers=5000,
+                            num_timesteps=20000,
                             equil_steps=500,
                             chkpt_every=500,
                             wfn_every=500,
@@ -80,11 +92,11 @@ for i in range(1):
                             atoms=['O', 'H', 'H'],
                             delta_t=1,
                             potential=water_pot,
-                            start_structures=test_structure[None, :, :],
+                            start_structures=structures[i, None, :, :],
                             imp_samp=water_imp,
                             masses=[m_O, m_H, m_H])
 
-    # test_water.run()
+    test_water.run()
 
 
 from Coordinerds.CoordinateSystems import *
@@ -129,6 +141,7 @@ grid = linear_combo_stretch_grid(r1, r2, water).reshape((num_points, num_points,
 mass = np.array([m_O, m_H, m_H])
 mom = dt.MomentOfSpinz(water, mass)
 water = mom.coord_spinz()
+np.save('paf_monomer_coords', water)
 
 eck = dt.EckartsSpinz(water, grid, mass, planar=True)
 grid_rot = eck.get_rotated_coords()
@@ -143,9 +156,9 @@ import matplotlib.pyplot as plt
 plt.plot(sym, (local_kin + pot)*har2wave, label='local energy')
 plt.plot(sym, pot*har2wave, label='potential')
 
-deriv, sderiv = water_imp.call_derivs(grid)
+deriv, sderiv = water_imp.call_derivs(grid_rot)
 local_kin = test_water.impsamp.local_kin(test_water.inv_masses_trip, sderiv)
-pot = test_water.potential(grid)
+pot = test_water.potential(grid_rot)
 
 plt.plot(sym, (local_kin + pot)*har2wave, label='local energy after Eckart')
 plt.plot(sym, pot*har2wave, label='potential after Eckart')
